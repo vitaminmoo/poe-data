@@ -32,5 +32,11 @@ target/
 .aider*
 .env
 
+lib/schema.min.json
+
 # temp until CDN-based file fetching is available
 data/ggpk
+data/.cache
+data/files
+data/tables
+data/config.json

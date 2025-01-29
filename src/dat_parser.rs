@@ -17,7 +17,6 @@ pub enum DatError {
         offset: usize,
     },
 }
-
 impl From<io::Error> for DatError {
     fn from(e: io::Error) -> Self {
         DatError::Io(e)
@@ -45,9 +44,7 @@ impl std::fmt::Display for DatError {
     }
 }
 
-#[derive(Debug)]
-pub struct Analysis {}
-
+// datc64 table types
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Scalar {
     Unknown,
@@ -87,7 +84,7 @@ impl Column {
             Column::Scalar(Scalar::U32) => 4,
             Column::Scalar(Scalar::F32) => 4,
             // 8 bytes of count, 8 bytes of offset in the data field. Offset is always increasing and interleaved evenly in column, row order
-            // note that if count is 0 then offset is still valid but points to zero bytes, which means it can point to the last byte of the data section
+            // note that if count is 0 then offset is still valid but points to zero bytes, which means it can point to the last byte of the data section, and multiple adjacent empty array cells could point to the same offset if no other columns point to data
             Column::Array(_) => 16,
             // who knows
             Column::Scalar(_) => 0,
@@ -95,6 +92,7 @@ impl Column {
     }
 }
 
+// A ColumnClaim is a object that declares that a column may or does exist at a particular offset in the row bytes
 #[derive(Debug)]
 pub struct ColumnClaim {
     pub offset: usize, // offset in bytes, either per row or for the data section (including 0xBB magic)
@@ -473,6 +471,41 @@ impl DatFile {
     }
 }
 
+pub fn hexdump(data: &[u8]) {
+    for (i, chunk) in data.chunks(16).enumerate() {
+        print!("{:08x}  ", i * 16);
+        for &byte in chunk {
+            print!("{:02x} ", byte);
+        }
+        for _ in chunk.len()..16 {
+            print!("   ");
+        }
+        print!(" |");
+        for &byte in chunk {
+            let c = byte as char;
+            if c.is_ascii_graphic() || c == ' ' {
+                print!("{}", c);
+            } else {
+                print!(".");
+            }
+        }
+        for _ in chunk.len()..16 {
+            print!(" ");
+        }
+        print!("| ");
+
+        // UTF-16 interpretation (assuming little-endian)
+        let utf16_chunks = chunk.chunks_exact(2);
+        for utf16_bytes in utf16_chunks {
+            let utf16_val = u16::from_le_bytes([utf16_bytes[0], utf16_bytes[1]]);
+            match char::from_u32(utf16_val as u32) {
+                Some(c) => print!("{}", c),
+                None => print!("."), // Or handle invalid UTF-16 as needed
+            }
+        }
+        println!();
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -522,41 +555,5 @@ mod tests {
                 }
             }
         }
-    }
-}
-
-pub fn hexdump(data: &[u8]) {
-    for (i, chunk) in data.chunks(16).enumerate() {
-        print!("{:08x}  ", i * 16);
-        for &byte in chunk {
-            print!("{:02x} ", byte);
-        }
-        for _ in chunk.len()..16 {
-            print!("   ");
-        }
-        print!(" |");
-        for &byte in chunk {
-            let c = byte as char;
-            if c.is_ascii_graphic() || c == ' ' {
-                print!("{}", c);
-            } else {
-                print!(".");
-            }
-        }
-        for _ in chunk.len()..16 {
-            print!(" ");
-        }
-        print!("| ");
-
-        // UTF-16 interpretation (assuming little-endian)
-        let utf16_chunks = chunk.chunks_exact(2);
-        for utf16_bytes in utf16_chunks {
-            let utf16_val = u16::from_le_bytes([utf16_bytes[0], utf16_bytes[1]]);
-            match char::from_u32(utf16_val as u32) {
-                Some(c) => print!("{}", c),
-                None => print!("."), // Or handle invalid UTF-16 as needed
-            }
-        }
-        println!();
     }
 }
