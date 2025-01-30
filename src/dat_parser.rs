@@ -1,9 +1,8 @@
 use bytes::{Buf, Bytes};
 use std::collections::HashMap;
 use std::io;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::{LazyLock, RwLock};
-use std::{env, fs};
 
 #[derive(Debug)]
 pub enum DatError {
@@ -13,7 +12,7 @@ pub enum DatError {
     },
     StringError {
         message: String,
-        source: PathBuf,
+        source: String,
         offset: usize,
     },
 }
@@ -35,9 +34,7 @@ impl std::fmt::Display for DatError {
                 write!(
                     f,
                     "{}: Failed accessing string at offset {}: {}",
-                    source.display(),
-                    offset,
-                    message
+                    source, offset, message
                 )
             }
         }
@@ -105,21 +102,23 @@ pub static DAT_LOADER: LazyLock<RwLock<DatLoader>> =
     LazyLock::new(|| RwLock::new(DatLoader::default()));
 
 pub struct DatLoader {
-    pub data_dir: PathBuf,
+    pub fs: poe_tools::bundle_fs::FS,
     // path -> dat file struct
     pub dat_files: HashMap<String, DatFile>,
 }
 
 impl Default for DatLoader {
     fn default() -> Self {
-        let data_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
-        let data_dir = std::path::Path::new(data_dir).join("data/ggpk/data");
-        let mut dl = DatLoader {
-            data_dir,
+        let cache_dir = dirs::cache_dir().unwrap().join("poe_data_tools");
+        let base_url = poe_tools::bundle_loader::cdn_base_url(&cache_dir, "2").unwrap();
+        eprint!("loading fs...");
+        let fs = poe_tools::bundle_fs::from_cdn(&base_url, &cache_dir);
+        eprintln!("done");
+
+        DatLoader {
+            fs,
             dat_files: HashMap::new(),
-        };
-        dl.load_all_tables();
-        dl
+        }
     }
 }
 
@@ -129,32 +128,98 @@ impl DatLoader {
             return;
         }
 
-        match load_file(self.data_dir.clone(), name) {
+        eprint!("loading {}...", name);
+        match self.load_file(name) {
             Ok(loaded) => {
-                self.dat_files
-                    .insert(name.strip_suffix(".datc64").unwrap().to_string(), loaded);
+                self.dat_files.insert(name.to_string(), loaded);
             }
             Err(err) => panic!("Couldn't load table {}: {}", name, err),
         }
+        eprintln!("done");
     }
-    fn load_all_tables(&mut self) {
-        let dir = self.data_dir.clone();
-        for entry in dir.read_dir().unwrap() {
-            let entry = entry.unwrap();
-            let path = entry.path();
-            if path.is_file() && path.extension().unwrap_or_default() == "datc64" {
-                self.load_table(entry.file_name().to_str().unwrap());
+    pub fn load_all_tables(&mut self) {
+        for path in self.fs.list() {
+            if PathBuf::from(&path).extension().unwrap_or_default() == "datc64" {
+                self.load_table(&path);
             }
         }
     }
     pub fn get_table(&mut self, name: &str) -> Option<&mut DatFile> {
+        if !self.dat_files.contains_key(name) {
+            self.load_table(name);
+        }
         self.dat_files.get_mut(name)
+    }
+
+    pub fn load_file(&mut self, name: &str) -> Result<DatFile, DatError> {
+        let file = self.fs.read(name).unwrap();
+        /*
+        let mut fh = File::open(data_dir)?;
+        let mut file = Vec::<u8>::new();
+        let len = fh.read_to_end(&mut file)?;
+        */
+
+        // length + magic
+        if file.len() < 4 + 8 {
+            return Err(DatError::ParseError {
+                message: "file too short".to_string(),
+            });
+        }
+
+        let magic_index = file
+            .windows(8)
+            .position(|window| window == [0xBB; 8])
+            .ok_or(DatError::ParseError {
+                message: "magic bytes not found".to_string(),
+            })?;
+
+        let mut data = Bytes::from_owner(file);
+        let mut table = data.split_to(magic_index);
+
+        let table_len_rows = table.get_u32_le() as usize;
+        let mut row_len_bytes = 0;
+        if table_len_rows > 0 {
+            row_len_bytes = table.len() / table_len_rows;
+        }
+
+        /*
+        let mut data_refs = vec![0; data.len()];
+        for item in data_refs.iter_mut().take(8) {
+            // BB magic
+            *item = 1;
+        }
+        */
+
+        let mut dat_file = DatFile {
+            source: name.to_string(),
+            table,
+            _table_len_rows: table_len_rows,
+            row_len_bytes,
+            data,
+            table_row_or: vec![0; row_len_bytes],
+            table_row_min: vec![0xFF; row_len_bytes],
+            table_row_max: vec![0; row_len_bytes],
+        };
+
+        if table_len_rows == 0 {
+            return Ok(dat_file);
+        }
+
+        for row in dat_file.table.chunks_exact(row_len_bytes) {
+            for (i, &byte) in row.iter().enumerate() {
+                dat_file.table_row_or[i] |= byte;
+                dat_file.table_row_min[i] = dat_file.table_row_min[i].min(byte);
+                dat_file.table_row_max[i] = dat_file.table_row_max[i].max(byte);
+            }
+        }
+
+        Ok(dat_file)
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct DatFile {
-    pub source: PathBuf,        // path to the file that we got this data from
+    pub source: String,         // path to the file that we got this data from
     pub table: Bytes,           // The entire fixed-length table section without the rows header
     pub _table_len_rows: usize, // how many rows in the table
     pub row_len_bytes: usize,   // how many bytes per row
@@ -162,73 +227,6 @@ pub struct DatFile {
     pub table_row_or: Vec<u8>, // 1 byte per row byte, all rows bitwise or'd together
     pub table_row_min: Vec<u8>, // 1 byte per row byte, containing the min value of all rows
     pub table_row_max: Vec<u8>, // 1 byte per row byte, containing the max value of all rows
-}
-
-pub fn load_file(data_dir: PathBuf, name: &str) -> Result<DatFile, DatError> {
-    let mut path = data_dir.join(name);
-    path.set_extension("datc64");
-    let file = fs::read(&path)?;
-    /*
-    let mut fh = File::open(data_dir)?;
-    let mut file = Vec::<u8>::new();
-    let len = fh.read_to_end(&mut file)?;
-    */
-
-    // length + magic
-    if file.len() < 4 + 8 {
-        return Err(DatError::ParseError {
-            message: "file too short".to_string(),
-        });
-    }
-
-    let magic_index = file
-        .windows(8)
-        .position(|window| window == [0xBB; 8])
-        .ok_or(DatError::ParseError {
-            message: "magic bytes not found".to_string(),
-        })?;
-
-    let mut data = Bytes::from_owner(file);
-    let mut table = data.split_to(magic_index);
-
-    let table_len_rows = table.get_u32_le() as usize;
-    let mut row_len_bytes = 0;
-    if table_len_rows > 0 {
-        row_len_bytes = table.len() / table_len_rows;
-    }
-
-    /*
-    let mut data_refs = vec![0; data.len()];
-    for item in data_refs.iter_mut().take(8) {
-        // BB magic
-        *item = 1;
-    }
-    */
-
-    let mut dat_file = DatFile {
-        source: path,
-        table,
-        _table_len_rows: table_len_rows,
-        row_len_bytes,
-        data,
-        table_row_or: vec![0; row_len_bytes],
-        table_row_min: vec![0xFF; row_len_bytes],
-        table_row_max: vec![0; row_len_bytes],
-    };
-
-    if table_len_rows == 0 {
-        return Ok(dat_file);
-    }
-
-    for row in dat_file.table.chunks_exact(row_len_bytes) {
-        for (i, &byte) in row.iter().enumerate() {
-            dat_file.table_row_or[i] |= byte;
-            dat_file.table_row_min[i] = dat_file.table_row_min[i].min(byte);
-            dat_file.table_row_max[i] = dat_file.table_row_max[i].max(byte);
-        }
-    }
-
-    Ok(dat_file)
 }
 
 impl DatFile {
@@ -512,7 +510,7 @@ mod tests {
     #[test]
     fn test_get_claims_mods() {
         let mut dl = DatLoader::default();
-        let dat_file: &mut DatFile = dl.get_table("mods").unwrap();
+        let dat_file: &mut DatFile = dl.get_table("data/mods.datc64").unwrap();
         for bytes in [1, 2, 4, 8, 16] {
             if dat_file.row_len_bytes < bytes + 1 {
                 continue;
