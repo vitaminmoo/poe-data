@@ -1,6 +1,6 @@
 local schema = import 'schema.min.json';
 
-local explicitTables = ['BaseItemTypes', 'Essences', 'CraftingBenchOptions'];
+local explicitTables = ['Mods'];
 // good simple case for testing
 //local explicitTables = ['DamageParticleEffects'];
 {
@@ -10,7 +10,7 @@ local explicitTables = ['BaseItemTypes', 'Essences', 'CraftingBenchOptions'];
   kvSchema:: {
     [table.name]: table
     for table in schema.tables
-    if table.validFor == 1 || table.validFor == 3
+    if table.validFor == 2 || table.validFor == 3
   },
   tableRefs(table)::
     if std.objectHas($.kvSchema, table)

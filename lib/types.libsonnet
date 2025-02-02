@@ -92,7 +92,7 @@ local types =
     }],
     // basic
     [{
-      type: ['i16', 'f32', 'i32', 'u32', 'bool', 'string'],
+      type: ['i16', 'u16', 'f32', 'i32', 'u32', 'bool', 'string'],
       array: false,
       table_reference: null,
       column_reference: null,
@@ -104,7 +104,7 @@ local types =
     }],
     // basic_array
     [{
-      type: ['i16', 'f32', 'i32', 'u32', 'bool', 'string'],
+      type: ['i16', 'u16', 'f32', 'i32', 'u32', 'bool', 'string'],
       array: true,
       table_reference: null,
       column_reference: null,
@@ -120,6 +120,7 @@ local types =
   type_map(t):: (
     local tm = {
       i16: 'i16',
+      u16: 'u16',
       i32: 'i32',
       u32: 'u32',
       string: 'String',
