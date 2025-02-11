@@ -5,7 +5,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::sync::{LazyLock, RwLock};
 
-// datc64 table types
+// datc64 column types
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Scalar {
     Unknown,
@@ -23,36 +23,70 @@ pub enum Scalar {
     U64,
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Column {
+pub enum Cell {
     Scalar(Scalar),
     Array(Scalar),
 }
 
-impl Column {
+impl Cell {
     pub fn bytes(&self) -> usize {
         match self {
             // index to the current table, 0xfe filled if null
-            Column::Scalar(Scalar::SelfRow) => 8,
+            Cell::Scalar(Scalar::SelfRow) => 8,
             // index to some other table, 0xfe filled if null
-            Column::Scalar(Scalar::ForeignRow) => 16,
+            Cell::Scalar(Scalar::ForeignRow) => 16,
             // index to a non-table enum (not a dat, can be zero or 1 indexed), 0xfe filled if null
-            Column::Scalar(Scalar::EnumRow) => 4,
+            Cell::Scalar(Scalar::EnumRow) => 4,
             // uint8_le 0 or 1
-            Column::Scalar(Scalar::Bool) => 1,
+            Cell::Scalar(Scalar::Bool) => 1,
             // index into a utf-16 string in the data table with double-null termination
-            Column::Scalar(Scalar::String) => 8,
-            Column::Scalar(Scalar::I16) => 2,
-            Column::Scalar(Scalar::U16) => 2,
-            Column::Scalar(Scalar::I32) => 4,
-            Column::Scalar(Scalar::U32) => 4,
-            Column::Scalar(Scalar::F32) => 4,
+            Cell::Scalar(Scalar::String) => 8,
+            Cell::Scalar(Scalar::I16) => 2,
+            Cell::Scalar(Scalar::U16) => 2,
+            Cell::Scalar(Scalar::I32) => 4,
+            Cell::Scalar(Scalar::U32) => 4,
+            Cell::Scalar(Scalar::F32) => 4,
             // 8 bytes of count, 8 bytes of offset in the data field. Offset is always increasing and interleaved evenly in column, row order
             // note that if count is 0 then offset is still valid but points to zero bytes, which means it can point to the last byte of the data section, and multiple adjacent empty array cells could point to the same offset if no other columns point to data
-            Column::Array(_) => 16,
+            Cell::Array(_) => 16,
             // who knows
-            Column::Scalar(_) => 0,
+            Cell::Scalar(_) => 0,
         }
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum ScalarRef {
+    SelfRef(u32),
+    ForeignRef(u64),
+    EnumRef(u16),
+    Bool(u8),
+    String(u32),
+    I16(i16),
+    U16(u16),
+    I32(i32),
+    U32(u32),
+    F32(f32),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum CellRef {
+    Scalar(ScalarRef),
+    Array(ScalarRef),
+}
+
+#[derive(Debug)]
+pub enum ScalarValue {
+    SelfRow(u32),
+    ForeignRow(u64),
+    EnumRow(u16),
+    Bool(bool),
+    String(String),
+    I16(i16),
+    U16(u16),
+    I32(i32),
+    U32(u32),
+    F32(f32),
 }
 
 // A ColumnClaim is a object that declares that a column may or does exist at a particular offset in the row bytes
@@ -60,7 +94,7 @@ impl Column {
 pub struct ColumnClaim {
     pub offset: usize, // offset in bytes, either per row or for the data section (including 0xBB magic)
     pub bytes: usize,  // how many bytes the claim covers
-    pub column_type: Column, // what type of field is this claim for
+    pub column_type: Cell, // what type of field is this claim for
     pub labels: HashMap<String, String>, // arbitrary metadata for the claim
 }
 
@@ -218,76 +252,76 @@ impl DatFile {
             .slice(row * self.row_len_bytes + index..row * self.row_len_bytes + index + bytes)
     }
     pub fn cell_foreignrow(&mut self, row: usize, index: usize) -> u64 {
-        self.cell(row, index, Column::Scalar(Scalar::ForeignRow).bytes())
+        self.cell(row, index, Cell::Scalar(Scalar::ForeignRow).bytes())
             .get_u64_le()
     }
     pub fn cell_selfrow(&mut self, row: usize, index: usize) -> u32 {
-        self.cell(row, index, Column::Scalar(Scalar::SelfRow).bytes())
+        self.cell(row, index, Cell::Scalar(Scalar::SelfRow).bytes())
             .get_u32_le()
     }
     pub fn cell_enumrow(&mut self, row: usize, index: usize) -> u16 {
-        self.cell(row, index, Column::Scalar(Scalar::EnumRow).bytes())
+        self.cell(row, index, Cell::Scalar(Scalar::EnumRow).bytes())
             .get_u16_le()
     }
     pub fn cell_i16(&mut self, row: usize, index: usize) -> i16 {
-        self.cell(row, index, Column::Scalar(Scalar::I16).bytes())
+        self.cell(row, index, Cell::Scalar(Scalar::I16).bytes())
             .get_i16_le()
     }
     pub fn cell_u16(&mut self, row: usize, index: usize) -> u16 {
-        self.cell(row, index, Column::Scalar(Scalar::U16).bytes())
+        self.cell(row, index, Cell::Scalar(Scalar::U16).bytes())
             .get_u16_le()
     }
     pub fn cell_i32(&mut self, row: usize, index: usize) -> i32 {
-        self.cell(row, index, Column::Scalar(Scalar::I32).bytes())
+        self.cell(row, index, Cell::Scalar(Scalar::I32).bytes())
             .get_i32_le()
     }
     pub fn cell_u32(&mut self, row: usize, index: usize) -> u32 {
-        self.cell(row, index, Column::Scalar(Scalar::U32).bytes())
+        self.cell(row, index, Cell::Scalar(Scalar::U32).bytes())
             .get_u32_le()
     }
     pub fn cell_f32(&mut self, row: usize, index: usize) -> f32 {
-        self.cell(row, index, Column::Scalar(Scalar::F32).bytes())
+        self.cell(row, index, Cell::Scalar(Scalar::F32).bytes())
             .get_f32_le()
     }
     pub fn cell_bool(&mut self, row: usize, index: usize) -> bool {
-        self.cell(row, index, Column::Scalar(Scalar::Bool).bytes())
+        self.cell(row, index, Cell::Scalar(Scalar::Bool).bytes())
             .get_u8()
             > 0
     }
     pub fn cell_array_foreignrow(&mut self, row: usize, index: usize) -> Result<Vec<u64>> {
-        self.array_from_cell(row, index, Column::Scalar(Scalar::ForeignRow).bytes())
+        self.array_from_cell(row, index, Cell::Scalar(Scalar::ForeignRow).bytes())
             .map(|mut x| x.iter_mut().map(|y| y.get_u64_le()).collect())
     }
     pub fn cell_array_selfrow(&mut self, row: usize, index: usize) -> Result<Vec<u32>> {
-        self.array_from_cell(row, index, Column::Scalar(Scalar::SelfRow).bytes())
+        self.array_from_cell(row, index, Cell::Scalar(Scalar::SelfRow).bytes())
             .map(|mut x| x.iter_mut().map(|y| y.get_u32_le()).collect())
     }
     pub fn cell_array_enumrow(&mut self, row: usize, index: usize) -> Result<Vec<u16>> {
-        self.array_from_cell(row, index, Column::Scalar(Scalar::EnumRow).bytes())
+        self.array_from_cell(row, index, Cell::Scalar(Scalar::EnumRow).bytes())
             .map(|mut x| x.iter_mut().map(|y| y.get_u16_le()).collect())
     }
     pub fn cell_array_i16(&mut self, row: usize, index: usize) -> Result<Vec<i16>> {
-        self.array_from_cell(row, index, Column::Scalar(Scalar::I16).bytes())
+        self.array_from_cell(row, index, Cell::Scalar(Scalar::I16).bytes())
             .map(|mut x| x.iter_mut().map(|y| y.get_i16_le()).collect())
     }
     pub fn cell_array_u16(&mut self, row: usize, index: usize) -> Result<Vec<u16>> {
-        self.array_from_cell(row, index, Column::Scalar(Scalar::U16).bytes())
+        self.array_from_cell(row, index, Cell::Scalar(Scalar::U16).bytes())
             .map(|mut x| x.iter_mut().map(|y| y.get_u16_le()).collect())
     }
     pub fn cell_array_i32(&mut self, row: usize, index: usize) -> Result<Vec<i32>> {
-        self.array_from_cell(row, index, Column::Scalar(Scalar::I32).bytes())
+        self.array_from_cell(row, index, Cell::Scalar(Scalar::I32).bytes())
             .map(|mut x| x.iter_mut().map(|y| y.get_i32_le()).collect())
     }
     pub fn cell_array_u32(&mut self, row: usize, index: usize) -> Result<Vec<u32>> {
-        self.array_from_cell(row, index, Column::Scalar(Scalar::U32).bytes())
+        self.array_from_cell(row, index, Cell::Scalar(Scalar::U32).bytes())
             .map(|mut x| x.iter_mut().map(|y| y.get_u32_le()).collect())
     }
     pub fn cell_array_f32(&mut self, row: usize, index: usize) -> Result<Vec<f32>> {
-        self.array_from_cell(row, index, Column::Scalar(Scalar::F32).bytes())
+        self.array_from_cell(row, index, Cell::Scalar(Scalar::F32).bytes())
             .map(|mut x| x.iter_mut().map(|y| y.get_f32_le()).collect())
     }
     pub fn cell_array_bool(&mut self, row: usize, index: usize) -> Result<Vec<bool>> {
-        self.array_from_cell(row, index, Column::Scalar(Scalar::Bool).bytes())
+        self.array_from_cell(row, index, Cell::Scalar(Scalar::Bool).bytes())
             .map(|mut x| x.iter_mut().map(|y| y.get_u8() > 0).collect())
     }
     pub fn cell_array_string(&mut self, row: usize, index: usize) -> Result<Vec<String>> {
@@ -471,7 +505,7 @@ impl DatFile {
                     claims.push(ColumnClaim {
                         offset: col_index,
                         bytes: 8,
-                        column_type: Column::Scalar(Scalar::String),
+                        column_type: Cell::Scalar(Scalar::String),
                         labels: HashMap::new(),
                     });
                 }
@@ -498,7 +532,7 @@ impl DatFile {
                     claims.push(ColumnClaim {
                         offset: col_index,
                         bytes: 16,
-                        column_type: Column::Array(Scalar::Unknown),
+                        column_type: Cell::Array(Scalar::Unknown),
                         labels: HashMap::new(),
                     });
                 }
@@ -512,7 +546,7 @@ impl DatFile {
                     claims.push(ColumnClaim {
                         offset: col_index,
                         bytes: 16,
-                        column_type: Column::Scalar(Scalar::ForeignRow),
+                        column_type: Cell::Scalar(Scalar::ForeignRow),
                         labels: HashMap::new(),
                     });
                 }
