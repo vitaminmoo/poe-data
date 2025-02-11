@@ -1,52 +1,16 @@
+use anyhow::{anyhow, bail, Result};
 use bytes::{Buf, Bytes};
 use std::collections::HashMap;
-use std::io;
+use std::fs;
 use std::path::PathBuf;
 use std::sync::{LazyLock, RwLock};
 
-#[derive(Debug)]
-pub enum DatError {
-    Io(io::Error),
-    ParseError {
-        message: String,
-    },
-    StringError {
-        message: String,
-        source: String,
-        offset: usize,
-    },
-}
-impl From<io::Error> for DatError {
-    fn from(e: io::Error) -> Self {
-        DatError::Io(e)
-    }
-}
-impl std::fmt::Display for DatError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            DatError::Io(e) => write!(f, "IO error: {}", e),
-            DatError::ParseError { message } => write!(f, "Failed to parse DAT file: {}", message),
-            DatError::StringError {
-                message,
-                source,
-                offset,
-            } => {
-                write!(
-                    f,
-                    "{}: Failed accessing string at offset {}: {}",
-                    source, offset, message
-                )
-            }
-        }
-    }
-}
-
-// datc64 table types
+// datc64 column types
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Scalar {
     Unknown,
     SelfRow,
-    ForeignRow(usize),
+    ForeignRow,
     EnumRow,
     Bool,
     String,
@@ -55,38 +19,74 @@ pub enum Scalar {
     I32,
     U32,
     F32,
+    I64,
+    U64,
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Column {
+pub enum Cell {
     Scalar(Scalar),
     Array(Scalar),
 }
 
-impl Column {
+impl Cell {
     pub fn bytes(&self) -> usize {
         match self {
             // index to the current table, 0xfe filled if null
-            Column::Scalar(Scalar::SelfRow) => 8,
+            Cell::Scalar(Scalar::SelfRow) => 8,
             // index to some other table, 0xfe filled if null
-            Column::Scalar(Scalar::ForeignRow(_)) => 16,
+            Cell::Scalar(Scalar::ForeignRow) => 16,
             // index to a non-table enum (not a dat, can be zero or 1 indexed), 0xfe filled if null
-            Column::Scalar(Scalar::EnumRow) => 4,
+            Cell::Scalar(Scalar::EnumRow) => 4,
             // uint8_le 0 or 1
-            Column::Scalar(Scalar::Bool) => 1,
+            Cell::Scalar(Scalar::Bool) => 1,
             // index into a utf-16 string in the data table with double-null termination
-            Column::Scalar(Scalar::String) => 8,
-            Column::Scalar(Scalar::I16) => 2,
-            Column::Scalar(Scalar::U16) => 2,
-            Column::Scalar(Scalar::I32) => 4,
-            Column::Scalar(Scalar::U32) => 4,
-            Column::Scalar(Scalar::F32) => 4,
+            Cell::Scalar(Scalar::String) => 8,
+            Cell::Scalar(Scalar::I16) => 2,
+            Cell::Scalar(Scalar::U16) => 2,
+            Cell::Scalar(Scalar::I32) => 4,
+            Cell::Scalar(Scalar::U32) => 4,
+            Cell::Scalar(Scalar::F32) => 4,
             // 8 bytes of count, 8 bytes of offset in the data field. Offset is always increasing and interleaved evenly in column, row order
             // note that if count is 0 then offset is still valid but points to zero bytes, which means it can point to the last byte of the data section, and multiple adjacent empty array cells could point to the same offset if no other columns point to data
-            Column::Array(_) => 16,
+            Cell::Array(_) => 16,
             // who knows
-            Column::Scalar(_) => 0,
+            Cell::Scalar(_) => 0,
         }
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum ScalarRef {
+    SelfRef(u32),
+    ForeignRef(u64),
+    EnumRef(u16),
+    Bool(u8),
+    String(u32),
+    I16(i16),
+    U16(u16),
+    I32(i32),
+    U32(u32),
+    F32(f32),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum CellRef {
+    Scalar(ScalarRef),
+    Array(ScalarRef),
+}
+
+#[derive(Debug)]
+pub enum ScalarValue {
+    SelfRow(u32),
+    ForeignRow(u64),
+    EnumRow(u16),
+    Bool(bool),
+    String(String),
+    I16(i16),
+    U16(u16),
+    I32(i32),
+    U32(u32),
+    F32(f32),
 }
 
 // A ColumnClaim is a object that declares that a column may or does exist at a particular offset in the row bytes
@@ -94,7 +94,7 @@ impl Column {
 pub struct ColumnClaim {
     pub offset: usize, // offset in bytes, either per row or for the data section (including 0xBB magic)
     pub bytes: usize,  // how many bytes the claim covers
-    pub column_type: Column, // what type of field is this claim for
+    pub column_type: Cell, // what type of field is this claim for
     pub labels: HashMap<String, String>, // arbitrary metadata for the claim
 }
 
@@ -105,37 +105,43 @@ pub struct DatLoader {
     pub fs: poe_tools::bundle_fs::FS,
     // path -> dat file struct
     pub dat_files: HashMap<String, DatFile>,
+    pub cache_dir: PathBuf,
 }
 
 impl Default for DatLoader {
     fn default() -> Self {
         let cache_dir = dirs::cache_dir().unwrap().join("poe_data_tools");
         let base_url = poe_tools::bundle_loader::cdn_base_url(&cache_dir, "2").unwrap();
-        eprint!("loading fs...");
+        eprintln!("loading fs");
         let fs = poe_tools::bundle_fs::from_cdn(&base_url, &cache_dir);
-        eprintln!("done");
-
         DatLoader {
             fs,
             dat_files: HashMap::new(),
+            cache_dir,
         }
     }
 }
 
 impl DatLoader {
+    pub fn get_table(&mut self, name: &str) -> Option<&mut DatFile> {
+        if !self.dat_files.contains_key(name) {
+            self.load_table(name);
+        }
+        self.dat_files.get_mut(name)
+    }
+
     fn load_table(&mut self, name: &str) {
         if self.dat_files.contains_key(name) {
             return;
         }
 
-        eprint!("loading {}...", name);
+        eprintln!("loading {}", name);
         match self.load_file(name) {
             Ok(loaded) => {
                 self.dat_files.insert(name.to_string(), loaded);
             }
             Err(err) => panic!("Couldn't load table {}: {}", name, err),
         }
-        eprintln!("done");
     }
     pub fn load_all_tables(&mut self) {
         for path in self.fs.list() {
@@ -144,34 +150,27 @@ impl DatLoader {
             }
         }
     }
-    pub fn get_table(&mut self, name: &str) -> Option<&mut DatFile> {
-        if !self.dat_files.contains_key(name) {
-            self.load_table(name);
-        }
-        self.dat_files.get_mut(name)
-    }
+    pub fn load_file(&mut self, name: &str) -> Result<DatFile> {
+        let file: Bytes;
+        let cache_file = self.cache_dir.join("tables").join(name);
 
-    pub fn load_file(&mut self, name: &str) -> Result<DatFile, DatError> {
-        let file = self.fs.read(name).unwrap();
-        /*
-        let mut fh = File::open(data_dir)?;
-        let mut file = Vec::<u8>::new();
-        let len = fh.read_to_end(&mut file)?;
-        */
+        if let Ok(cached_file) = fs::read(&cache_file) {
+            file = cached_file.into();
+        } else {
+            file = self.fs.read(name).unwrap();
+            fs::create_dir_all(cache_file.parent().unwrap()).expect("failed to create cache dir");
+            fs::write(&cache_file, &file).expect("failed to write cache file");
+        }
 
         // length + magic
         if file.len() < 4 + 8 {
-            return Err(DatError::ParseError {
-                message: "file too short".to_string(),
-            });
+            bail!("file too short");
         }
 
         let magic_index = file
             .windows(8)
             .position(|window| window == [0xBB; 8])
-            .ok_or(DatError::ParseError {
-                message: "magic bytes not found".to_string(),
-            })?;
+            .ok_or(anyhow!("magic bytes not found"))?;
 
         let mut data = Bytes::from_owner(file);
         let mut table = data.split_to(magic_index);
@@ -181,14 +180,6 @@ impl DatLoader {
         if table_len_rows > 0 {
             row_len_bytes = table.len() / table_len_rows;
         }
-
-        /*
-        let mut data_refs = vec![0; data.len()];
-        for item in data_refs.iter_mut().take(8) {
-            // BB magic
-            *item = 1;
-        }
-        */
 
         let mut dat_file = DatFile {
             source: name.to_string(),
@@ -230,109 +221,196 @@ pub struct DatFile {
 }
 
 impl DatFile {
+    // Get all rows of the table
     pub fn rows(&self) -> Vec<Bytes> {
-        // TODO: implement iterator?
         self.table
             .chunks_exact(self.row_len_bytes)
             .map(|x| self.table.slice_ref(x))
             .collect()
     }
+    pub fn rows_iter(&self) -> impl Iterator<Item = Bytes> + '_ {
+        self.table
+            .chunks_exact(self.row_len_bytes)
+            .map(|x| self.table.slice_ref(x))
+    }
+    // Get all rows of a column by offset and length
     pub fn column_rows(&self, offset: usize, bytes: usize) -> Vec<Bytes> {
-        // TODO: implement iterator?
-        self.rows()
-            .iter()
+        self.rows_iter()
             .map(|x| x.slice(offset..offset + bytes))
             .collect()
+    }
+    pub fn column_rows_iter(
+        &self,
+        offset: usize,
+        bytes: usize,
+    ) -> impl Iterator<Item = Bytes> + '_ {
+        self.rows_iter()
+            .map(move |x| x.slice(offset..offset + bytes))
     }
     pub fn cell(&self, row: usize, index: usize, bytes: usize) -> Bytes {
         self.table
             .slice(row * self.row_len_bytes + index..row * self.row_len_bytes + index + bytes)
     }
-    pub fn valid_data_ref(&self, offset: usize) -> Result<(), DatError> {
-        if offset >= self.data.len() {
-            return Err(DatError::StringError {
-                message: "offset out of bounds".to_string(),
-                source: self.source.clone(),
-                offset,
-            });
-        }
-        if offset < 8 {
-            return Err(DatError::StringError {
-                message: "string offset is pointing to magic bytes".to_string(),
-                source: self.source.clone(),
-                offset,
-            });
-        }
-        Ok(())
+    pub fn cell_foreignrow(&mut self, row: usize, index: usize) -> u64 {
+        self.cell(row, index, Cell::Scalar(Scalar::ForeignRow).bytes())
+            .get_u64_le()
     }
+    pub fn cell_selfrow(&mut self, row: usize, index: usize) -> u32 {
+        self.cell(row, index, Cell::Scalar(Scalar::SelfRow).bytes())
+            .get_u32_le()
+    }
+    pub fn cell_enumrow(&mut self, row: usize, index: usize) -> u16 {
+        self.cell(row, index, Cell::Scalar(Scalar::EnumRow).bytes())
+            .get_u16_le()
+    }
+    pub fn cell_i16(&mut self, row: usize, index: usize) -> i16 {
+        self.cell(row, index, Cell::Scalar(Scalar::I16).bytes())
+            .get_i16_le()
+    }
+    pub fn cell_u16(&mut self, row: usize, index: usize) -> u16 {
+        self.cell(row, index, Cell::Scalar(Scalar::U16).bytes())
+            .get_u16_le()
+    }
+    pub fn cell_i32(&mut self, row: usize, index: usize) -> i32 {
+        self.cell(row, index, Cell::Scalar(Scalar::I32).bytes())
+            .get_i32_le()
+    }
+    pub fn cell_u32(&mut self, row: usize, index: usize) -> u32 {
+        self.cell(row, index, Cell::Scalar(Scalar::U32).bytes())
+            .get_u32_le()
+    }
+    pub fn cell_f32(&mut self, row: usize, index: usize) -> f32 {
+        self.cell(row, index, Cell::Scalar(Scalar::F32).bytes())
+            .get_f32_le()
+    }
+    pub fn cell_bool(&mut self, row: usize, index: usize) -> bool {
+        self.cell(row, index, Cell::Scalar(Scalar::Bool).bytes())
+            .get_u8()
+            > 0
+    }
+    pub fn cell_array_foreignrow(&mut self, row: usize, index: usize) -> Result<Vec<u64>> {
+        self.array_from_cell(row, index, Cell::Scalar(Scalar::ForeignRow).bytes())
+            .map(|mut x| x.iter_mut().map(|y| y.get_u64_le()).collect())
+    }
+    pub fn cell_array_selfrow(&mut self, row: usize, index: usize) -> Result<Vec<u32>> {
+        self.array_from_cell(row, index, Cell::Scalar(Scalar::SelfRow).bytes())
+            .map(|mut x| x.iter_mut().map(|y| y.get_u32_le()).collect())
+    }
+    pub fn cell_array_enumrow(&mut self, row: usize, index: usize) -> Result<Vec<u16>> {
+        self.array_from_cell(row, index, Cell::Scalar(Scalar::EnumRow).bytes())
+            .map(|mut x| x.iter_mut().map(|y| y.get_u16_le()).collect())
+    }
+    pub fn cell_array_i16(&mut self, row: usize, index: usize) -> Result<Vec<i16>> {
+        self.array_from_cell(row, index, Cell::Scalar(Scalar::I16).bytes())
+            .map(|mut x| x.iter_mut().map(|y| y.get_i16_le()).collect())
+    }
+    pub fn cell_array_u16(&mut self, row: usize, index: usize) -> Result<Vec<u16>> {
+        self.array_from_cell(row, index, Cell::Scalar(Scalar::U16).bytes())
+            .map(|mut x| x.iter_mut().map(|y| y.get_u16_le()).collect())
+    }
+    pub fn cell_array_i32(&mut self, row: usize, index: usize) -> Result<Vec<i32>> {
+        self.array_from_cell(row, index, Cell::Scalar(Scalar::I32).bytes())
+            .map(|mut x| x.iter_mut().map(|y| y.get_i32_le()).collect())
+    }
+    pub fn cell_array_u32(&mut self, row: usize, index: usize) -> Result<Vec<u32>> {
+        self.array_from_cell(row, index, Cell::Scalar(Scalar::U32).bytes())
+            .map(|mut x| x.iter_mut().map(|y| y.get_u32_le()).collect())
+    }
+    pub fn cell_array_f32(&mut self, row: usize, index: usize) -> Result<Vec<f32>> {
+        self.array_from_cell(row, index, Cell::Scalar(Scalar::F32).bytes())
+            .map(|mut x| x.iter_mut().map(|y| y.get_f32_le()).collect())
+    }
+    pub fn cell_array_bool(&mut self, row: usize, index: usize) -> Result<Vec<bool>> {
+        self.array_from_cell(row, index, Cell::Scalar(Scalar::Bool).bytes())
+            .map(|mut x| x.iter_mut().map(|y| y.get_u8() > 0).collect())
+    }
+    pub fn cell_array_string(&mut self, row: usize, index: usize) -> Result<Vec<String>> {
+        let mut cell = self.cell(row, index, 16);
+        let count = cell.get_u64_le() as usize;
+        let offset = cell.get_u64_le() as usize;
+        self.strings_from_offset(offset, count)
+    }
+
     pub fn array_from_cell(
         &mut self,
         row: usize,
         index: usize,
         bytes: usize,
-    ) -> Result<Vec<&[u8]>, DatError> {
+    ) -> Result<Vec<Bytes>> {
         let mut cell = self.cell(row, index, 16);
         let count = cell.get_u64_le() as usize;
         let offset = cell.get_u64_le() as usize;
-        let array = self.get_array(offset, count, bytes)?;
+        let array = self.array_from_offset(offset, count, bytes)?;
         Ok(array)
     }
-    pub fn get_array(
+    pub fn array_from_offset(
         &mut self,
         offset: usize,
         member_count: usize,
         member_bytes: usize,
-    ) -> Result<Vec<&[u8]>, DatError> {
+    ) -> Result<Vec<Bytes>> {
         self.valid_data_ref(offset)?;
         //self.increment_data_ref(offset, member_count * member_bytes);
         let start = offset;
         let end = start + member_count * member_bytes;
-        let data = self.data.get(start..end).unwrap();
-        Ok(data.chunks_exact(member_bytes).collect())
+        let data = self
+            .data
+            .get(start..end)
+            .ok_or_else(|| anyhow!("invalid data range: {}:{}-{}", self.source, start, end))?;
+        let result = data
+            .chunks_exact(member_bytes)
+            .map(|x| self.data.slice_ref(x))
+            .collect();
+        Ok(result)
     }
-    pub fn string_from_cell(&mut self, row: usize, index: usize) -> Result<String, DatError> {
+
+    // Get a string pointed to by a cell
+    pub fn cell_string(&mut self, row: usize, index: usize) -> Result<String> {
         let mut cell = self.cell(row, index, 8);
-        self.get_string(cell.get_u64_le() as usize)
+        self.string_from_offset(cell.get_u64_le() as usize)
     }
-    pub fn get_string(&mut self, offset: usize) -> Result<String, DatError> {
+    // Get a string pointed to by an offset in the data
+    pub fn string_from_offset(&mut self, offset: usize) -> Result<String> {
         self.valid_data_ref(offset)?;
-        let s = self.load_string(offset)?;
+        let s = self.string_from_offset_if_valid(offset)?;
         //self.increment_data_ref(offset, s.len() * 2 + 4); // 2 bytes per char, 2 null terminators
         Ok(s)
     }
-    pub fn load_strings(&self, offset: usize, count: usize) -> Result<Vec<String>, DatError> {
+    // Get count strings pointed to by an offset in the data
+    pub fn strings_from_offset(&self, offset: usize, count: usize) -> Result<Vec<String>> {
         let mut strings = Vec::new();
         let mut current_offset = offset;
         for _ in 0..count {
-            let s = self.load_string(current_offset)?;
+            let s = self.string_from_offset_if_valid(current_offset)?;
             current_offset += s.len() * 2 + 4; // +2 for null terminators
             strings.push(s);
         }
         Ok(strings)
     }
 
-    pub fn load_string(&self, offset: usize) -> Result<String, DatError> {
+    // Get a string by offset
+    fn string_from_offset_if_valid(&self, offset: usize) -> Result<String> {
         let mut start = self.data.slice(offset..);
         let mut utf16string = Vec::new();
         let mut complete = false;
         while start.has_remaining() {
             if start.remaining() < 2 {
-                return Err(DatError::StringError {
-                    message: "what the fuck?".to_string(),
-                    source: self.source.clone(),
+                bail!(
+                    "eof before double null-termination: {}:{}",
+                    self.source,
                     offset,
-                });
+                );
             }
             let utf16_val = start.get_u16_le();
             if utf16_val == 0 {
                 if start.has_remaining() {
                     let next = start.get_u16_le();
                     if next != 0 {
-                        return Err(DatError::StringError {
-                            message: "string lacks second null-termination".to_string(),
-                            source: self.source.clone(),
+                        bail!(
+                            "string lacks second null-termination: {}:{}",
+                            self.source,
                             offset,
-                        });
+                        );
                     }
                 }
                 complete = true;
@@ -342,18 +420,28 @@ impl DatFile {
         }
 
         if !complete {
-            return Err(DatError::StringError {
-                message: "string not null-terminated before eof".to_string(),
-                source: self.source.clone(),
+            bail!(
+                "string not null-terminated before eof: {}:{}",
+                self.source,
                 offset,
-            });
+            );
         }
 
-        String::from_utf16(&utf16string).map_err(|e| DatError::StringError {
-            message: e.to_string(),
-            source: self.source.clone(),
-            offset,
-        })
+        Ok(String::from_utf16(&utf16string)?)
+    }
+    // check if an offset is valid for the data
+    pub fn valid_data_ref(&self, offset: usize) -> Result<()> {
+        if offset >= self.data.len() {
+            bail!("offset out of bounds: {}:{}", self.source, offset);
+        }
+        if offset < 8 {
+            bail!(
+                "string offset is pointing to magic bytes: {}:{}",
+                self.source,
+                offset
+            );
+        }
+        Ok(())
     }
     pub fn get_column_claims(&self, col_index: usize, cell_length: usize) -> Vec<ColumnClaim> {
         let mut cells = self.column_rows(col_index, cell_length);
@@ -387,7 +475,7 @@ impl DatFile {
                     if self.valid_data_ref(offset).is_err() {
                         return true;
                     }
-                    match self.load_string(offset) {
+                    match self.string_from_offset_if_valid(offset) {
                         Ok(s) => {
                             if s.len() < 2 && !(s.is_empty() || s == " ") {
                                 return true;
@@ -417,7 +505,7 @@ impl DatFile {
                     claims.push(ColumnClaim {
                         offset: col_index,
                         bytes: 8,
-                        column_type: Column::Scalar(Scalar::String),
+                        column_type: Cell::Scalar(Scalar::String),
                         labels: HashMap::new(),
                     });
                 }
@@ -444,7 +532,7 @@ impl DatFile {
                     claims.push(ColumnClaim {
                         offset: col_index,
                         bytes: 16,
-                        column_type: Column::Array(Scalar::Unknown),
+                        column_type: Cell::Array(Scalar::Unknown),
                         labels: HashMap::new(),
                     });
                 }
@@ -458,7 +546,7 @@ impl DatFile {
                     claims.push(ColumnClaim {
                         offset: col_index,
                         bytes: 16,
-                        column_type: Column::Scalar(Scalar::ForeignRow(col_max)),
+                        column_type: Cell::Scalar(Scalar::ForeignRow),
                         labels: HashMap::new(),
                     });
                 }
@@ -508,6 +596,21 @@ pub fn hexdump(data: &[u8]) {
 mod tests {
     use super::*;
     #[test]
+    fn test_oneoff() {
+        let mut dl = DatLoader::default();
+        let dat_file: &mut DatFile = dl.get_table("data/mods.datc64").unwrap();
+        println!("Id, ModType, Level");
+        for row in 0..5 {
+            print!(
+                "{:?}, ",
+                dat_file.cell_string(row, 0).unwrap_or("".to_string())
+            );
+            print!("{:?}, ", dat_file.cell_foreignrow(row, 10));
+            print!("{:?}", dat_file.cell_u32(row, 26));
+            println!();
+        }
+    }
+    #[test]
     fn test_get_claims_mods() {
         let mut dl = DatLoader::default();
         let dat_file: &mut DatFile = dl.get_table("data/mods.datc64").unwrap();
@@ -532,8 +635,8 @@ mod tests {
     #[test]
     fn test_load_all() {
         let mut dl = DatLoader::default();
+        dl.load_all_tables();
         for (name, dat_file) in dl.dat_files.iter_mut() {
-            //let table: &mut DatFile = dl.get_table(table).unwrap();
             for bytes in [1, 2, 4, 8, 16] {
                 if dat_file.row_len_bytes < bytes + 1 {
                     continue;
