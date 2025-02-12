@@ -5,6 +5,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::sync::{LazyLock, RwLock};
 
+/*
 // datc64 column types
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Scalar {
@@ -97,6 +98,7 @@ pub struct ColumnClaim {
     pub column_type: Cell, // what type of field is this claim for
     pub labels: HashMap<String, String>, // arbitrary metadata for the claim
 }
+*/
 
 pub static DAT_LOADER: LazyLock<RwLock<DatLoader>> =
     LazyLock::new(|| RwLock::new(DatLoader::default()));
@@ -184,7 +186,6 @@ impl DatLoader {
         let mut dat_file = DatFile {
             source: name.to_string(),
             table,
-            _table_len_rows: table_len_rows,
             row_len_bytes,
             data,
             table_row_or: vec![0; row_len_bytes],
@@ -212,7 +213,6 @@ impl DatLoader {
 pub struct DatFile {
     pub source: String,         // path to the file that we got this data from
     pub table: Bytes,           // The entire fixed-length table section without the rows header
-    pub _table_len_rows: usize, // how many rows in the table
     pub row_len_bytes: usize,   // how many bytes per row
     pub data: Bytes, // The entire variable-length data section, including 8 bytes of magic
     pub table_row_or: Vec<u8>, // 1 byte per row byte, all rows bitwise or'd together
@@ -247,111 +247,7 @@ impl DatFile {
         self.rows_iter()
             .map(move |x| x.slice(offset..offset + bytes))
     }
-    /*
-    pub fn cell(&self, row: usize, index: usize, bytes: usize) -> Result<Bytes> {
-        if self.table.len() < row * self.row_len_bytes + index + bytes {
-            bail!("cell out of bounds");
-        }
-        Ok(self
-            .table
-            .slice(row * self.row_len_bytes + index..row * self.row_len_bytes + index + bytes))
-    }
-    pub fn cell_foreignrow(&self, row: usize, index: usize) -> Result<u64> {
-        Ok(self
-            .cell(row, index, Cell::Scalar(Scalar::ForeignRow).bytes())?
-            .get_u64_le())
-    }
-    pub fn cell_selfrow(&self, row: usize, index: usize) -> Result<u32> {
-        Ok(self
-            .cell(row, index, Cell::Scalar(Scalar::SelfRow).bytes())?
-            .get_u32_le())
-    }
-    pub fn cell_enumrow(&self, row: usize, index: usize) -> Result<u16> {
-        Ok(self
-            .cell(row, index, Cell::Scalar(Scalar::EnumRow).bytes())?
-            .get_u16_le())
-    }
-    pub fn cell_i16(&self, row: usize, index: usize) -> Result<i16> {
-        Ok(self
-            .cell(row, index, Cell::Scalar(Scalar::I16).bytes())?
-            .get_i16_le())
-    }
-    pub fn cell_u16(&self, row: usize, index: usize) -> Result<u16> {
-        Ok(self
-            .cell(row, index, Cell::Scalar(Scalar::U16).bytes())?
-            .get_u16_le())
-    }
-    pub fn cell_i32(&self, row: usize, index: usize) -> Result<i32> {
-        Ok(self
-            .cell(row, index, Cell::Scalar(Scalar::I32).bytes())?
-            .get_i32_le())
-    }
-    pub fn cell_u32(&self, row: usize, index: usize) -> Result<u32> {
-        Ok(self
-            .cell(row, index, Cell::Scalar(Scalar::U32).bytes())?
-            .get_u32_le())
-    }
-    pub fn cell_f32(&self, row: usize, index: usize) -> Result<f32> {
-        Ok(self
-            .cell(row, index, Cell::Scalar(Scalar::F32).bytes())?
-            .get_f32_le())
-    }
-    pub fn cell_bool(&self, row: usize, index: usize) -> Result<bool> {
-        Ok(self
-            .cell(row, index, Cell::Scalar(Scalar::Bool).bytes())?
-            .get_u8()
-            > 0)
-    }
-    pub fn cell_array_foreignrow(&self, row: usize, index: usize) -> Result<Vec<u64>> {
-        self.array_from_cell(row, index, Cell::Scalar(Scalar::ForeignRow).bytes())
-            .map(|x| x.into_iter().map(|mut y| y.get_u64_le()).collect())
-    }
-    pub fn cell_array_selfrow(&self, row: usize, index: usize) -> Result<Vec<u32>> {
-        self.array_from_cell(row, index, Cell::Scalar(Scalar::SelfRow).bytes())
-            .map(|x| x.into_iter().map(|mut y| y.get_u32_le()).collect())
-    }
-    pub fn cell_array_enumrow(&self, row: usize, index: usize) -> Result<Vec<u16>> {
-        self.array_from_cell(row, index, Cell::Scalar(Scalar::EnumRow).bytes())
-            .map(|x| x.into_iter().map(|mut y| y.get_u16_le()).collect())
-    }
-    pub fn cell_array_i16(&self, row: usize, index: usize) -> Result<Vec<i16>> {
-        self.array_from_cell(row, index, Cell::Scalar(Scalar::I16).bytes())
-            .map(|x| x.into_iter().map(|mut y| y.get_i16_le()).collect())
-    }
-    pub fn cell_array_u16(&self, row: usize, index: usize) -> Result<Vec<u16>> {
-        self.array_from_cell(row, index, Cell::Scalar(Scalar::U16).bytes())
-            .map(|x| x.into_iter().map(|mut y| y.get_u16_le()).collect())
-    }
-    pub fn cell_array_i32(&self, row: usize, index: usize) -> Result<Vec<i32>> {
-        self.array_from_cell(row, index, Cell::Scalar(Scalar::I32).bytes())
-            .map(|x| x.into_iter().map(|mut y| y.get_i32_le()).collect())
-    }
-    pub fn cell_array_u32(&self, row: usize, index: usize) -> Result<Vec<u32>> {
-        self.array_from_cell(row, index, Cell::Scalar(Scalar::U32).bytes())
-            .map(|x| x.into_iter().map(|mut y| y.get_u32_le()).collect())
-    }
-    pub fn cell_array_f32(&self, row: usize, index: usize) -> Result<Vec<f32>> {
-        self.array_from_cell(row, index, Cell::Scalar(Scalar::F32).bytes())
-            .map(|x| x.into_iter().map(|mut y| y.get_f32_le()).collect())
-    }
-    pub fn cell_array_bool(&self, row: usize, index: usize) -> Result<Vec<bool>> {
-        self.array_from_cell(row, index, Cell::Scalar(Scalar::Bool).bytes())
-            .map(|x| x.into_iter().map(|mut y| y.get_u8() > 0).collect())
-    }
-    pub fn cell_array_string(&self, row: usize, index: usize) -> Result<Vec<String>> {
-        let mut cell = self.cell(row, index, 16)?;
-        let count = cell.get_u64_le() as usize;
-        let offset = cell.get_u64_le() as usize;
-        self.strings_from_offset(offset, count)
-    }
 
-    pub fn array_from_cell(&self, row: usize, index: usize, bytes: usize) -> Result<Vec<Bytes>> {
-        let mut cell = self.cell(row, index, 16)?;
-        let count = cell.get_u64_le() as usize;
-        let offset = cell.get_u64_le() as usize;
-        let array = self.array_from_offset(offset, count, bytes)?;
-        Ok(array)
-    }
     pub fn array_from_offset(
         &self,
         offset: usize,
@@ -373,12 +269,6 @@ impl DatFile {
         Ok(result)
     }
 
-    // Get a string pointed to by a cell
-    pub fn cell_string(&self, row: usize, index: usize) -> Result<String> {
-        let mut cell = self.cell(row, index, 8)?;
-        self.string_from_offset(cell.get_u64_le() as usize)
-    }
-    */
     // Get a string pointed to by an offset in the data
     pub fn string_from_offset(&self, offset: usize) -> Result<String> {
         self.valid_data_ref(offset)?;

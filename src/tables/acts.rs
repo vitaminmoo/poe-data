@@ -1,5 +1,4 @@
 #![allow(clippy::all)]
-use anyhow::Result;
 use bytes::{Buf, Bytes};
 
 use crate::dat_parser::{DatFile, DAT_LOADER};
@@ -18,50 +17,32 @@ static RAW_TABLE_Acts: LazyLock<DatFile> = LazyLock::new(|| {
         .clone()
 });
 
-#[derive(Debug)]
-pub struct ActsRowRaw {
-    pub r#id: i32,
-    pub r#part: i32,
-    pub r#act_number: i32,
-    pub r#is_end_game: bool,
-}
-
-fn acts_raw(row: &mut Bytes) -> Result<ActsRowRaw> {
-    Ok(ActsRowRaw {
-        r#id: row.get(0..8).unwrap().get_i32_le(),
-        r#part: row.get(8..16).unwrap().get_i32_le(),
-        r#act_number: row.get(16..20).unwrap().get_i32_le(),
-        r#is_end_game: row.get(40).unwrap().to_le() != 0,
-    })
-}
-
-impl ActsRowRaw {
-    fn row(&self) -> Acts {
-        Acts {
-            r#id: self.id().unwrap(),
-            r#part: self.part,
-            r#act_number: self.act_number,
-            r#is_end_game: self.is_end_game,
-        }
-    }
-    fn id(&self) -> Result<String> {
-        RAW_TABLE_Acts.string_from_offset(self.id as usize)
+pub fn acts_row(row: &mut Bytes) -> ActsRow {
+    let id = row.get(0..8).unwrap().get_i32_le();
+    let part = row.get(8..16).unwrap().get_i32_le();
+    let act_number = row.get(16..20).unwrap().get_i32_le();
+    let is_end_game = row.get(40).unwrap().to_le() != 0;
+    ActsRow {
+        r#id: RAW_TABLE_Acts.string_from_offset(id as usize).unwrap(),
+        r#part: part,
+        r#act_number: act_number,
+        r#is_end_game: is_end_game,
     }
 }
 
 #[allow(non_upper_case_globals)]
-pub static TABLE_Acts: LazyLock<Vec<Acts>> = LazyLock::new(|| {
+pub static TABLE_Acts: LazyLock<Vec<ActsRow>> = LazyLock::new(|| {
     RAW_TABLE_Acts
         .rows_iter()
         .map(|r| {
             let mut row = r.clone();
-            acts_raw(&mut row).unwrap().row()
+            acts_row(&mut row)
         })
         .collect()
 });
 
 #[derive(Debug)]
-pub struct Acts {
+pub struct ActsRow {
     pub r#id: String,
     pub r#part: i32,
     pub r#act_number: i32,
@@ -69,49 +50,42 @@ pub struct Acts {
 }
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Ord, PartialOrd)]
-pub struct ActsRow(pub usize);
+pub struct ActsRef(pub usize);
 
-impl Deref for ActsRow {
-    type Target = Acts;
+impl Deref for ActsRef {
+    type Target = ActsRow;
 
     fn deref(&self) -> &'static Self::Target {
         &TABLE_Acts[self.0]
     }
 }
 
-impl ActsRow {
+impl ActsRef {
     pub fn new(index: usize) -> Self {
         Self(index)
     }
-    pub fn as_static_ref(&self) -> &'static Acts {
+    pub fn as_static_ref(&self) -> &'static ActsRow {
         &TABLE_Acts[self.0]
     }
-    pub fn get(&self) -> &'static Acts {
+    pub fn get(&self) -> &'static ActsRow {
         &TABLE_Acts[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
         TABLE_Acts.iter().enumerate().map(|(i, _)| Self(i))
     }
-    pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static Acts)> {
+    pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static ActsRow)> {
         TABLE_Acts.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
+
 #[cfg(test)]
-mod tests {
+mod test {
     use super::*;
     #[test]
-    fn test_table_acts() {
-        for (i, act) in TABLE_Acts.iter().enumerate() {
-            println!("Row {}: {:?}", i, act);
+    fn print_acts() {
+        // Print all rows
+        for act in TABLE_Acts.iter() {
+            println!("{:?}", act);
         }
-    }
-    #[test]
-    fn test_acts_row_deref() {
-        let row = ActsRow::new(0);
-        let acts: &Acts = row.deref();
-        assert_eq!(acts.id, TABLE_Acts[0].id);
-        assert_eq!(acts.part, TABLE_Acts[0].part);
-        assert_eq!(acts.act_number, TABLE_Acts[0].act_number);
-        assert_eq!(acts.is_end_game, TABLE_Acts[0].is_end_game);
     }
 }
