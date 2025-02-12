@@ -134,7 +134,6 @@ impl DatLoader {
         if self.dat_files.contains_key(name) {
             return;
         }
-
         eprintln!("loading {}", name);
         match self.load_file(name) {
             Ok(loaded) => {
@@ -143,7 +142,7 @@ impl DatLoader {
             Err(err) => panic!("Couldn't load table {}: {}", name, err),
         }
     }
-    pub fn load_file(&mut self, name: &str) -> Result<DatFile> {
+    fn load_file(&mut self, name: &str) -> Result<DatFile> {
         let file: Bytes;
         let cache_file = self.cache_dir.join("tables").join(name);
 
@@ -214,10 +213,7 @@ pub struct DatFile {
 impl DatFile {
     // Get all rows of the table
     pub fn rows(&self) -> Vec<Bytes> {
-        self.table
-            .chunks_exact(self.row_len_bytes)
-            .map(|x| self.table.slice_ref(x))
-            .collect()
+        self.rows_iter().collect()
     }
     pub fn rows_iter(&self) -> impl Iterator<Item = Bytes> + '_ {
         self.table
@@ -226,9 +222,7 @@ impl DatFile {
     }
     // Get all rows of a column by offset and length
     pub fn column_rows(&self, offset: usize, bytes: usize) -> Vec<Bytes> {
-        self.rows_iter()
-            .map(|x| x.slice(offset..offset + bytes))
-            .collect()
+        self.column_rows_iter(offset, bytes).collect()
     }
     pub fn column_rows_iter(
         &self,
