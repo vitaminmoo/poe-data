@@ -1,6 +1,7 @@
-use poe_data::dat_parser::DatLoader;
+//use poe_data::dat_parser::DatLoader;
 
 fn main() {
+    /*
     let mut dl = DatLoader::default();
     for (name, dat_file) in dl.dat_files.iter_mut() {
         //let table: &mut DatFile = dl.get_table(table).unwrap();
@@ -23,4 +24,5 @@ fn main() {
             }
         }
     }
+    */
 }

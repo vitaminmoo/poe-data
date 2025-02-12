@@ -123,11 +123,11 @@ impl Default for DatLoader {
 }
 
 impl DatLoader {
-    pub fn get_table(&mut self, name: &str) -> Option<&mut DatFile> {
+    pub fn get_table(&mut self, name: &str) -> Option<&DatFile> {
         if !self.dat_files.contains_key(name) {
             self.load_table(name);
         }
-        self.dat_files.get_mut(name)
+        self.dat_files.get(name)
     }
 
     fn load_table(&mut self, name: &str) {
@@ -247,104 +247,113 @@ impl DatFile {
         self.rows_iter()
             .map(move |x| x.slice(offset..offset + bytes))
     }
-    pub fn cell(&self, row: usize, index: usize, bytes: usize) -> Bytes {
-        self.table
-            .slice(row * self.row_len_bytes + index..row * self.row_len_bytes + index + bytes)
+    /*
+    pub fn cell(&self, row: usize, index: usize, bytes: usize) -> Result<Bytes> {
+        if self.table.len() < row * self.row_len_bytes + index + bytes {
+            bail!("cell out of bounds");
+        }
+        Ok(self
+            .table
+            .slice(row * self.row_len_bytes + index..row * self.row_len_bytes + index + bytes))
     }
-    pub fn cell_foreignrow(&mut self, row: usize, index: usize) -> u64 {
-        self.cell(row, index, Cell::Scalar(Scalar::ForeignRow).bytes())
-            .get_u64_le()
+    pub fn cell_foreignrow(&self, row: usize, index: usize) -> Result<u64> {
+        Ok(self
+            .cell(row, index, Cell::Scalar(Scalar::ForeignRow).bytes())?
+            .get_u64_le())
     }
-    pub fn cell_selfrow(&mut self, row: usize, index: usize) -> u32 {
-        self.cell(row, index, Cell::Scalar(Scalar::SelfRow).bytes())
-            .get_u32_le()
+    pub fn cell_selfrow(&self, row: usize, index: usize) -> Result<u32> {
+        Ok(self
+            .cell(row, index, Cell::Scalar(Scalar::SelfRow).bytes())?
+            .get_u32_le())
     }
-    pub fn cell_enumrow(&mut self, row: usize, index: usize) -> u16 {
-        self.cell(row, index, Cell::Scalar(Scalar::EnumRow).bytes())
-            .get_u16_le()
+    pub fn cell_enumrow(&self, row: usize, index: usize) -> Result<u16> {
+        Ok(self
+            .cell(row, index, Cell::Scalar(Scalar::EnumRow).bytes())?
+            .get_u16_le())
     }
-    pub fn cell_i16(&mut self, row: usize, index: usize) -> i16 {
-        self.cell(row, index, Cell::Scalar(Scalar::I16).bytes())
-            .get_i16_le()
+    pub fn cell_i16(&self, row: usize, index: usize) -> Result<i16> {
+        Ok(self
+            .cell(row, index, Cell::Scalar(Scalar::I16).bytes())?
+            .get_i16_le())
     }
-    pub fn cell_u16(&mut self, row: usize, index: usize) -> u16 {
-        self.cell(row, index, Cell::Scalar(Scalar::U16).bytes())
-            .get_u16_le()
+    pub fn cell_u16(&self, row: usize, index: usize) -> Result<u16> {
+        Ok(self
+            .cell(row, index, Cell::Scalar(Scalar::U16).bytes())?
+            .get_u16_le())
     }
-    pub fn cell_i32(&mut self, row: usize, index: usize) -> i32 {
-        self.cell(row, index, Cell::Scalar(Scalar::I32).bytes())
-            .get_i32_le()
+    pub fn cell_i32(&self, row: usize, index: usize) -> Result<i32> {
+        Ok(self
+            .cell(row, index, Cell::Scalar(Scalar::I32).bytes())?
+            .get_i32_le())
     }
-    pub fn cell_u32(&mut self, row: usize, index: usize) -> u32 {
-        self.cell(row, index, Cell::Scalar(Scalar::U32).bytes())
-            .get_u32_le()
+    pub fn cell_u32(&self, row: usize, index: usize) -> Result<u32> {
+        Ok(self
+            .cell(row, index, Cell::Scalar(Scalar::U32).bytes())?
+            .get_u32_le())
     }
-    pub fn cell_f32(&mut self, row: usize, index: usize) -> f32 {
-        self.cell(row, index, Cell::Scalar(Scalar::F32).bytes())
-            .get_f32_le()
+    pub fn cell_f32(&self, row: usize, index: usize) -> Result<f32> {
+        Ok(self
+            .cell(row, index, Cell::Scalar(Scalar::F32).bytes())?
+            .get_f32_le())
     }
-    pub fn cell_bool(&mut self, row: usize, index: usize) -> bool {
-        self.cell(row, index, Cell::Scalar(Scalar::Bool).bytes())
+    pub fn cell_bool(&self, row: usize, index: usize) -> Result<bool> {
+        Ok(self
+            .cell(row, index, Cell::Scalar(Scalar::Bool).bytes())?
             .get_u8()
-            > 0
+            > 0)
     }
-    pub fn cell_array_foreignrow(&mut self, row: usize, index: usize) -> Result<Vec<u64>> {
+    pub fn cell_array_foreignrow(&self, row: usize, index: usize) -> Result<Vec<u64>> {
         self.array_from_cell(row, index, Cell::Scalar(Scalar::ForeignRow).bytes())
-            .map(|mut x| x.iter_mut().map(|y| y.get_u64_le()).collect())
+            .map(|x| x.into_iter().map(|mut y| y.get_u64_le()).collect())
     }
-    pub fn cell_array_selfrow(&mut self, row: usize, index: usize) -> Result<Vec<u32>> {
+    pub fn cell_array_selfrow(&self, row: usize, index: usize) -> Result<Vec<u32>> {
         self.array_from_cell(row, index, Cell::Scalar(Scalar::SelfRow).bytes())
-            .map(|mut x| x.iter_mut().map(|y| y.get_u32_le()).collect())
+            .map(|x| x.into_iter().map(|mut y| y.get_u32_le()).collect())
     }
-    pub fn cell_array_enumrow(&mut self, row: usize, index: usize) -> Result<Vec<u16>> {
+    pub fn cell_array_enumrow(&self, row: usize, index: usize) -> Result<Vec<u16>> {
         self.array_from_cell(row, index, Cell::Scalar(Scalar::EnumRow).bytes())
-            .map(|mut x| x.iter_mut().map(|y| y.get_u16_le()).collect())
+            .map(|x| x.into_iter().map(|mut y| y.get_u16_le()).collect())
     }
-    pub fn cell_array_i16(&mut self, row: usize, index: usize) -> Result<Vec<i16>> {
+    pub fn cell_array_i16(&self, row: usize, index: usize) -> Result<Vec<i16>> {
         self.array_from_cell(row, index, Cell::Scalar(Scalar::I16).bytes())
-            .map(|mut x| x.iter_mut().map(|y| y.get_i16_le()).collect())
+            .map(|x| x.into_iter().map(|mut y| y.get_i16_le()).collect())
     }
-    pub fn cell_array_u16(&mut self, row: usize, index: usize) -> Result<Vec<u16>> {
+    pub fn cell_array_u16(&self, row: usize, index: usize) -> Result<Vec<u16>> {
         self.array_from_cell(row, index, Cell::Scalar(Scalar::U16).bytes())
-            .map(|mut x| x.iter_mut().map(|y| y.get_u16_le()).collect())
+            .map(|x| x.into_iter().map(|mut y| y.get_u16_le()).collect())
     }
-    pub fn cell_array_i32(&mut self, row: usize, index: usize) -> Result<Vec<i32>> {
+    pub fn cell_array_i32(&self, row: usize, index: usize) -> Result<Vec<i32>> {
         self.array_from_cell(row, index, Cell::Scalar(Scalar::I32).bytes())
-            .map(|mut x| x.iter_mut().map(|y| y.get_i32_le()).collect())
+            .map(|x| x.into_iter().map(|mut y| y.get_i32_le()).collect())
     }
-    pub fn cell_array_u32(&mut self, row: usize, index: usize) -> Result<Vec<u32>> {
+    pub fn cell_array_u32(&self, row: usize, index: usize) -> Result<Vec<u32>> {
         self.array_from_cell(row, index, Cell::Scalar(Scalar::U32).bytes())
-            .map(|mut x| x.iter_mut().map(|y| y.get_u32_le()).collect())
+            .map(|x| x.into_iter().map(|mut y| y.get_u32_le()).collect())
     }
-    pub fn cell_array_f32(&mut self, row: usize, index: usize) -> Result<Vec<f32>> {
+    pub fn cell_array_f32(&self, row: usize, index: usize) -> Result<Vec<f32>> {
         self.array_from_cell(row, index, Cell::Scalar(Scalar::F32).bytes())
-            .map(|mut x| x.iter_mut().map(|y| y.get_f32_le()).collect())
+            .map(|x| x.into_iter().map(|mut y| y.get_f32_le()).collect())
     }
-    pub fn cell_array_bool(&mut self, row: usize, index: usize) -> Result<Vec<bool>> {
+    pub fn cell_array_bool(&self, row: usize, index: usize) -> Result<Vec<bool>> {
         self.array_from_cell(row, index, Cell::Scalar(Scalar::Bool).bytes())
-            .map(|mut x| x.iter_mut().map(|y| y.get_u8() > 0).collect())
+            .map(|x| x.into_iter().map(|mut y| y.get_u8() > 0).collect())
     }
-    pub fn cell_array_string(&mut self, row: usize, index: usize) -> Result<Vec<String>> {
-        let mut cell = self.cell(row, index, 16);
+    pub fn cell_array_string(&self, row: usize, index: usize) -> Result<Vec<String>> {
+        let mut cell = self.cell(row, index, 16)?;
         let count = cell.get_u64_le() as usize;
         let offset = cell.get_u64_le() as usize;
         self.strings_from_offset(offset, count)
     }
 
-    pub fn array_from_cell(
-        &mut self,
-        row: usize,
-        index: usize,
-        bytes: usize,
-    ) -> Result<Vec<Bytes>> {
-        let mut cell = self.cell(row, index, 16);
+    pub fn array_from_cell(&self, row: usize, index: usize, bytes: usize) -> Result<Vec<Bytes>> {
+        let mut cell = self.cell(row, index, 16)?;
         let count = cell.get_u64_le() as usize;
         let offset = cell.get_u64_le() as usize;
         let array = self.array_from_offset(offset, count, bytes)?;
         Ok(array)
     }
     pub fn array_from_offset(
-        &mut self,
+        &self,
         offset: usize,
         member_count: usize,
         member_bytes: usize,
@@ -365,12 +374,13 @@ impl DatFile {
     }
 
     // Get a string pointed to by a cell
-    pub fn cell_string(&mut self, row: usize, index: usize) -> Result<String> {
-        let mut cell = self.cell(row, index, 8);
+    pub fn cell_string(&self, row: usize, index: usize) -> Result<String> {
+        let mut cell = self.cell(row, index, 8)?;
         self.string_from_offset(cell.get_u64_le() as usize)
     }
+    */
     // Get a string pointed to by an offset in the data
-    pub fn string_from_offset(&mut self, offset: usize) -> Result<String> {
+    pub fn string_from_offset(&self, offset: usize) -> Result<String> {
         self.valid_data_ref(offset)?;
         let s = self.string_from_offset_if_valid(offset)?;
         //self.increment_data_ref(offset, s.len() * 2 + 4); // 2 bytes per char, 2 null terminators
@@ -443,6 +453,7 @@ impl DatFile {
         }
         Ok(())
     }
+    /*
     pub fn get_column_claims(&self, col_index: usize, cell_length: usize) -> Vec<ColumnClaim> {
         let mut cells = self.column_rows(col_index, cell_length);
         if cells.is_empty() {
@@ -555,8 +566,10 @@ impl DatFile {
             _ => Vec::new(),
         }
     }
+    */
 }
 
+/*
 pub fn hexdump(data: &[u8]) {
     for (i, chunk) in data.chunks(16).enumerate() {
         print!("{:08x}  ", i * 16);
@@ -592,28 +605,16 @@ pub fn hexdump(data: &[u8]) {
         println!();
     }
 }
+*/
+
+/*
 #[cfg(test)]
 mod tests {
     use super::*;
     #[test]
-    fn test_oneoff() {
-        let mut dl = DatLoader::default();
-        let dat_file: &mut DatFile = dl.get_table("data/mods.datc64").unwrap();
-        println!("Id, ModType, Level");
-        for row in 0..5 {
-            print!(
-                "{:?}, ",
-                dat_file.cell_string(row, 0).unwrap_or("".to_string())
-            );
-            print!("{:?}, ", dat_file.cell_foreignrow(row, 10));
-            print!("{:?}", dat_file.cell_u32(row, 26));
-            println!();
-        }
-    }
-    #[test]
     fn test_get_claims_mods() {
         let mut dl = DatLoader::default();
-        let dat_file: &mut DatFile = dl.get_table("data/mods.datc64").unwrap();
+        let dat_file: &DatFile = dl.get_table("data/mods.datc64").unwrap();
         for bytes in [1, 2, 4, 8, 16] {
             if dat_file.row_len_bytes < bytes + 1 {
                 continue;
@@ -658,3 +659,4 @@ mod tests {
         }
     }
 }
+*/
