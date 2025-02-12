@@ -104,10 +104,10 @@ pub static DAT_LOADER: LazyLock<RwLock<DatLoader>> =
     LazyLock::new(|| RwLock::new(DatLoader::default()));
 
 pub struct DatLoader {
-    pub fs: poe_tools::bundle_fs::FS,
     // path -> dat file struct
     pub dat_files: HashMap<String, DatFile>,
-    pub cache_dir: PathBuf,
+    fs: poe_tools::bundle_fs::FS,
+    cache_dir: PathBuf,
 }
 
 impl Default for DatLoader {
