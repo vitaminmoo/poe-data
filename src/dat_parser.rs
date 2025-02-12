@@ -126,9 +126,7 @@ impl Default for DatLoader {
 
 impl DatLoader {
     pub fn get_table(&mut self, name: &str) -> Option<&DatFile> {
-        if !self.dat_files.contains_key(name) {
-            self.load_table(name);
-        }
+        self.load_table(name);
         self.dat_files.get(name)
     }
 
@@ -143,13 +141,6 @@ impl DatLoader {
                 self.dat_files.insert(name.to_string(), loaded);
             }
             Err(err) => panic!("Couldn't load table {}: {}", name, err),
-        }
-    }
-    pub fn load_all_tables(&mut self) {
-        for path in self.fs.list() {
-            if PathBuf::from(&path).extension().unwrap_or_default() == "datc64" {
-                self.load_table(&path);
-            }
         }
     }
     pub fn load_file(&mut self, name: &str) -> Result<DatFile> {
@@ -519,31 +510,6 @@ mod tests {
                         claim.offset + claim.bytes - 1,
                         claim.column_type
                     );
-                }
-            }
-        }
-    }
-    #[test]
-    fn test_load_all() {
-        let mut dl = DatLoader::default();
-        dl.load_all_tables();
-        for (name, dat_file) in dl.dat_files.iter_mut() {
-            for bytes in [1, 2, 4, 8, 16] {
-                if dat_file.row_len_bytes < bytes + 1 {
-                    continue;
-                }
-                let last_col = dat_file.row_len_bytes - bytes - 1;
-                for index in 0..last_col {
-                    let claims = dat_file.get_column_claims(index, bytes);
-                    for claim in claims {
-                        println!(
-                            "{} {}:{}: {:?}",
-                            name,
-                            claim.offset,
-                            claim.offset + claim.bytes - 1,
-                            claim.column_type
-                        );
-                    }
                 }
             }
         }
