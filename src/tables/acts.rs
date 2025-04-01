@@ -21,7 +21,9 @@ pub static TABLE_Acts: LazyLock<Vec<ActsRow>> = LazyLock::new(|| {
             r#id: df
                 .string_from_offset(row.get(0..8).unwrap().get_i32_le() as usize)
                 .unwrap(),
-            r#ui_title: row.get(8..16).unwrap().get_i32_le(),
+            r#ui_title: df
+                .string_from_offset(row.get(8..16).unwrap().get_i32_le() as usize)
+                .unwrap(),
             r#act_number: row.get(16..20).unwrap().get_i32_le(),
             r#is_end_game: row.get(40).unwrap().to_le() != 0,
             r#unknown_int: row.get(41..43).unwrap().get_i16_le(),
@@ -46,7 +48,7 @@ pub static TABLE_Acts: LazyLock<Vec<ActsRow>> = LazyLock::new(|| {
 #[derive(Debug)]
 pub struct ActsRow {
     pub r#id: String,
-    pub r#ui_title: i32,
+    pub r#ui_title: String,
     pub r#act_number: i32,
     pub r#is_end_game: bool,
     pub r#unknown_int: i16,
