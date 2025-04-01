@@ -113,9 +113,10 @@ pub struct DatLoader {
 impl Default for DatLoader {
     fn default() -> Self {
         let cache_dir = dirs::cache_dir().unwrap().join("poe_data_tools");
+        std::fs::create_dir_all(&cache_dir).unwrap();
         let base_url = poe_tools::bundle_loader::cdn_base_url(&cache_dir, "2").unwrap();
         eprintln!("loading fs");
-        let fs = poe_tools::bundle_fs::from_cdn(&base_url, &cache_dir);
+        let fs = poe_tools::bundle_fs::FS::from_cdn(&base_url, &cache_dir).unwrap();
         DatLoader {
             fs,
             dat_files: HashMap::new(),

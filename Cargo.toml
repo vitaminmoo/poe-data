@@ -10,6 +10,7 @@ serde = { version = "1.0.217", features = ["derive"] }
 serde_json = "1.0.138"
 strum = { version = "0.26.3", features = ["derive"] }
 winnow = { version = "0.6.24" }
-poe_tools = { git = "https://github.com/vitaminmoo/poe_data_tools/", branch = "caching-spike" }
+# poe_tools = { git = "https://github.com/vitaminmoo/poe_data_tools/", branch = "caching-spike" }
+poe_tools = { git = "https://github.com/adamthedash/poe_data_tools/", branch = "master" }
 dirs = "6.0.0"
 anyhow = "1.0.95"
