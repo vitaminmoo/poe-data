@@ -14,3 +14,4 @@ winnow = { version = "0.6.24" }
 poe_tools = { git = "https://github.com/adamthedash/poe_data_tools/", branch = "master" }
 dirs = "6.0.0"
 anyhow = "1.0.95"
+iterators_extended = "0.2.0"

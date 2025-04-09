@@ -1959,6 +1959,7 @@ dependencies = [
  "anyhow",
  "bytes",
  "dirs",
+ "iterators_extended",
  "poe_tools",
  "serde",
  "serde_json",
