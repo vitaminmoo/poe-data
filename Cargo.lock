@@ -1970,7 +1970,7 @@ dependencies = [
 [[package]]
 name = "poe_tools"
 version = "0.3.1"
-source = "git+https://github.com/adamthedash/poe_data_tools/?branch=master#f0ab71239f3ef4afb79b49affd180cc133228a20"
+source = "git+https://github.com/vitaminmoo/poe_data_tools/?branch=doot#1253143f1657bee513f254647652ef2a591b3d2a"
 dependencies = [
  "anyhow",
  "bytes",

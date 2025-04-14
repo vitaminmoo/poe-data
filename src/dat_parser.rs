@@ -128,37 +128,6 @@ impl DatLoader {
         self.load_table(name);
         self.dat_files.get(name)
     }
-
-    pub fn load_files(&mut self, names: &[&str]) -> Vec<DatFile> {
-        let dfs = self
-            .fs
-            .batch_read(&names)
-            .filter_map(|f| match f {
-                Ok(x) => {
-                    if self.dat_files.contains_key(x.0) {
-                        None
-                    } else {
-                        Some(x)
-                    }
-                }
-                Err((path, e)) => {
-                    panic!("Failed to extract file: {:?}: {:?}", path, e);
-                }
-            })
-            .map(
-                |(filename, contents)| match parse_file(filename, contents) {
-                    Ok(df) => df,
-                    Err(err) => panic!("Failed to parse file: {:?}: {:?}", filename, err),
-                },
-            );
-
-        for df in dfs {
-            self.dat_files.insert(df.source.clone(), df.clone());
-        }
-
-        self.dat_files.values().cloned().collect()
-    }
-
     fn load_table(&mut self, name: &str) {
         if self.dat_files.contains_key(name) {
             return;
@@ -172,10 +141,10 @@ impl DatLoader {
             Err(err) => panic!("Couldn't load table {}: {}", name, err),
         }
     }
+    // load_file gets a file from the cache or cdn and returns their Bytes
     fn load_file(&mut self, name: &str) -> Result<Bytes> {
         let file: Bytes;
         let cache_file = self.cache_dir.join("tables").join(name);
-
         if let Ok(cached_file) = fs::read(&cache_file) {
             file = cached_file.into();
         } else {
@@ -183,8 +152,51 @@ impl DatLoader {
             fs::create_dir_all(cache_file.parent().unwrap()).expect("failed to create cache dir");
             fs::write(&cache_file, &file).expect("failed to write cache file");
         }
-
         Ok(file)
+    }
+    pub fn get_tables<'a>(
+        &mut self,
+        names: &'a [&'a str],
+    ) -> impl Iterator<Item = (&'a str, &DatFile)> {
+        self.load_tables(names);
+        names.iter().map(|n| (*n, self.dat_files.get(*n).unwrap()))
+    }
+    pub fn load_tables<'a>(&'a mut self, names: &[&'a str]) {
+        let missing = names
+            .iter()
+            .copied()
+            .filter(|n| !self.dat_files.contains_key(*n))
+            .collect::<Vec<&str>>();
+        let loaded = self
+            .load_files(&missing)
+            .map(|(n, b)| match parse_file(n, b) {
+                Ok(df) => (n.to_string(), df),
+                Err(_) => panic!("fuck"),
+            })
+            .collect::<Vec<_>>();
+        self.dat_files.extend(loaded);
+    }
+    // load_files efficiently gets all specified files from the cache or cdn and returns their Bytes
+    pub fn load_files<'a>(&'a self, names: &[&'a str]) -> impl Iterator<Item = (&'a str, Bytes)> {
+        let mut missing = Vec::new();
+        let files = names
+            .iter()
+            .filter_map(|n| match fs::read(self.cache_dir.join("tables").join(n)) {
+                Ok(f) => Some((*n, f.into())),
+                Err(_) => {
+                    missing.push(*n);
+                    None
+                }
+            })
+            .collect::<Vec<(&str, Bytes)>>();
+        let from_cdn = self.fs.batch_read(&missing).map(|f| match f {
+            Ok(x) => x,
+            Err((path, e)) => {
+                panic!("Failed to extract file: {:?}: {:?}", path, e);
+            }
+        });
+
+        files.into_iter().chain(from_cdn)
     }
 }
 
@@ -324,15 +336,20 @@ impl DatFile {
             }
             let utf16_val = start.get_u16_le();
             if utf16_val == 0 {
-                if start.has_remaining() {
-                    let next = start.get_u16_le();
-                    if next != 0 {
-                        bail!(
-                            "string lacks second null-termination: {}:{}",
-                            self.source,
-                            offset,
-                        );
-                    }
+                if start.remaining() < 2 {
+                    bail!(
+                        "not enough bytes or some shit I don't know: {}:{}",
+                        self.source,
+                        offset
+                    )
+                }
+                let next = start.get_u16_le();
+                if next != 0 {
+                    bail!(
+                        "string lacks second null-termination: {}:{}",
+                        self.source,
+                        offset,
+                    );
                 }
                 complete = true;
                 break;
@@ -520,34 +537,20 @@ mod tests {
     use super::*;
     #[test]
     fn test_get_claims_mods() {
-        let dll = DatLoader::default();
-        let fs = dll.fs;
+        let mut dl = DatLoader::default();
 
         println!("getting dat_paths");
-        let dat_paths = fs
+        let dat_paths = dl
+            .fs
             .list()
             .filter(|x| x.ends_with(".datc64"))
-            .collect::<Vec<_>>();
+            .collect::<Vec<String>>();
 
         println!("converting dat_paths");
-        let p = dat_paths.iter().map(|x| x.as_str()).collect::<Vec<_>>();
-        println!("batch_reading files");
-        let files = fs
-            .batch_read(&p)
-            .filter_map(|d| match d {
-                Ok(dat) => Some(dat),
-                Err((path, e)) => {
-                    eprintln!("Error reading file {}: {}", path, e);
-                    None
-                }
-            })
-            .collect::<Vec<_>>();
 
-        for (dat_path, _) in files {
-            let mut dl = DatLoader::default();
-            let dat_file = dl.get_table(dat_path).unwrap();
-            println!("{}", dat_file.source);
-            /*
+        let shit = dat_paths.iter().map(|x| x.as_str()).collect::<Vec<_>>();
+
+        for (_, dat_file) in dl.get_tables(&shit) {
             //for bytes in [1, 2, 4, 8, 16] {
             for bytes in [8] {
                 if dat_file.row_len_bytes < bytes + 1 {
@@ -557,30 +560,30 @@ mod tests {
                 for index in 0..last_col {
                     let claims = dat_file.get_column_claims(index, bytes);
                     for claim in claims {
-                        println!(
-                            "{}:{}: {:?}",
-                            claim.offset,
-                            claim.offset + claim.bytes - 1,
-                            claim.column_type
-                        );
                         if claim.column_type == Cell::Scalar(Scalar::String) {
-                            println!(
-                                "String value: index: {} {}",
-                                index,
-                                dat_file
-                                    .column_rows_iter(claim.offset, claim.bytes)
-                                    .map(|cell| dat_file
+                            for (i, s) in dat_file
+                                .column_rows_iter(claim.offset, claim.bytes)
+                                .map(|cell| {
+                                    dat_file
                                         .string_from_offset(cell.clone().get_i32_le() as usize)
-                                        .unwrap())
-                                    .filter(|s| !s.is_empty())
-                                    .collect::<Vec<String>>()
-                                    .join(", ")
-                            );
+                                        .unwrap()
+                                })
+                                .enumerate()
+                                .filter(|s| !s.1.is_empty())
+                            {
+                                println!(
+                                    "{}:{}:{}: {}: {:?}",
+                                    dat_file.source,
+                                    claim.offset,
+                                    claim.offset + claim.bytes - 1,
+                                    i,
+                                    s,
+                                );
+                            }
                         }
                     }
                 }
             }
-            */
         }
     }
 }
