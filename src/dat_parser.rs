@@ -220,7 +220,7 @@ fn parse_file(source: &str, file: Bytes) -> Result<DatFile> {
         row_len_bytes = table.len() / table_len_rows;
     }
 
-    let dat_file = DatFile {
+    let mut dat_file = DatFile {
         source: source.to_string(),
         table,
         row_len_bytes,
@@ -234,7 +234,6 @@ fn parse_file(source: &str, file: Bytes) -> Result<DatFile> {
         return Ok(dat_file);
     }
 
-    /*
     for row in dat_file.table.chunks_exact(row_len_bytes) {
         for (i, &byte) in row.iter().enumerate() {
             dat_file.table_row_or[i] |= byte;
@@ -242,7 +241,6 @@ fn parse_file(source: &str, file: Bytes) -> Result<DatFile> {
             dat_file.table_row_max[i] = dat_file.table_row_max[i].max(byte);
         }
     }
-    */
 
     Ok(dat_file)
 }
@@ -431,7 +429,21 @@ impl DatFile {
                                 == self.table_row_max[col_index..col_index + 8]
                             {
                                 // if all rows have the same value, it's probably not a string, unless it's ""
-                                if s.is_empty() {
+                                if !s.is_empty() {
+                                    return true;
+                                }
+                            }
+                            if self.table_row_min[col_index..col_index + 1] == [0xfe; 1]
+                                && self.table_row_max[col_index..col_index + 1] == [0xfe; 1]
+                            {
+                                // if the first byte is all fe it's probably overlapping an empty thing
+                                return true;
+                            }
+                            if self.table_row_min[col_index..col_index + 1] == [0x00; 1]
+                                && self.table_row_max[col_index..col_index + 1] == [0x00; 1]
+                            {
+                                // if the first byte is all 00 it's probably not a string unless it's ""
+                                if !s.is_empty() {
                                     return true;
                                 }
                             }
@@ -545,6 +557,8 @@ mod tests {
             .list()
             .filter(|x| x.ends_with(".datc64"))
             .collect::<Vec<String>>();
+
+        //let dat_paths = vec!["data/worldareas.datc64".to_string()];
 
         println!("converting dat_paths");
 
