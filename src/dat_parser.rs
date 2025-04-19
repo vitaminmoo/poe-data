@@ -5,7 +5,6 @@ use std::fs;
 use std::path::PathBuf;
 use std::sync::{LazyLock, RwLock};
 
-/*
 // datc64 column types
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Scalar {
@@ -98,7 +97,6 @@ pub struct ColumnClaim {
     pub column_type: Cell, // what type of field is this claim for
     pub labels: HashMap<String, String>, // arbitrary metadata for the claim
 }
-*/
 
 pub static DAT_LOADER: LazyLock<RwLock<DatLoader>> =
     LazyLock::new(|| RwLock::new(DatLoader::default()));
@@ -130,7 +128,6 @@ impl DatLoader {
         self.load_table(name);
         self.dat_files.get(name)
     }
-
     fn load_table(&mut self, name: &str) {
         if self.dat_files.contains_key(name) {
             return;
@@ -138,15 +135,16 @@ impl DatLoader {
         eprintln!("loading {}", name);
         match self.load_file(name) {
             Ok(loaded) => {
-                self.dat_files.insert(name.to_string(), loaded);
+                let df = parse_file(name, loaded).unwrap();
+                self.dat_files.insert(name.to_string(), df);
             }
             Err(err) => panic!("Couldn't load table {}: {}", name, err),
         }
     }
-    fn load_file(&mut self, name: &str) -> Result<DatFile> {
+    // load_file gets a file from the cache or cdn and returns their Bytes
+    fn load_file(&mut self, name: &str) -> Result<Bytes> {
         let file: Bytes;
         let cache_file = self.cache_dir.join("tables").join(name);
-
         if let Ok(cached_file) = fs::read(&cache_file) {
             file = cached_file.into();
         } else {
@@ -154,50 +152,97 @@ impl DatLoader {
             fs::create_dir_all(cache_file.parent().unwrap()).expect("failed to create cache dir");
             fs::write(&cache_file, &file).expect("failed to write cache file");
         }
-
-        // length + magic
-        if file.len() < 4 + 8 {
-            bail!("file too short");
-        }
-
-        let magic_index = file
-            .windows(8)
-            .position(|window| window == [0xBB; 8])
-            .ok_or(anyhow!("magic bytes not found"))?;
-
-        let mut data = Bytes::from_owner(file);
-        let mut table = data.split_to(magic_index);
-
-        let table_len_rows = table.get_u32_le() as usize;
-        let mut row_len_bytes = 0;
-        if table_len_rows > 0 {
-            row_len_bytes = table.len() / table_len_rows;
-        }
-
-        let mut dat_file = DatFile {
-            source: name.to_string(),
-            table,
-            row_len_bytes,
-            data,
-            table_row_or: vec![0; row_len_bytes],
-            table_row_min: vec![0xFF; row_len_bytes],
-            table_row_max: vec![0; row_len_bytes],
-        };
-
-        if table_len_rows == 0 {
-            return Ok(dat_file);
-        }
-
-        for row in dat_file.table.chunks_exact(row_len_bytes) {
-            for (i, &byte) in row.iter().enumerate() {
-                dat_file.table_row_or[i] |= byte;
-                dat_file.table_row_min[i] = dat_file.table_row_min[i].min(byte);
-                dat_file.table_row_max[i] = dat_file.table_row_max[i].max(byte);
-            }
-        }
-
-        Ok(dat_file)
+        Ok(file)
     }
+    pub fn get_tables<'a>(
+        &mut self,
+        names: &'a [&'a str],
+    ) -> impl Iterator<Item = (&'a str, &DatFile)> {
+        self.load_tables(names);
+        names.iter().map(|n| (*n, self.dat_files.get(*n).unwrap()))
+    }
+    pub fn load_tables<'a>(&'a mut self, names: &[&'a str]) {
+        let missing = names
+            .iter()
+            .copied()
+            .filter(|n| !self.dat_files.contains_key(*n))
+            .collect::<Vec<&str>>();
+        let loaded = self
+            .load_files(&missing)
+            .map(|(n, b)| match parse_file(n, b) {
+                Ok(df) => (n.to_string(), df),
+                Err(_) => panic!("fuck"),
+            })
+            .collect::<Vec<_>>();
+        self.dat_files.extend(loaded);
+    }
+    // load_files efficiently gets all specified files from the cache or cdn and returns their Bytes
+    pub fn load_files<'a>(&'a self, names: &[&'a str]) -> impl Iterator<Item = (&'a str, Bytes)> {
+        let mut missing = Vec::new();
+        let files = names
+            .iter()
+            .filter_map(|n| match fs::read(self.cache_dir.join("tables").join(n)) {
+                Ok(f) => Some((*n, f.into())),
+                Err(_) => {
+                    missing.push(*n);
+                    None
+                }
+            })
+            .collect::<Vec<(&str, Bytes)>>();
+        let from_cdn = self.fs.batch_read(&missing).map(|f| match f {
+            Ok(x) => x,
+            Err((path, e)) => {
+                panic!("Failed to extract file: {:?}: {:?}", path, e);
+            }
+        });
+
+        files.into_iter().chain(from_cdn)
+    }
+}
+
+fn parse_file(source: &str, file: Bytes) -> Result<DatFile> {
+    // length + magic
+    if file.len() < 4 + 8 {
+        bail!("file too short");
+    }
+
+    let magic_index = file
+        .windows(8)
+        .position(|window| window == [0xBB; 8])
+        .ok_or(anyhow!("magic bytes not found"))?;
+
+    let mut data = Bytes::from_owner(file);
+    let mut table = data.split_to(magic_index);
+
+    let table_len_rows = table.get_u32_le() as usize;
+    let mut row_len_bytes = 0;
+    if table_len_rows > 0 {
+        row_len_bytes = table.len() / table_len_rows;
+    }
+
+    let mut dat_file = DatFile {
+        source: source.to_string(),
+        table,
+        row_len_bytes,
+        data,
+        table_row_or: vec![0; row_len_bytes],
+        table_row_min: vec![0xFF; row_len_bytes],
+        table_row_max: vec![0; row_len_bytes],
+    };
+
+    if table_len_rows == 0 {
+        return Ok(dat_file);
+    }
+
+    for row in dat_file.table.chunks_exact(row_len_bytes) {
+        for (i, &byte) in row.iter().enumerate() {
+            dat_file.table_row_or[i] |= byte;
+            dat_file.table_row_min[i] = dat_file.table_row_min[i].min(byte);
+            dat_file.table_row_max[i] = dat_file.table_row_max[i].max(byte);
+        }
+    }
+
+    Ok(dat_file)
 }
 
 #[derive(Debug, Clone)]
@@ -289,15 +334,20 @@ impl DatFile {
             }
             let utf16_val = start.get_u16_le();
             if utf16_val == 0 {
-                if start.has_remaining() {
-                    let next = start.get_u16_le();
-                    if next != 0 {
-                        bail!(
-                            "string lacks second null-termination: {}:{}",
-                            self.source,
-                            offset,
-                        );
-                    }
+                if start.remaining() < 2 {
+                    bail!(
+                        "not enough bytes or some shit I don't know: {}:{}",
+                        self.source,
+                        offset
+                    )
+                }
+                let next = start.get_u16_le();
+                if next != 0 {
+                    bail!(
+                        "string lacks second null-termination: {}:{}",
+                        self.source,
+                        offset,
+                    );
                 }
                 complete = true;
                 break;
@@ -329,7 +379,7 @@ impl DatFile {
         }
         Ok(())
     }
-    /*
+
     pub fn get_column_claims(&self, col_index: usize, cell_length: usize) -> Vec<ColumnClaim> {
         let mut cells = self.column_rows(col_index, cell_length);
         if cells.is_empty() {
@@ -379,7 +429,21 @@ impl DatFile {
                                 == self.table_row_max[col_index..col_index + 8]
                             {
                                 // if all rows have the same value, it's probably not a string, unless it's ""
-                                if s.is_empty() {
+                                if !s.is_empty() {
+                                    return true;
+                                }
+                            }
+                            if self.table_row_min[col_index..col_index + 1] == [0xfe; 1]
+                                && self.table_row_max[col_index..col_index + 1] == [0xfe; 1]
+                            {
+                                // if the first byte is all fe it's probably overlapping an empty thing
+                                return true;
+                            }
+                            if self.table_row_min[col_index..col_index + 1] == [0x00; 1]
+                                && self.table_row_max[col_index..col_index + 1] == [0x00; 1]
+                            {
+                                // if the first byte is all 00 it's probably not a string unless it's ""
+                                if !s.is_empty() {
                                     return true;
                                 }
                             }
@@ -442,10 +506,8 @@ impl DatFile {
             _ => Vec::new(),
         }
     }
-    */
 }
 
-/*
 pub fn hexdump(data: &[u8]) {
     for (i, chunk) in data.chunks(16).enumerate() {
         print!("{:08x}  ", i * 16);
@@ -481,33 +543,61 @@ pub fn hexdump(data: &[u8]) {
         println!();
     }
 }
-*/
 
-/*
 #[cfg(test)]
 mod tests {
     use super::*;
     #[test]
     fn test_get_claims_mods() {
         let mut dl = DatLoader::default();
-        let dat_file: &DatFile = dl.get_table("data/mods.datc64").unwrap();
-        for bytes in [1, 2, 4, 8, 16] {
-            if dat_file.row_len_bytes < bytes + 1 {
-                continue;
-            }
-            let last_col = dat_file.row_len_bytes - bytes - 1;
-            for index in 0..last_col {
-                let claims = dat_file.get_column_claims(index, bytes);
-                for claim in claims {
-                    println!(
-                        "{}:{}: {:?}",
-                        claim.offset,
-                        claim.offset + claim.bytes - 1,
-                        claim.column_type
-                    );
+
+        println!("getting dat_paths");
+        let dat_paths = dl
+            .fs
+            .list()
+            .filter(|x| x.ends_with(".datc64"))
+            .collect::<Vec<String>>();
+
+        //let dat_paths = vec!["data/worldareas.datc64".to_string()];
+
+        println!("converting dat_paths");
+
+        let shit = dat_paths.iter().map(|x| x.as_str()).collect::<Vec<_>>();
+
+        for (_, dat_file) in dl.get_tables(&shit) {
+            //for bytes in [1, 2, 4, 8, 16] {
+            for bytes in [8] {
+                if dat_file.row_len_bytes < bytes + 1 {
+                    continue;
+                }
+                let last_col = dat_file.row_len_bytes - bytes - 1;
+                for index in 0..last_col {
+                    let claims = dat_file.get_column_claims(index, bytes);
+                    for claim in claims {
+                        if claim.column_type == Cell::Scalar(Scalar::String) {
+                            for (i, s) in dat_file
+                                .column_rows_iter(claim.offset, claim.bytes)
+                                .map(|cell| {
+                                    dat_file
+                                        .string_from_offset(cell.clone().get_i32_le() as usize)
+                                        .unwrap()
+                                })
+                                .enumerate()
+                                .filter(|s| !s.1.is_empty())
+                            {
+                                println!(
+                                    "{}:{}:{}: {}: {:?}",
+                                    dat_file.source,
+                                    claim.offset,
+                                    claim.offset + claim.bytes - 1,
+                                    i,
+                                    s,
+                                );
+                            }
+                        }
+                    }
                 }
             }
         }
     }
 }
-*/
