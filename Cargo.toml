@@ -15,3 +15,4 @@ poe_tools = { git = "https://github.com/vitaminmoo/poe_data_tools/", branch = "d
 dirs = "6.0.0"
 anyhow = "1.0.95"
 iterators_extended = "0.2.0"
+libc = "0.2.174"

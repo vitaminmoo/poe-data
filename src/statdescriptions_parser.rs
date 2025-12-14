@@ -11,7 +11,7 @@ use winnow::combinator::{
 use winnow::error::{ContextError, ParseError};
 use winnow::stream::Stream;
 use winnow::token::{take, take_until, take_while};
-use winnow::PResult;
+use winnow::ModalResult;
 use winnow::Parser;
 
 use crate::statdescriptions::{
@@ -83,14 +83,14 @@ impl std::error::Error for StatLoaderError {}
 /*
     Primitive types
 */
-fn doublequoted<'a>(input: &mut &'a str) -> PResult<&'a str> {
+fn doublequoted<'a>(input: &mut &'a str) -> ModalResult<&'a str> {
     delimited('"', take_until(0.., '"'), '"').parse_next(input)
 }
 
 /*
     Main file parser
 */
-pub fn stats_file(input: &mut &str) -> PResult<statdescriptions::StatFile> {
+pub fn stats_file(input: &mut &str) -> ModalResult<statdescriptions::StatFile> {
     let _ = take(1_usize).parse_next(input)?; // skip 0xfeff
     let _ = multispace0.parse_next(input)?; // leading whitespace if there
 
@@ -128,7 +128,7 @@ pub fn stats_file(input: &mut &str) -> PResult<statdescriptions::StatFile> {
 /*
     Child parsers in order of appearance-ish
 */
-pub fn includes(input: &mut &str) -> PResult<Vec<String>> {
+pub fn includes(input: &mut &str) -> ModalResult<Vec<String>> {
     separated(
         0..,
         preceded(("include", space1), doublequoted).map(|x| x.to_string()),
@@ -137,7 +137,7 @@ pub fn includes(input: &mut &str) -> PResult<Vec<String>> {
     .parse_next(input)
 }
 
-pub fn no_descriptions(input: &mut &str) -> PResult<Vec<String>> {
+pub fn no_descriptions(input: &mut &str) -> ModalResult<Vec<String>> {
     separated(
         0..,
         preceded(("no_description", space1), identifier).map(|x| x.to_string()),
@@ -146,7 +146,7 @@ pub fn no_descriptions(input: &mut &str) -> PResult<Vec<String>> {
     .parse_next(input)
 }
 
-pub fn description(input: &mut &str) -> PResult<(Vec<String>, Descriptor)> {
+pub fn description(input: &mut &str) -> ModalResult<(Vec<String>, Descriptor)> {
     let name: Option<&str> = delimited(
         "description",
         opt(preceded(space1, identifier)),
@@ -196,7 +196,7 @@ pub fn description(input: &mut &str) -> PResult<(Vec<String>, Descriptor)> {
     ))
 }
 
-pub fn statsblock(num_keys: usize) -> impl FnMut(&mut &str) -> PResult<Vec<LineSpec>> {
+pub fn statsblock(num_keys: usize) -> impl FnMut(&mut &str) -> ModalResult<Vec<LineSpec>> {
     move |input: &mut &str| {
         let num_lines: usize = terminated(digit1, multispace1)
             .map(|x: &str| x.parse::<usize>().unwrap())
@@ -206,7 +206,7 @@ pub fn statsblock(num_keys: usize) -> impl FnMut(&mut &str) -> PResult<Vec<LineS
     }
 }
 
-pub fn linespec(num_keys: usize) -> impl FnMut(&mut &str) -> PResult<LineSpec> {
+pub fn linespec(num_keys: usize) -> impl FnMut(&mut &str) -> ModalResult<LineSpec> {
     move |input: &mut &str| {
         let conditions: Vec<Pattern> =
             terminated(separated(num_keys, pattern_part, space1), space1).parse_next(input)?;
@@ -220,7 +220,7 @@ pub fn linespec(num_keys: usize) -> impl FnMut(&mut &str) -> PResult<LineSpec> {
     }
 }
 
-fn pattern_part(input: &mut &str) -> PResult<Pattern> {
+fn pattern_part(input: &mut &str) -> ModalResult<Pattern> {
     alt((
         "!0".value(Pattern::NotZero),
         terminated(dec_int, "|#").map(Pattern::GreaterOrEqual),
@@ -233,7 +233,7 @@ fn pattern_part(input: &mut &str) -> PResult<Pattern> {
     .parse_next(input)
 }
 
-pub fn value(input: &mut &str) -> PResult<f64> {
+pub fn value(input: &mut &str) -> ModalResult<f64> {
     let numword = alt([
         "one".value(1.0),
         "two".value(2.0),
@@ -288,17 +288,17 @@ pub fn value(input: &mut &str) -> PResult<f64> {
     Ok((x + y) * z)
 }
 
-pub fn identifier<'a>(input: &mut &'a str) -> PResult<&'a str> {
+pub fn identifier<'a>(input: &mut &'a str) -> ModalResult<&'a str> {
     take_while(1.., ('a'..='z', 'A'..='Z', '0'..='9', '%', '-', '_', '+')).parse_next(input)
 }
 
-pub fn extra(input: &mut &str) -> PResult<Vec<LineFunction>> {
+pub fn extra(input: &mut &str) -> ModalResult<Vec<LineFunction>> {
     repeat(0.., preceded(space1, function))
         .map(|x: Vec<Vec<LineFunction>>| x.into_iter().flatten().collect())
         .parse_next(input)
 }
 
-pub fn function(input: &mut &str) -> PResult<Vec<LineFunction>> {
+pub fn function(input: &mut &str) -> ModalResult<Vec<LineFunction>> {
     let base_function = alt((
         alt([
             "per_minute_to_per_second".value(StatFunction::DivideByRound(60.0, 1)),
