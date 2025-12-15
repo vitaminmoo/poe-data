@@ -144,15 +144,35 @@ local types =
   ),
   getter_map(t):: (
     local tm = {
-      i16: 'row.get(%(offset)d).get_i16_le()',
-      u16: 'row.get(%(offset)d).get_u16_le()',
-      i32: 'row.get(%(offset)d..%(offset)d + 4).get_i32_le()',
-      u32: 'row.get(%(offset)d..%(offset)d + 4).get_u32_le()',
-      string: 'df.string_from_offset(row.get(%(offset)d..%(offset)d + 8).get_i32_le() as usize).unwrap()',
-      bool: 'row.get(%(offset)d).to_le() != 0',
-      f32: 'row.get(%(offset)d..%(offset)d + 4).get_f32_le()',
+      i16: 'row.get(%(offset)d..%(offset)d + 2).unwrap().get_i16_le()',
+      u16: 'row.get(%(offset)d..%(offset)d + 2).unwrap().get_u16_le()',
+      i32: 'row.get(%(offset)d..%(offset)d + 4).unwrap().get_i32_le()',
+      u32: 'row.get(%(offset)d..%(offset)d + 4).unwrap().get_u32_le()',
+      string: 'df.string_from_offset(row.get(%(offset)d..%(offset)d + 8).unwrap().get_i32_le() as usize).unwrap()',
+      bool: 'row.get(%(offset)d).unwrap().to_le() != 0',
+      f32: 'row.get(%(offset)d..%(offset)d + 4).unwrap().get_f32_le()',
     };
     if std.objectHas(tm, t) then tm[t] else error 'unknown type %s' % t
+  ),
+  sizeof_map:: {
+    i16: 2,
+    u16: 2,
+    i32: 4,
+    u32: 4,
+    string: 8,
+    bool: 1,
+    f32: 4,
+    row: 8,
+    foreignrow: 8,
+    enumrow: 4,
+  },
+  sizeof(column):: (
+    if column.array then
+      8
+    else if std.objectHas($.sizeof_map, column.type) then
+      $.sizeof_map[column.type]
+    else
+      error 'unknown size for type %s' % column.type
   ),
   match(item, matcher):: (
     local type = std.type(matcher);
@@ -185,25 +205,35 @@ local types =
     )
   ),
   columns_from_table(table):: (
-    local parts = [
-      $.column(table.name, column)
-      for column in table.columns
-      if column.name != null
-    ];
-    std.foldl(
-      function(x, y)
-        x + if y != null then
-          {
-            field_types+: if y.field_type != null then y.field_type else [],
-            field_values+: if y.field_value != null then y.field_value else [],
-          }
-        else
-          {},
-      parts,
-      {}
-    )
+    local columns = [c for c in table.columns];
+    local initial = { offset: 0, fields: { field_types: [], field_values: [] } };
+    local result = std.foldl(
+      function(acc, column) (
+        local current_offset = acc.offset;
+        local new_fields = if column.name != null then (
+          local processed_column = $.column(table.name, column, current_offset);
+          if processed_column != null then
+            {
+              field_types+: if processed_column.field_type != null then processed_column.field_type else [],
+              field_values+: if processed_column.field_value != null then processed_column.field_value else [],
+            }
+          else
+            {}
+        ) else {};
+
+        local type_size = $.sizeof(column);
+        local next_offset = current_offset + type_size;
+        {
+          offset: next_offset,
+          fields: acc.fields + new_fields,
+        }
+      ),
+      columns,
+      initial
+    );
+    result.fields
   ),
-  column(table, column):: (
+  column(table, column, offset):: (
     local type = column.type;
     local target_table =
       if column.references != null && std.objectHas(column.references, 'table')
@@ -216,7 +246,7 @@ local types =
       target_table_name: target_table,
       snake_target_table_name: if target_table != null then util.case.snake(target_table) else null,
       type: $.type_map(column.type),
-      offset: 0,
+      offset: offset,
       getter: $.getter_map(column.type) % self,
     };
     local matches = [

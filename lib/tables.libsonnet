@@ -81,31 +81,21 @@ local kvEnum = {
           df.rows_iter()
               .map(|row| %(tableName)sRow {
                 %(field_values)s
-               /*
-                  r#id: df
-                      .string_from_offset(row.get(0..8).unwrap().get_i32_le() as usize)
-                      .unwrap(),
-                  r#ui_title: df
-                      .string_from_offset(row.get(8..16).unwrap().get_i32_le() as usize)
-                      .unwrap(),
-                  r#act_number: row.get(16..20).unwrap().get_i32_le(),
-                  r#is_end_game: row.get(40).unwrap().to_le() != 0,
-                  //r#unknown_int: row.get(41..43).unwrap().get_i16_le(),
 
-                  //r#unknown_foreign_array: df
-                  //    .array_from_offset(
-                  //        row.get(53..59).unwrap().get_i32_le() as usize,
-                  //        row.get(45..51).unwrap().get_i32_le() as usize,
-                  //        16,
-                  //    )
-                  //    .unwrap()
-                  //    .iter()
-                  //    .map(|x| x.clone().get_i32_le())
-                  //    .collect(),
-                  r#description: df
-                      .string_from_offset(row.get(125..131).unwrap().get_i32_le() as usize)
-                      .unwrap(),
-                      */
+      /*
+          //r#unknown_int: row.get(41..43).unwrap().get_i16_le(),
+
+          r#unknown_foreign_array: df
+              .array_from_offset(
+                  row.get(53..59).unwrap().get_i32_le() as usize,
+                  row.get(45..51).unwrap().get_i32_le() as usize,
+                  16,
+              )
+              .unwrap()
+              .iter()
+              .map(|x| x.clone().get_i32_le())
+              .collect(),
+      */
               })
               .collect()
       });
