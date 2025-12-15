@@ -11,6 +11,7 @@ local tables = [
 local kvEnum = {
   [enumeration.name]: enumeration
   for enumeration in schema.enumerations
+  if enumeration.validFor == 2 || enumeration.validFor == 3
 };
 
 {
@@ -19,6 +20,7 @@ local kvEnum = {
       '\n',
       ['#![allow(clippy::all)]']
       + ['use serde::{Deserialize, Serialize};']
+      + ['#[allow(unused_imports)]']
       + ['use std::ops::Deref;']
       + ['use strum::{EnumIter, FromRepr, Display};']
       + [|||
@@ -59,74 +61,98 @@ local kvEnum = {
   ['src/tables/%s.rs' % util.case.snake(table.name)]+:
     |||
       #![allow(clippy::all)]
-      use serde::{Deserialize, Serialize};
-      use std::sync::LazyLock;
-      use std::ops::Deref;
-      #[allow(unused_imports)]
+      use bytes::Buf;
+
+      use crate::dat_parser::DAT_LOADER;
+
+      #[allow(unused)]
       use super::*;
-      #[derive(Debug)]
-      pub struct %(tableName)s {
-      %(field_types)s
-      }
+      use std::{ops::Deref, sync::LazyLock};
 
       #[allow(non_upper_case_globals)]
-      pub static TABLE_%(tableName)s: LazyLock<Vec<%(tableName)s>> =
-          LazyLock::new(|| {
-              RAW_TABLE_%(tableName)s
-                  .iter()
-                  .map(|x| {%(tableName)s {
-                      %(field_values)s
-                  }})
-                  .collect()
-          });
+      pub static TABLE_%(tableName)s: LazyLock<Vec<%(tableName)sRow>> = LazyLock::new(|| {
+          let df = DAT_LOADER
+              .write()
+              .unwrap()
+              .get_table("data/%(tableName)s.datc64")
+              .unwrap()
+              .clone();
+
+          df.rows_iter()
+              .map(|row| %(tableName)sRow {
+                %(field_values)s
+               /*
+                  r#id: df
+                      .string_from_offset(row.get(0..8).unwrap().get_i32_le() as usize)
+                      .unwrap(),
+                  r#ui_title: df
+                      .string_from_offset(row.get(8..16).unwrap().get_i32_le() as usize)
+                      .unwrap(),
+                  r#act_number: row.get(16..20).unwrap().get_i32_le(),
+                  r#is_end_game: row.get(40).unwrap().to_le() != 0,
+                  //r#unknown_int: row.get(41..43).unwrap().get_i16_le(),
+
+                  //r#unknown_foreign_array: df
+                  //    .array_from_offset(
+                  //        row.get(53..59).unwrap().get_i32_le() as usize,
+                  //        row.get(45..51).unwrap().get_i32_le() as usize,
+                  //        16,
+                  //    )
+                  //    .unwrap()
+                  //    .iter()
+                  //    .map(|x| x.clone().get_i32_le())
+                  //    .collect(),
+                  r#description: df
+                      .string_from_offset(row.get(125..131).unwrap().get_i32_le() as usize)
+                      .unwrap(),
+                      */
+              })
+              .collect()
+      });
+
+      #[derive(Debug)]
+      pub struct %(tableName)sRow {
+          %(field_types)s
+          //pub r#id: String,
+          //pub r#ui_title: String,
+          //pub r#act_number: i32,
+          //pub r#is_end_game: bool,
+          //pub r#unknown_int: i16,
+          //pub r#unknown_foreign_array: Vec<i32>,
+          //pub r#description: String,
+      }
 
       #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Ord, PartialOrd)]
-      pub struct %(tableName)sRow(pub usize);
+      pub struct %(tableName)sRef(pub usize);
 
-      impl Deref for %(tableName)sRow {
-          type Target = %(tableName)s;
-
+      impl Deref for %(tableName)sRef {
+          type Target = %(tableName)sRow;
           fn deref(&self) -> &'static Self::Target {
               &TABLE_%(tableName)s[self.0]
           }
       }
 
-      impl %(tableName)sRow {
+      impl %(tableName)sRef {
           pub fn new(index: usize) -> Self {
               Self(index)
           }
-          pub fn as_static_ref(&self) -> &'static %(tableName)s {
+          pub fn as_static_ref(&self) -> &'static %(tableName)sRow {
               &TABLE_%(tableName)s[self.0]
           }
-          pub fn get(&self) -> &'static %(tableName)s {
+          pub fn get(&self) -> &'static %(tableName)sRow {
               &TABLE_%(tableName)s[self.0]
           }
           pub fn iter() -> impl Iterator<Item = Self> {
               TABLE_%(tableName)s.iter().enumerate().map(|(i, _)| Self(i))
           }
-          pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static %(tableName)s)> {
+          pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static %(tableName)sRow)> {
               TABLE_%(tableName)s.iter().enumerate().map(|(i, x)| (Self(i), x))
           }
       }
-
-      #[allow(non_upper_case_globals)]
-      static RAW_TABLE_%(tableName)s: LazyLock<
-          Vec<%(tableName)sRaw>,
-      > = LazyLock::new(|| {
-          const DATA: &str = include_str!("../../data/tables/English/%(tableName)s.json");
-          serde_json::from_str(DATA).unwrap()
-      });
-
-      #[derive(Debug, Deserialize, Serialize)]
-      struct %(tableName)sRaw {
-      %(raw_field_types)s
-      }
-
     ||| % {
       local columns = types.columns_from_table(table),
       tableName: table.name,
       field_types: std.join('\n', columns.field_types),
-      raw_field_types: std.join('\n', columns.raw_field_types),
       field_values: std.join('\n', columns.field_values),
     }
   for table in tables

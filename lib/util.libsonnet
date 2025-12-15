@@ -17,8 +17,9 @@ local isNum(chr) = std.codepoint(chr) >= 48 && std.codepoint(chr) <= 57;
                 then '_' + chr
                 else if isCaps(chr)
                         && std.length(str) > i + 1
-                        && !isCaps(chrs[i + 1])
-                        && !isNum(chrs[i + 1])
+                        && !isCaps(chrs[i + 1])  // don't add _ inside acronyms
+                        && !isNum(chrs[i + 1])  // don't add _ between words and numbers
+                        && chrs[i + 1] != '_'  // avoid UI_Image -> u_i_image
                 then '_' + chr
                 else chr
               , std.stringChars(str)

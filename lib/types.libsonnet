@@ -14,9 +14,8 @@ local types =
       column_reference: null,
     }, {
       type: 'row_ref',
-      raw_field_type+: [rename, 'pub r#%(snake_column_name)s: Option<usize>,'],
       field_type+: ['pub r#%(snake_column_name)s: Option<%(target_table_name)sRow>,'],
-      field_value+: ['r#%(snake_column_name)s: x.r#%(snake_column_name)s.map(%(target_table_name)sRow),'],
+      field_value+: ['// row_ref %(snake_column_name)s'],
     }],
     // row_ref_array
     [{
@@ -26,9 +25,8 @@ local types =
       column_reference: null,
     }, {
       type: 'row_ref_array',
-      raw_field_type+: [rename, 'pub r#%(snake_column_name)s: Vec<usize>,'],
       field_type+: ['pub r#%(snake_column_name)s: Vec<%(target_table_name)sRow>,'],
-      field_value+: ['r#%(snake_column_name)s: x.r#%(snake_column_name)s.iter().copied().map(%(target_table_name)sRow).collect(),'],
+      field_value+: ['// row_ref_array %(snake_column_name)s'],
     }],
     // column_ref
     [{
@@ -38,7 +36,6 @@ local types =
       column_reference: not_null,
     }, {
       type: 'column_ref',
-      raw_field_type+: [rename, 'pub r#%(snake_column_name)s: %(type)s,'],
       field_type+: ['// column_ref %(snake_column_name)s'],
       field_value+: ['// column_ref %(snake_column_name)s'],
     }],
@@ -50,7 +47,6 @@ local types =
       column_reference: not_null,
     }, {
       type: 'column_ref_array',
-      raw_field_type+: [rename, 'pub r#%(snake_column_name)s: Vec<%(type)s>,'],
       field_type+: ['// column_ref_array %(snake_column_name)s'],
       field_value+: ['// column_ref_array %(snake_column_name)s'],
     }],
@@ -62,9 +58,8 @@ local types =
       column_reference: any,
     }, {
       type: 'row_ref_unknown',
-      raw_field_type+: [],
-      field_type+: [],
-      field_value+: [],
+      field_type+: ['// row_ref_unknown %(snake_column_name)s'],
+      field_value+: ['// row_ref_unknown %(snake_column_name)s'],
     }],
     // enum_ref
     [{
@@ -74,9 +69,8 @@ local types =
       column_reference: null,
     }, {
       type: 'enum_ref',
-      raw_field_type+: [rename, 'pub r#%(snake_column_name)s: usize,'],
       field_type+: ['pub r#%(snake_column_name)s: MaybeVariant<%(target_table_name)s>,'],
-      field_value+: ['r#%(snake_column_name)s: %(target_table_name)s::from_repr(x.r#%(snake_column_name)s).map_or(MaybeVariant::NotVariant(x.r#%(snake_column_name)s), MaybeVariant::Variant),'],
+      field_value+: ['// enum_ref %(snake_column_name)s'],
     }],
     // enum_ref_array
     [{
@@ -86,33 +80,52 @@ local types =
       column_reference: null,
     }, {
       type: 'enum_ref_array',
-      raw_field_type+: [rename, 'pub r#%(snake_column_name)s: Vec<usize>,'],
       field_type+: ['pub r#%(snake_column_name)s: Vec<%(target_table_name)s>,'],
-      field_value+: ['r#%(snake_column_name)s: x.r#%(snake_column_name)s.iter().map(|y| %(target_table_name)s::from_repr(*y).unwrap()).collect(),'],
+      field_value+: ['// enum_ref_array%(snake_column_name)s'],
     }],
     // basic
     [{
-      type: ['i16', 'u16', 'f32', 'i32', 'u32', 'bool', 'string'],
+      type: ['i16', 'u16', 'f32', 'i32', 'u32', 'bool'],
       array: false,
       table_reference: null,
       column_reference: null,
     }, {
       type: 'basic',
-      raw_field_type+: [rename, 'pub r#%(snake_column_name)s: %(type)s,'],
       field_type+: ['pub r#%(snake_column_name)s: %(type)s,'],
-      field_value+: ['r#%(snake_column_name)s: x.r#%(snake_column_name)s.clone(),'],
+      field_value+: ['r#%(snake_column_name)s: %(getter)s, // basic'],
     }],
     // basic_array
     [{
-      type: ['i16', 'u16', 'f32', 'i32', 'u32', 'bool', 'string'],
+      type: ['i16', 'u16', 'f32', 'i32', 'u32', 'bool'],
       array: true,
       table_reference: null,
       column_reference: null,
     }, {
       type: 'basic_array',
-      raw_field_type+: [rename, 'pub r#%(snake_column_name)s: Vec<%(type)s>,'],
       field_type+: ['pub r#%(snake_column_name)s: Vec<%(type)s>,'],
-      field_value+: ['r#%(snake_column_name)s: x.r#%(snake_column_name)s.clone(),'],
+      field_value+: ['// basic_array %(snake_column_name)s'],
+    }],
+    // string
+    [{
+      type: ['string'],
+      array: false,
+      table_reference: null,
+      column_reference: null,
+    }, {
+      type: 'string',
+      field_type+: ['pub r#%(snake_column_name)s: %(type)s,'],
+      field_value+: ['r#%(snake_column_name)s: %(getter)s, // string'],
+    }],
+    // string_array
+    [{
+      type: ['string'],
+      array: true,
+      table_reference: null,
+      column_reference: null,
+    }, {
+      type: 'string',
+      field_type+: ['pub r#%(snake_column_name)s: Vec<%(type)s>,'],
+      field_value+: ['// string %(snake_column_name)s'],
     }],
   ];
 
@@ -126,6 +139,18 @@ local types =
       string: 'String',
       bool: 'bool',
       f32: 'f32',
+    };
+    if std.objectHas(tm, t) then tm[t] else error 'unknown type %s' % t
+  ),
+  getter_map(t):: (
+    local tm = {
+      i16: 'row.get(%(offset)d).get_i16_le()',
+      u16: 'row.get(%(offset)d).get_u16_le()',
+      i32: 'row.get(%(offset)d..%(offset)d + 4).get_i32_le()',
+      u32: 'row.get(%(offset)d..%(offset)d + 4).get_u32_le()',
+      string: 'df.string_from_offset(row.get(%(offset)d..%(offset)d + 8).get_i32_le() as usize).unwrap()',
+      bool: 'row.get(%(offset)d).to_le() != 0',
+      f32: 'row.get(%(offset)d..%(offset)d + 4).get_f32_le()',
     };
     if std.objectHas(tm, t) then tm[t] else error 'unknown type %s' % t
   ),
@@ -169,7 +194,6 @@ local types =
       function(x, y)
         x + if y != null then
           {
-            raw_field_types+: if y.raw_field_type != null then y.raw_field_type else [],
             field_types+: if y.field_type != null then y.field_type else [],
             field_values+: if y.field_value != null then y.field_value else [],
           }
@@ -192,6 +216,8 @@ local types =
       target_table_name: target_table,
       snake_target_table_name: if target_table != null then util.case.snake(target_table) else null,
       type: $.type_map(column.type),
+      offset: 0,
+      getter: $.getter_map(column.type) % self,
     };
     local matches = [
       x[1]

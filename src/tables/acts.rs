@@ -12,35 +12,48 @@ pub static TABLE_Acts: LazyLock<Vec<ActsRow>> = LazyLock::new(|| {
     let df = DAT_LOADER
         .write()
         .unwrap()
-        .get_table("data/acts.datc64")
+        .get_table("data/Acts.datc64")
         .unwrap()
         .clone();
 
     df.rows_iter()
         .map(|row| ActsRow {
             r#id: df
-                .string_from_offset(row.get(0..8).unwrap().get_i32_le() as usize)
-                .unwrap(),
+                .string_from_offset(row.get(0..0 + 8).get_i32_le() as usize)
+                .unwrap(), // string
             r#ui_title: df
-                .string_from_offset(row.get(8..16).unwrap().get_i32_le() as usize)
-                .unwrap(),
-            r#act_number: row.get(16..20).unwrap().get_i32_le(),
-            r#is_end_game: row.get(40).unwrap().to_le() != 0,
-            r#unknown_int: row.get(41..43).unwrap().get_i16_le(),
-
-            r#unknown_foreign_array: df
-                .array_from_offset(
-                    row.get(53..59).unwrap().get_i32_le() as usize,
-                    row.get(45..51).unwrap().get_i32_le() as usize,
-                    16,
-                )
-                .unwrap()
-                .iter()
-                .map(|x| x.clone().get_i32_le())
-                .collect(),
+                .string_from_offset(row.get(0..0 + 8).get_i32_le() as usize)
+                .unwrap(), // string
+            r#act_number: row.get(0..0 + 4).get_i32_le(), // basic
+            r#is_end_game: row.get(0).to_le() != 0,       // basic
             r#description: df
-                .string_from_offset(row.get(125..131).unwrap().get_i32_le() as usize)
-                .unwrap(),
+                .string_from_offset(row.get(0..0 + 8).get_i32_le() as usize)
+                .unwrap(), // string
+                                                          /*
+                                                          r#id: df
+                                                              .string_from_offset(row.get(0..8).unwrap().get_i32_le() as usize)
+                                                              .unwrap(),
+                                                          r#ui_title: df
+                                                              .string_from_offset(row.get(8..16).unwrap().get_i32_le() as usize)
+                                                              .unwrap(),
+                                                          r#act_number: row.get(16..20).unwrap().get_i32_le(),
+                                                          r#is_end_game: row.get(40).unwrap().to_le() != 0,
+                                                          //r#unknown_int: row.get(41..43).unwrap().get_i16_le(),
+
+                                                          //r#unknown_foreign_array: df
+                                                          //    .array_from_offset(
+                                                          //        row.get(53..59).unwrap().get_i32_le() as usize,
+                                                          //        row.get(45..51).unwrap().get_i32_le() as usize,
+                                                          //        16,
+                                                          //    )
+                                                          //    .unwrap()
+                                                          //    .iter()
+                                                          //    .map(|x| x.clone().get_i32_le())
+                                                          //    .collect(),
+                                                          r#description: df
+                                                              .string_from_offset(row.get(125..131).unwrap().get_i32_le() as usize)
+                                                              .unwrap(),
+                                                              */
         })
         .collect()
 });
@@ -51,9 +64,14 @@ pub struct ActsRow {
     pub r#ui_title: String,
     pub r#act_number: i32,
     pub r#is_end_game: bool,
-    pub r#unknown_int: i16,
-    pub r#unknown_foreign_array: Vec<i32>,
     pub r#description: String,
+    //pub r#id: String,
+    //pub r#ui_title: String,
+    //pub r#act_number: i32,
+    //pub r#is_end_game: bool,
+    //pub r#unknown_int: i16,
+    //pub r#unknown_foreign_array: Vec<i32>,
+    //pub r#description: String,
 }
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Ord, PartialOrd)]
@@ -81,17 +99,5 @@ impl ActsRef {
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static ActsRow)> {
         TABLE_Acts.iter().enumerate().map(|(i, x)| (Self(i), x))
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-    #[test]
-    fn print_acts() {
-        // Print all rows
-        for act in TABLE_Acts.iter() {
-            println!("{:?}", act);
-        }
     }
 }
