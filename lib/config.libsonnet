@@ -1,6 +1,6 @@
 local schema = import 'schema.min.json';
 
-local explicitTables = ['Acts', 'Shrines'];
+local explicitTables = ['Acts'];
 // good simple case for testing
 //local explicitTables = ['DamageParticleEffects'];
 {
