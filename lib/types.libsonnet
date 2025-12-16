@@ -6,169 +6,219 @@ local any = function(x) true;
 
 local types =
   [
-    // row_ref
+    // row
     [{
-      type: ['row', 'foreignrow'],
-      array: false,
+      type: ['row'],
+      array: any,
       table_reference: not_null,
       column_reference: null,
     }, {
-      type: 'row_ref',
-      field_type+: ['pub r#%(snake_column_name)s: Option<%(target_table_name)sRow>,'],
-      field_value+: ['// row_ref %(snake_column_name)s'],
+      type: 'row',
+      field_type+: ['pub r#%(snake_column_name)s: Option<%(target_table_name)sRef>, // row'],
+      field_value+: ['// row_ref %(snake_column_name)s // row_ref'],
     }],
-    // row_ref_array
+    // row_by_column
     [{
-      type: ['row', 'foreignrow'],
-      array: true,
-      table_reference: not_null,
-      column_reference: null,
-    }, {
-      type: 'row_ref_array',
-      field_type+: ['pub r#%(snake_column_name)s: Vec<%(target_table_name)sRow>,'],
-      field_value+: ['// row_ref_array %(snake_column_name)s'],
-    }],
-    // column_ref
-    [{
-      type: ['i32', 'u32', 'string', 'f32'],
-      array: false,
-      table_reference: not_null,
+      type: ['row'],
+      array: any,
+      table_reference: null,
       column_reference: not_null,
     }, {
-      type: 'column_ref',
-      field_type+: ['// column_ref %(snake_column_name)s'],
-      field_value+: ['// column_ref %(snake_column_name)s'],
+      type: 'row_by_column',
+      field_type+: ['// row_by_column %(snake_column_name)s'],
+      field_value+: ['// ro_by_column %(snake_column_name)s'],
     }],
-    // column_ref_array
-    [{
-      type: ['i32', 'u32', 'string', 'f32'],
-      array: true,
-      table_reference: not_null,
-      column_reference: not_null,
-    }, {
-      type: 'column_ref_array',
-      field_type+: ['// column_ref_array %(snake_column_name)s'],
-      field_value+: ['// column_ref_array %(snake_column_name)s'],
-    }],
-    // row_ref_unknown
+    // foreignrow
     [{
       type: ['foreignrow'],
+      array: false,
+      table_reference: not_null,
+      column_reference: null,
+    }, {
+      type: 'foreignrow',
+      field_type+: ['pub r#%(snake_column_name)s: Option<%(target_table_name)sRef>, // foreignrow'],
+      field_value+: [|||
+        r#%(snake_column_name)s: {
+          let x = row.get(%(offset)d..%(offset)d + 16).unwrap().get_u64_le() as usize;
+          match x {
+            0xFEFEFEFEFEFEFEFE => None,
+            _ => Some(%(target_table_name)sRef(x)),
+          }
+        }, // foreignrow
+      |||],
+    }],
+    // foreignrow_array
+    [{
+      type: ['foreignrow'],
+      array: true,
+      table_reference: not_null,
+      column_reference: null,
+    }, {
+      type: 'foreignrow_array',
+      field_type+: ['pub r#%(snake_column_name)s: Vec<%(target_table_name)sRef>, // foreignrow_array'],
+      field_value+: [|||
+        r#%(snake_column_name)s: {
+          let x = row.get(%(offset)d..%(offset)d + 16).unwrap().get_u64_le() as usize;
+          match x {
+            0xFEFEFEFEFEFEFEFE => None,
+            _ => Some(%(target_table_name)sRef(x)),
+          }
+        }, // foreignrow_array
+      |||],
+    }],
+    // foreignrow_by_column
+    [{
+      type: ['i32', 'string'],
       array: any,
+      table_reference: not_null,
+      column_reference: not_null,
+    }, {
+      type: 'foreignrow_by_column',
+      field_type+: ['// foreignrow_by_column %(snake_column_name)s'],
+      field_value+: ['// foreignrow_by_column %(snake_column_name)s'],
+    }],
+    // foreignrow_unknown
+    [{
+      type: ['foreignrow'],
+      array: false,
       table_reference: null,
       column_reference: any,
     }, {
-      type: 'row_ref_unknown',
-      field_type+: ['// row_ref_unknown %(snake_column_name)s'],
-      field_value+: ['// row_ref_unknown %(snake_column_name)s'],
+      type: 'foreignrow_unknown',
+      field_type+: ['pub r#%(snake_column_name)s: Option<u64>, // foreignrow_unknown'],
+      field_value+: [|||
+        r#%(snake_column_name)s: {
+          let x = row.get(%(offset)d..%(offset)d + 16).unwrap().get_u64_le();
+          match x {
+            0xFEFEFEFEFEFEFEFE => None,
+            _ => Some(x),
+          }
+        }, // foreignrow_unknown
+      |||],
     }],
-    // enum_ref
+    // foreignrow_unknown_array
     [{
-      type: 'enumrow',
-      array: false,
-      table_reference: not_null,
-      column_reference: null,
-    }, {
-      type: 'enum_ref',
-      field_type+: ['pub r#%(snake_column_name)s: MaybeVariant<%(target_table_name)s>,'],
-      field_value+: ['// enum_ref %(snake_column_name)s'],
-    }],
-    // enum_ref_array
-    [{
-      type: 'enumrow',
+      type: ['foreignrow'],
       array: true,
+      table_reference: null,
+      column_reference: any,
+    }, {
+      type: 'foreignrow_unknown_array',
+      field_type+: ['pub r#%(snake_column_name)s: Vec<u64>, // foreignrow_unknown_array'],
+      field_value+: [|||
+        r#%(snake_column_name)s: df.array_from_offset(
+          row.get(%(offset)d+8..%(offset)d + 16).unwrap().get_u64_le() as usize,
+          row.get(%(offset)d..%(offset)d + 8).unwrap().get_u64_le() as usize,
+          16,
+        ).unwrap().iter().map(|x| x.clone().get_u64_le()).collect(), // foreignrow_unknown_array'],
+      |||],
+    }],
+    // enumrow
+    [{
+      type: 'enumrow',
+      array: any,
       table_reference: not_null,
       column_reference: null,
     }, {
-      type: 'enum_ref_array',
-      field_type+: ['pub r#%(snake_column_name)s: Vec<%(target_table_name)s>,'],
-      field_value+: ['// enum_ref_array%(snake_column_name)s'],
+      type: 'enumrow',
+      field_type+: ['pub r#%(snake_column_name)s: MaybeVariant<%(target_table_name)s>, // enumrow'],
+      field_value+: [|||
+        r#%(snake_column_name)s: {
+          let x = row.get(%(offset)d..%(offset)d + 8).unwrap().get_u32_le() as usize;
+          %(target_table_name)s::from_repr(x)
+               .map_or(MaybeVariant::NotVariant(x), MaybeVariant::Variant)
+        }, // enumrow
+      |||],
     }],
     // basic
     [{
       type: ['i16', 'u16', 'f32', 'i32', 'u32', 'bool'],
-      array: false,
+      array: any,
       table_reference: null,
       column_reference: null,
     }, {
       type: 'basic',
-      field_type+: ['pub r#%(snake_column_name)s: %(type)s,'],
+      field_type+: ['pub r#%(snake_column_name)s: %(rust_type)s, // basic'],
       field_value+: ['r#%(snake_column_name)s: %(getter)s, // basic'],
-    }],
-    // basic_array
-    [{
-      type: ['i16', 'u16', 'f32', 'i32', 'u32', 'bool'],
-      array: true,
-      table_reference: null,
-      column_reference: null,
-    }, {
-      type: 'basic_array',
-      field_type+: ['pub r#%(snake_column_name)s: Vec<%(type)s>,'],
-      field_value+: ['// basic_array %(snake_column_name)s'],
     }],
     // string
     [{
       type: ['string'],
-      array: false,
+      array: any,
       table_reference: null,
       column_reference: null,
     }, {
       type: 'string',
-      field_type+: ['pub r#%(snake_column_name)s: %(type)s,'],
+      field_type+: ['pub r#%(snake_column_name)s: %(rust_type)s, // string'],
       field_value+: ['r#%(snake_column_name)s: %(getter)s, // string'],
     }],
-    // string_array
+    // array_unknown
     [{
-      type: ['string'],
+      type: ['array'],
       array: true,
       table_reference: null,
       column_reference: null,
     }, {
-      type: 'string',
-      field_type+: ['pub r#%(snake_column_name)s: Vec<%(type)s>,'],
-      field_value+: ['// string %(snake_column_name)s'],
+      type: 'array_unknown',
+      field_type+: ['pub r#%(snake_column_name)s: %(rust_type)s, // array_unknown'],
+      field_value+: ['r#%(snake_column_name)s: %(getter)s, // array_unknown'],
     }],
   ];
 
 {
   type_map(t):: (
     local tm = {
+      // field type: rust type
+      bool: 'bool',
       i16: 'i16',
       u16: 'u16',
       i32: 'i32',
       u32: 'u32',
-      string: 'String',
-      bool: 'bool',
+      i64: 'i64',
+      u64: 'u64',
       f32: 'f32',
+      string: 'String',
+      row: '%(target_table_name)sRef',  // references its own table
+      foreignrow: '%(target_table_name)sRef',  // references another table
+      enumrow: 'enumrowFIXME',
+      array: 'i32',
     };
-    if std.objectHas(tm, t) then tm[t] else error 'unknown type %s' % t
+    if std.objectHas(tm, t) then tm[t] else error 'unknown upstream type %s' % t
   ),
   getter_map(t):: (
     local tm = {
+      bool: 'row.get(%(offset)d).unwrap().to_le() != 0',
       i16: 'row.get(%(offset)d..%(offset)d + 2).unwrap().get_i16_le()',
       u16: 'row.get(%(offset)d..%(offset)d + 2).unwrap().get_u16_le()',
       i32: 'row.get(%(offset)d..%(offset)d + 4).unwrap().get_i32_le()',
       u32: 'row.get(%(offset)d..%(offset)d + 4).unwrap().get_u32_le()',
-      string: 'df.string_from_offset(row.get(%(offset)d..%(offset)d + 8).unwrap().get_i32_le() as usize).unwrap()',
-      bool: 'row.get(%(offset)d).unwrap().to_le() != 0',
+      i64: 'row.get(%(offset)d..%(offset)d + 8).unwrap().get_i64_le()',
+      u64: 'row.get(%(offset)d..%(offset)d + 8).unwrap().get_u64_le()',
       f32: 'row.get(%(offset)d..%(offset)d + 4).unwrap().get_f32_le()',
+      String: 'df.string_from_offset(row.get(%(offset)d..%(offset)d + 8).unwrap().get_i32_le() as usize).unwrap()',
+      'Vec<%(target_table_name)s>': 'Vec::new()',
+      '%(target_table_name)s': '%(target_table_name)s()',
+      'Vec<i32>': 'Vec::new()',
+      'Vec<String>': 'Vec::new()',
     };
-    if std.objectHas(tm, t) then tm[t] else error 'unknown type %s' % t
+    if std.objectHas(tm, t) then tm[t] else error 'unknown rust type %s' % t
   ),
   sizeof_map:: {
     i16: 2,
     u16: 2,
     i32: 4,
     u32: 4,
+    u64: 8,
     string: 8,
     bool: 1,
     f32: 4,
     row: 8,
-    foreignrow: 8,
+    foreignrow: 16,
     enumrow: 4,
   },
   sizeof(column):: (
     if column.array then
-      8
+      16
     else if std.objectHas($.sizeof_map, column.type) then
       $.sizeof_map[column.type]
     else
@@ -210,16 +260,19 @@ local types =
     local result = std.foldl(
       function(acc, column) (
         local current_offset = acc.offset;
-        local new_fields = if column.name != null then (
-          local processed_column = $.column(table.name, column, current_offset);
+        local processed_column = $.column(
+          table.name,
+          column { name: if column.name != null then column.name else 'unknown%d' % current_offset },
+          current_offset
+        );
+        local new_fields =
           if processed_column != null then
             {
               field_types+: if processed_column.field_type != null then processed_column.field_type else [],
               field_values+: if processed_column.field_value != null then processed_column.field_value else [],
             }
           else
-            {}
-        ) else {};
+            {};
 
         local type_size = $.sizeof(column);
         local next_offset = current_offset + type_size;
@@ -243,11 +296,13 @@ local types =
       snake_column_name: util.case.snake(column.name),
       table_name: table,
       snake_table_name: util.case.snake(table),
-      target_table_name: target_table,
-      snake_target_table_name: if target_table != null then util.case.snake(target_table) else null,
-      type: $.type_map(column.type),
+      target_table_name: if target_table != null then target_table else 'u64',
+      rust_type_template: if column.array then
+        'Vec<' + $.type_map(column.type) + '>' else
+        $.type_map(column.type),
+      rust_type: self.rust_type_template % self,
       offset: offset,
-      getter: $.getter_map(column.type) % self,
+      getter: $.getter_map(self.rust_type_template) % self,
     };
     local matches = [
       x[1]

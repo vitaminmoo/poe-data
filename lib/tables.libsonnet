@@ -74,28 +74,12 @@ local kvEnum = {
           let df = DAT_LOADER
               .write()
               .unwrap()
-              .get_table("data/%(tableName)s.datc64")
+              .get_table("data/balance/%(tableNameLC)s.datc64")
               .unwrap()
               .clone();
-
           df.rows_iter()
               .map(|row| %(tableName)sRow {
                 %(field_values)s
-
-      /*
-          //r#unknown_int: row.get(41..43).unwrap().get_i16_le(),
-
-          r#unknown_foreign_array: df
-              .array_from_offset(
-                  row.get(53..59).unwrap().get_i32_le() as usize,
-                  row.get(45..51).unwrap().get_i32_le() as usize,
-                  16,
-              )
-              .unwrap()
-              .iter()
-              .map(|x| x.clone().get_i32_le())
-              .collect(),
-      */
               })
               .collect()
       });
@@ -103,13 +87,6 @@ local kvEnum = {
       #[derive(Debug)]
       pub struct %(tableName)sRow {
           %(field_types)s
-          //pub r#id: String,
-          //pub r#ui_title: String,
-          //pub r#act_number: i32,
-          //pub r#is_end_game: bool,
-          //pub r#unknown_int: i16,
-          //pub r#unknown_foreign_array: Vec<i32>,
-          //pub r#description: String,
       }
 
       #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Ord, PartialOrd)]
@@ -139,9 +116,22 @@ local kvEnum = {
               TABLE_%(tableName)s.iter().enumerate().map(|(i, x)| (Self(i), x))
           }
       }
+
+      #[cfg(test)]
+      mod test {
+          use super::*;
+          #[test]
+          fn print_all_rows() {
+              // Print all rows
+              for row in TABLE_%(tableName)s.iter() {
+                  println!("{:?}", row);
+              }
+          }
+      }
     ||| % {
       local columns = types.columns_from_table(table),
       tableName: table.name,
+      tableNameLC: std.asciiLower(table.name),
       field_types: std.join('\n', columns.field_types),
       field_values: std.join('\n', columns.field_values),
     }
