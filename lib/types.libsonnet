@@ -8,7 +8,6 @@ local any = function(x) true;
   array_mutator(column):: (
     column + if column.array
     then {
-      cell_type: '(i32, i32)',
       cell_read+: (
         |||
           // array_mutator column.array == true
@@ -31,6 +30,7 @@ local any = function(x) true;
           |||
         )
       ) % column,
+      cell_type: '(i32, i32)',
       value_type: if column.type == 'array' then column.cell_type else 'Vec<%s>' % column.cell_type,
       local return_type = std.get(column, 'return_type', column.value_type),
       return_type: if column.type == 'array' then return_type else 'Vec<%s>' % return_type,
@@ -68,55 +68,30 @@ local any = function(x) true;
   ),
   type_mutator(column):: (
     local type_to_cell_type = {
+      array: '(usize, usize)',  // count, offset - for unknown arrays
       bool: 'i8',
+      enumrow: 'i32',  // index in enum table
+      f32: 'f32',
+      f64: 'f64',
+      foreignrow: 'i64',  // index in foreign table
       i16: 'i16',
       i32: 'i32',
       i64: 'i64',
-      u16: 'u16',
-      u32: 'u32',
-      u64: 'u64',
-      f32: 'f32',
-      f64: 'f64',
+      interval: '(i32, i32)',
+      row: 'i64',  // index in current table
       string: 'i32',  // offset in vdata
-      row: 'i64',  // index in current table
-      foreignrow: 'i64',  // index in foreign table
-      enumrow: 'i32',  // index in enum table
-      array: '(usize, usize)',  // count, offset - for unknown arrays
-      interval: '(i32, i32)',
-    };
-    local type_to_value_type = {
-      bool: 'bool',
-      i16: 'i16',
-      i32: 'i32',
-      i64: 'i64',
       u16: 'u16',
       u32: 'u32',
       u64: 'u64',
-      f64: 'f64',
-      f32: 'f32',
-      string: 'String',  // offset in vdata
-      row: 'i64',  // index in current table
-      foreignrow: 'i64',  // index in foreign table
-      enumrow: 'i32',  // index in enum table
-      array: '(usize, usize)',  // count, offset - for unknown arrays
-      interval: '(i32, i32)',
     };
-    local type_to_return_type = {
+    local type_to_value_type = type_to_cell_type {
       bool: 'bool',
-      i16: 'i16',
-      i32: 'i32',
-      i64: 'i64',
-      u16: 'u16',
-      u32: 'u32',
-      u64: 'u64',
-      f64: 'f64',
-      f32: 'f32',
       string: 'String',  // offset in vdata
-      row: '%sRef' % column.references.table,  // index in current table
-      foreignrow: '%sRef' % column.references.table,  // index in foreign table
+    };
+    local type_to_return_type = type_to_value_type {
       enumrow: 'Option<%s>' % column.references.table,  // index in enum table
-      array: '(usize, usize)',  // count, offset - for unknown arrays
-      interval: '(i32, i32)',
+      foreignrow: '%sRef' % column.references.table,  // index in foreign table
+      row: '%sRef' % column.references.table,  // index in current table
     };
     column {
       local this = self,
@@ -148,26 +123,6 @@ local any = function(x) true;
       default: 'Vec<' + t + '>',
     };
     std.get(tm, t, tm.default)
-  ),
-  type_map(t):: (
-    local tm = {
-      // field type: rust type
-      bool: 'bool',
-      i16: 'i16',
-      u16: 'u16',
-      i32: 'i32',
-      u32: 'u32',
-      i64: 'i64',
-      u64: 'u64',
-      f32: 'f32',
-      string: 'String',
-      row: '%(target_table_name)sRef',  // references its own table
-      foreignrow: '%(target_table_name)sRef',  // references another table
-      enumrow: 'enumrowFIXME',
-      array: 'i32',
-      interval: '(i32, i32)',
-    };
-    if std.objectHas(tm, t) then tm[t] else error 'unknown upstream type %s' % t
   ),
   sizeof_map:: {
     i16: 2,
@@ -211,13 +166,13 @@ local any = function(x) true;
             value_bytes: $.sizeof_value(self),
             offset: current_offset,
             // hide shit I don't care about
-            description:: null,
-            file:: null,
+            description:: super.description,
+            files:: super.files,
+            file:: super.file,
             interval:: super.interval,
-            files:: null,
-            localized:: null,
-            unique:: null,
-            until:: null,
+            localized:: super.localized,
+            unique:: super.unique,
+            until:: super.until,
           })),
         }
       ),

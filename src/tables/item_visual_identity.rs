@@ -832,11 +832,11 @@ impl ItemVisualIdentityRef {
 #[cfg(test)]
 mod test {
     use super::*;
+    use std::hint::black_box;
     #[test]
-    fn print_all_rows() {
-        // Print all rows
+    fn get_all_rows() {
         for row in TABLE_ItemVisualIdentity.iter() {
-            println!("{:?}", row);
+            black_box(row);
         }
     }
 }
