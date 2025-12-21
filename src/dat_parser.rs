@@ -285,6 +285,9 @@ impl DatFile {
         member_count: usize,
         member_bytes: usize,
     ) -> Result<Vec<Bytes>> {
+        if member_count == 0 {
+            return Ok(Vec::new());
+        }
         self.valid_data_ref(offset)?;
         //self.increment_data_ref(offset, member_count * member_bytes);
         let start = offset;
@@ -310,10 +313,12 @@ impl DatFile {
     // Get count strings pointed to by an offset in the data
     pub fn strings_from_offset(&self, offset: usize, count: usize) -> Result<Vec<String>> {
         let mut strings = Vec::new();
-        let mut current_offset = offset;
+        //let mut current_offset = offset;
+        let mut string_offset_bytes = self.data.slice(offset..offset + (4 * count));
         for _ in 0..count {
-            let s = self.string_from_offset_if_valid(current_offset)?;
-            current_offset += s.len() * 2 + 4; // +2 for null terminators
+            let string_offset = string_offset_bytes.get_u32_le() as usize;
+            let s = self.string_from_offset_if_valid(string_offset)?;
+            //current_offset += s.len() * 2 + 4; // +2 for null terminators
             strings.push(s);
         }
         Ok(strings)
@@ -367,8 +372,13 @@ impl DatFile {
     }
     // check if an offset is valid for the data
     pub fn valid_data_ref(&self, offset: usize) -> Result<()> {
-        if offset >= self.data.len() {
-            bail!("offset out of bounds: {}:{}", self.source, offset);
+        if offset > self.data.len() {
+            bail!(
+                "offset out of bounds: {}:{} (data len {})",
+                self.source,
+                offset,
+                self.data.len()
+            );
         }
         if offset < 8 {
             bail!(

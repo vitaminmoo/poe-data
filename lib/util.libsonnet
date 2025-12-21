@@ -1,7 +1,46 @@
 local isCaps(chr) = std.codepoint(chr) >= 65 && std.codepoint(chr) <= 90;
 local isNum(chr) = std.codepoint(chr) >= 48 && std.codepoint(chr) <= 57;
 
+local trace(obj) = std.trace('trace: %s' % [obj], obj);
+
 {
+  depsolver: {
+    tableRefs(kvSchema, table)::
+      if std.objectHas(kvSchema, table)
+      then std.set([
+        $.depsolver.columnRefs(column)
+        for column in kvSchema[table].columns
+        if column.type != 'enumrow' && $.depsolver.columnRefs(column) != null
+      ])
+      else [],
+    columnRefs(column)::
+      if (column.references != null && std.length(column.references) > 0)
+      then column.references.table
+      else null,
+    getTables(kvSchema, baseTables, excluded, collectedTables)::
+      if baseTables == []
+      then []
+      else
+        std.setUnion(
+          baseTables,
+          $.depsolver.getTables(
+            kvSchema,
+            std.set(
+              std.flattenArrays([
+                if std.member(collectedTables, table2)
+                then []  // error 'loops: %s -> %s' % [table, table2]
+                else [table2]
+                for table in baseTables
+                for table2 in $.depsolver.tableRefs(kvSchema, table)
+                if !std.objectHas(excluded, table2)
+              ])
+            ),
+            excluded,
+            std.setUnion(baseTables, collectedTables)
+          )
+        ),
+    allTables(kvSchema, included, excluded):: $.depsolver.getTables(kvSchema, included, excluded, []),
+  },
   case: {
     snake(str):
       std.lstripChars(
@@ -41,4 +80,9 @@ local isNum(chr) = std.codepoint(chr) >= 48 && std.codepoint(chr) <= 57;
   },
   enumeratorToVariant(indexing, idx, enumerator):
     '    %s = %s,' % [$.case.pascal(enumerator), indexing + idx],
+  namedListToObject(poeVersion, list):: {
+    [x.name]: x { validFor:: null }
+    for x in list
+    if (x.validFor & poeVersion) == poeVersion
+  },
 }

@@ -1,18 +1,6 @@
 local config = import 'config.libsonnet';
-local schema = import 'schema.min.json';
 local types = import 'types.libsonnet';
 local util = import 'util.libsonnet';
-
-local tables = [
-  config.kvSchema[table.name]
-  for table in config.tables
-];
-
-local kvEnum = {
-  [enumeration.name]: enumeration
-  for enumeration in schema.enumerations
-  if enumeration.validFor == 2 || enumeration.validFor == 3
-};
 
 {
   'src/tables/enums.rs'+:
@@ -53,7 +41,7 @@ local kvEnum = {
             if enumeration.enumerators[idx] != null
           ]),
         }
-        for enumeration in std.objectValues(kvEnum)
+        for enumeration in config.enums
         if enumeration.name != null
       ],
     ),
@@ -129,13 +117,12 @@ local kvEnum = {
           }
       }
     ||| % {
-      local columns = types.columns_from_table(table),
       tableName: table.name,
       tableNameLC: std.asciiLower(table.name),
-      field_types: std.join('\n', columns.field_types),
-      field_values: std.join('\n', columns.field_values),
+      field_types: std.join('\n', ['pub %(name_field)s: %(return_type)s,' % column for column in table.columns]),
+      field_values: std.join('\n', ['%(name_field)s: { %(cell_read)s },' % column for column in table.columns]),
     }
-  for table in tables
+  for table in config.tables
 } + {
   'src/tables.rs'+: std.join(
     '\n',
@@ -143,13 +130,13 @@ local kvEnum = {
       'pub use enums::*;',
     ] + [
       'pub use %(table.name)s::*;' % util.case.snake(table.name)
-      for table in tables
+      for table in config.tables
     ] + [
       'pub mod enums;',
     ]
     + [
       'pub mod %(table.name)s;' % util.case.snake(table.name)
-      for table in tables
+      for table in config.tables
     ]
   ),
 }
