@@ -642,7 +642,7 @@ pub static TABLE_Mods: LazyLock<Vec<ModsRow>> = LazyLock::new(|| {
                 let value = cell_bytes.to_le() != 0;
                 value
             },
-            r#unknown657: {
+            r#spawn_level_override: {
                 // array_mutator column.array == false && column.type != 'string|bool'
                 let mut cell_bytes = row.get(657..657 + 4).unwrap();
                 let value = cell_bytes.get_i32_le();
@@ -740,7 +740,7 @@ pub struct ModsRow {
     pub r#unknown636: Vec<GrantedEffectsPerLevelRef>,
     pub r#radius_jewel_type: i32,
     pub r#is_essence_only_modifier: bool,
-    pub r#unknown657: i32,
+    pub r#spawn_level_override: i32,
     pub r#spawn_weight_values: Vec<i32>,
 }
 

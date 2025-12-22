@@ -1,11 +1,13 @@
 local emptyfiles = import 'emptyfiles.libsonnet';
-local schema = import 'schema.min.json';
+local schema1 = import 'schema.1.min.json';
+local schema2 = import 'schema.2.min.json';
 local types = import 'types.libsonnet';
 local util = import 'util.libsonnet';
 local validfiles = import 'validfiles.libsonnet';
 
+
 local config = {
-  poeVersion:: 3,
+  poeVersion:: 2,
   included:: ['Acts', 'NPCTalkDialogueTextAudio', 'MtxTypeGameSpecific'],
   excluded:: {
     AncestralTrialUnits: true,
@@ -27,6 +29,8 @@ local config = {
     SanctumSelectionDisplayOverride: true,
   },
 };
+
+local schema = if config.poeVersion == 1 then schema1 else schema2;
 
 local tables = [table {
   name_snake: util.case.snake(table.name),

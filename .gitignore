@@ -32,7 +32,7 @@ target/
 .aider*
 .env
 
-lib/schema.min.json
+lib/schema.*.min.json
 lib/schema.max.json
 
 # temp until CDN-based file fetching is available

@@ -568,8 +568,6 @@ mod tests {
             .filter(|x| x.ends_with(".datc64"))
             .collect::<Vec<String>>();
 
-        //let dat_paths = vec!["data/worldareas.datc64".to_string()];
-
         println!("converting dat_paths");
 
         let shit = dat_paths.iter().map(|x| x.as_str()).collect::<Vec<_>>();
@@ -584,6 +582,8 @@ mod tests {
                 for index in 0..last_col {
                     let claims = dat_file.get_column_claims(index, bytes);
                     for claim in claims {
+                        println!("{}: {}", dat_file.source, claim.offset);
+                        /*
                         if claim.column_type == Cell::Scalar(Scalar::String) {
                             for (i, s) in dat_file
                                 .column_rows_iter(claim.offset, claim.bytes)
@@ -605,6 +605,7 @@ mod tests {
                                 );
                             }
                         }
+                        */
                     }
                 }
             }

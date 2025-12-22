@@ -214,7 +214,7 @@ fn process_schema(
                 .to_string();
 
             // Remove validFor as it is implicit in the split file
-            table_obj.remove("validFor");
+            //table_obj.remove("validFor");
 
             let tags = table_obj
                 .get("tags")
@@ -264,10 +264,6 @@ fn process_schema(
         // Update tables in schema
         if let Some(obj) = schema.as_object_mut() {
             obj.insert("tables".to_string(), Value::Array(new_tables));
-            obj.insert(
-                "version".to_string(),
-                Value::Number(serde_json::Number::from(version_num)),
-            );
         }
     }
 
