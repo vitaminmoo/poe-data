@@ -1,3 +1,4 @@
+local config = import 'config.libsonnet';
 local util = import 'util.libsonnet';
 
 local rename = '#[serde(rename = "%(column_name)s")]';
@@ -161,7 +162,22 @@ local any = function(x) true;
             name: if column.name != null then column.name else 'Unknown%d' % current_offset,
             name_snake: util.case.snake(self.name),
             name_field: 'r#' + self.name_snake,
-            type: if self.interval then 'interval' else super.type,
+            type:
+              if super.interval
+              then 'interval'
+              //else if self.type == 'row' || self.type == 'foreignrow'
+              //then 'reference'
+              //else if self.file != null
+              //then 'file'
+              //else if self.files != null
+              //then 'directory'
+              else super.type,
+            references:
+              if super.references != null &&
+                 std.objectHas(super.references, 'table') &&
+                 !std.contains(config.invalidTables, super.references.table)
+              then super.references
+              else null,
             cell_bytes: $.sizeof_cell(self),
             value_bytes: $.sizeof_value(self),
             offset: current_offset,

@@ -34,7 +34,7 @@ pub static TABLE_LegionFactions: LazyLock<Vec<LegionFactionsRow>> = LazyLock::ne
                 // array_mutator column.array == false && column.type != 'string|bool'
                 let mut cell_bytes = row.get(12..12 + 16).unwrap();
                 let value = cell_bytes.get_i64_le();
-                LegionBalancePerLevelRef::new(value as usize)
+                value
             },
             r#unknown28: {
                 // array_mutator column.array == false && column.type != 'string|bool'
@@ -158,7 +158,7 @@ pub static TABLE_LegionFactions: LazyLock<Vec<LegionFactionsRow>> = LazyLock::ne
 pub struct LegionFactionsRow {
     pub r#id: String,
     pub r#spawn_weight: i32,
-    pub r#legion_balance_per_level_key: LegionBalancePerLevelRef,
+    pub r#legion_balance_per_level_key: i64,
     pub r#unknown28: f32,
     pub r#unknown32: f32,
     pub r#buff_visuals_key: BuffVisualsRef,

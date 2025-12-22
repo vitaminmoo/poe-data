@@ -53,7 +53,7 @@ pub static TABLE_BestiaryRecipeComponent: LazyLock<Vec<BestiaryRecipeComponentRo
                     // array_mutator column.array == false && column.type != 'string|bool'
                     let mut cell_bytes = row.get(60..60 + 16).unwrap();
                     let value = cell_bytes.get_i64_le();
-                    BestiaryCapturableMonstersRef::new(value as usize)
+                    value
                 },
                 r#beast_rarity: {
                     // array_mutator column.array == false && column.type != 'string|bool'
@@ -78,7 +78,7 @@ pub struct BestiaryRecipeComponentRow {
     pub r#bestiary_families_key: BestiaryFamiliesRef,
     pub r#bestiary_groups_key: BestiaryGroupsRef,
     pub r#mods_key: ModsRef,
-    pub r#bestiary_capturable_monsters_key: BestiaryCapturableMonstersRef,
+    pub r#bestiary_capturable_monsters_key: i64,
     pub r#beast_rarity: RarityRef,
     pub r#bestiary_genus_key: BestiaryGenusRef,
 }

@@ -48,7 +48,7 @@ pub static TABLE_NPCs: LazyLock<Vec<NPCsRow>> = LazyLock::new(|| {
                 // array_mutator column.array == false && column.type != 'string|bool'
                 let mut cell_bytes = row.get(40..40 + 16).unwrap();
                 let value = cell_bytes.get_i64_le();
-                NPCMasterRef::new(value as usize)
+                value
             },
             r#short_name: {
                 // array_mutator column.array == false && column.type == 'string'
@@ -163,7 +163,7 @@ pub struct NPCsRow {
     pub r#name: String,
     pub r#metadata: String,
     pub r#unknown24: i64,
-    pub r#npc_master_key: NPCMasterRef,
+    pub r#npc_master_key: i64,
     pub r#short_name: String,
     pub r#unknown64: i32,
     pub r#npc_audios1: Vec<NPCAudioRef>,

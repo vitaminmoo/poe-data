@@ -62,7 +62,7 @@ local util = import 'util.libsonnet';
           let df = DAT_LOADER
               .write()
               .unwrap()
-              .get_table("data/balance/%(tableNameLC)s.datc64")
+              .get_table("%(datPath)s/%(tableNameLC)s.datc64")
               .unwrap()
               .clone();
           df.rows_iter()
@@ -121,6 +121,7 @@ local util = import 'util.libsonnet';
       tableNameLC: std.asciiLower(table.name),
       field_types: std.join('\n', ['pub %(name_field)s: %(return_type)s,' % column for column in table.columns]),
       field_values: std.join('\n', ['%(name_field)s: { %(cell_read)s },' % column for column in table.columns]),
+      datPath: config.datPath,
     }
   for table in config.tables
 } + {

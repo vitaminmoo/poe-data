@@ -5,14 +5,26 @@ local util = import 'util.libsonnet';
 local validfiles = import 'validfiles.libsonnet';
 
 local config = {
-  poeVersion:: 2,
+  poeVersion:: 3,
   included:: ['Acts', 'NPCTalkDialogueTextAudio', 'MtxTypeGameSpecific'],
   excluded:: {
     AncestralTrialUnits: true,
-    CraftingBenchSortCategories: true,
+    AwardDisplay: true,
+    BeyondFactions: true,
     CraftingBenchOptions: true,
+    CraftingBenchSortCategories: true,
+    GroundEffects: true,
+    HarvestPerLevelValues: true,
+    HudVisualsFromStat: true,
+    ItemNoteCode: true,
+    ItemVisualReplacement: true,
+    LegionBalancePerLevel: true,
+    LegionRanks: true,
+    NPCMaster: true,
+    PassiveJewelRadii: true,
+    PassiveOverrideLimits: true,
+    RelicItemEffectVariations: true,
     SanctumSelectionDisplayOverride: true,
-    //ActiveSkills: true,
   },
 };
 
@@ -29,7 +41,19 @@ local allTables = std.objectFields(tablesKV);
 
 config {
   //tables: [tablesKV[table] for table in util.depsolver.allTables(tablesKV, super.included, super.excluded)],
-  tables: [tablesKV[table] for table in allTables if !std.objectHas(super.excluded, table) && std.member(validfiles, std.asciiLower(table)) && !std.member(emptyfiles, std.asciiLower(table))],
-  invalidTables: [table for table in allTables if !std.member(validfiles, std.asciiLower(table))],
+  invalidTables: [
+    table
+    for table in allTables
+    if !std.contains(validfiles, std.asciiLower(table)) ||
+    std.contains(emptyfiles, std.asciiLower(table)) ||
+    std.objectHas(super.excluded, table)
+  ],
+  tables: [
+    tablesKV[table]
+    for table in allTables
+    if !std.objectHas(super.excluded, table) &&
+    !std.contains(self.invalidTables, table)
+  ],
   enums:: [e for e in std.objectValues(enumsKV)],
+  datPath:: if config.poeVersion == 2 then 'data/balance' else 'data/',
 }

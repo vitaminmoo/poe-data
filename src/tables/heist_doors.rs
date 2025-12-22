@@ -78,7 +78,7 @@ pub static TABLE_HeistDoors: LazyLock<Vec<HeistDoorsRow>> = LazyLock::new(|| {
                 // array_mutator column.array == false && column.type != 'string|bool'
                 let mut cell_bytes = row.get(92..92 + 16).unwrap();
                 let value = cell_bytes.get_i64_le();
-                HeistAreasRef::new(value as usize)
+                value
             },
         })
         .collect()
@@ -94,7 +94,7 @@ pub struct HeistDoorsRow {
     pub r#unknown56: Vec<String>,
     pub r#unknown72: Vec<String>,
     pub r#unknown88: i32,
-    pub r#heist_areas_key: HeistAreasRef,
+    pub r#heist_areas_key: i64,
 }
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Ord, PartialOrd)]
