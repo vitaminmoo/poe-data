@@ -9,11 +9,19 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 #[derive(Serialize, Deserialize, Debug)]
+struct CachedFile {
+    rows: u32,
+    bundle_name: String,
+    offset: u32,
+    size: u32,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 struct RowCountsCache {
     poe_version: String,
     poe2_version: String,
-    files_1: HashMap<String, u32>,
-    files_2: HashMap<String, u32>,
+    files_1: HashMap<String, CachedFile>,
+    files_2: HashMap<String, CachedFile>,
 }
 
 fn main() -> Result<()> {
@@ -129,28 +137,64 @@ fn main() -> Result<()> {
     let mut poe2_updated = false;
 
     // Check PoE 1
-    if current_versions.poe != "error"
-        && (cache.poe_version != current_versions.poe || cache.files_1.is_empty())
-    {
-        eprintln!("Fetching info for PoE 1: {}", current_versions.poe);
-        if let Ok(map) = get_file_info(&cache_dir, &current_versions.poe, false) {
+    if current_versions.poe != "error" {
+        eprintln!("Checking info for PoE 1: {}", current_versions.poe);
+        if let Ok(map) = get_file_info(&cache_dir, &current_versions.poe, false, &cache.files_1) {
+            if cache.poe_version != current_versions.poe {
+                cache.poe_version = current_versions.poe.clone();
+                cache_changed = true;
+                poe1_updated = true;
+            }
+            if map.len() != cache.files_1.len() {
+                cache_changed = true;
+                poe1_updated = true;
+            } else {
+                for (k, v) in &map {
+                    if let Some(old) = cache.files_1.get(k) {
+                        if old.rows != v.rows {
+                            cache_changed = true;
+                            poe1_updated = true;
+                            break;
+                        }
+                    } else {
+                        cache_changed = true;
+                        poe1_updated = true;
+                        break;
+                    }
+                }
+            }
             cache.files_1 = map;
-            cache.poe_version = current_versions.poe.clone();
-            cache_changed = true;
-            poe1_updated = true;
         }
     }
 
     // Check PoE 2
-    if current_versions.poe2 != "error"
-        && (cache.poe2_version != current_versions.poe2 || cache.files_2.is_empty())
-    {
-        eprintln!("Fetching info for PoE 2: {}", current_versions.poe2);
-        if let Ok(map) = get_file_info(&cache_dir, &current_versions.poe2, true) {
+    if current_versions.poe2 != "error" {
+        eprintln!("Checking info for PoE 2: {}", current_versions.poe2);
+        if let Ok(map) = get_file_info(&cache_dir, &current_versions.poe2, true, &cache.files_2) {
+            if cache.poe2_version != current_versions.poe2 {
+                cache.poe2_version = current_versions.poe2.clone();
+                cache_changed = true;
+                poe2_updated = true;
+            }
+            if map.len() != cache.files_2.len() {
+                cache_changed = true;
+                poe2_updated = true;
+            } else {
+                for (k, v) in &map {
+                    if let Some(old) = cache.files_2.get(k) {
+                        if old.rows != v.rows {
+                            cache_changed = true;
+                            poe2_updated = true;
+                            break;
+                        }
+                    } else {
+                        cache_changed = true;
+                        poe2_updated = true;
+                        break;
+                    }
+                }
+            }
             cache.files_2 = map;
-            cache.poe2_version = current_versions.poe2.clone();
-            cache_changed = true;
-            poe2_updated = true;
         }
     }
 
@@ -181,7 +225,7 @@ fn main() -> Result<()> {
 
 fn process_schema(
     original_schema: &Value,
-    files: &HashMap<String, u32>,
+    files: &HashMap<String, CachedFile>,
     version_num: u64,
 ) -> Result<Value> {
     let mut schema = original_schema.clone();
@@ -224,10 +268,10 @@ fn process_schema(
             }
 
             // Add row count
-            if let Some(&rows) = files.get(&lookup_name) {
+            if let Some(entry) = files.get(&lookup_name) {
                 table_obj.insert(
                     "num_rows".to_string(),
-                    Value::Number(serde_json::Number::from(rows)),
+                    Value::Number(serde_json::Number::from(entry.rows)),
                 );
             }
 
@@ -260,12 +304,21 @@ fn process_schema(
     Ok(schema)
 }
 
-fn get_file_info(cache_dir: &Path, version: &str, is_poe2: bool) -> Result<HashMap<String, u32>> {
+fn get_file_info(
+    cache_dir: &Path,
+    version: &str,
+    is_poe2: bool,
+    previous_cache: &HashMap<String, CachedFile>,
+) -> Result<HashMap<String, CachedFile>> {
     let base_url = poe_data_tools::bundle_loader::cdn_base_url(cache_dir, version)?;
     let fs = poe_data_tools::bundle_fs::FS::from_cdn(&base_url, cache_dir)?;
     let mut files = HashMap::new();
 
-    for path in fs.list() {
+    let mut files_to_read = Vec::new();
+    let mut cached_count = 0;
+
+    for metadata in fs.list_files() {
+        let path = &metadata.path;
         let is_interesting = if is_poe2 {
             path.starts_with("data/balance/") && path.ends_with(".datc64")
         } else {
@@ -273,27 +326,87 @@ fn get_file_info(cache_dir: &Path, version: &str, is_poe2: bool) -> Result<HashM
         };
 
         if is_interesting {
-            match fs.read(&path) {
-                Ok(bytes) => {
-                    if bytes.len() >= 4 {
-                        let rows = u32::from_le_bytes(bytes[0..4].try_into().unwrap());
-                        let name = std::path::Path::new(&path)
-                            .file_stem()
-                            .unwrap()
-                            .to_string_lossy()
-                            .to_string();
-                        files.insert(name, rows);
-                    }
+            let name = std::path::Path::new(path)
+                .file_stem()
+                .unwrap()
+                .to_string_lossy()
+                .to_string();
+
+            // Check cache
+            let mut used_cache = false;
+            if let Some(cached_entry) = previous_cache.get(&name) {
+                if cached_entry.bundle_name == metadata.bundle_name
+                    && cached_entry.offset == metadata.offset
+                    && cached_entry.size == metadata.size
+                {
+                    files.insert(
+                        name.clone(),
+                        CachedFile {
+                            rows: cached_entry.rows,
+                            bundle_name: metadata.bundle_name.clone(),
+                            offset: metadata.offset,
+                            size: metadata.size,
+                        },
+                    );
+                    used_cache = true;
+                    cached_count += 1;
                 }
-                Err(e) => {
-                    eprintln!("Failed to read {}: {}", path, e);
-                }
+            }
+
+            if !used_cache {
+                files_to_read.push(metadata);
             }
         }
     }
+
+    if !files_to_read.is_empty() {
+        eprintln!(
+            "{} files changed or new, reading (cached {})...",
+            files_to_read.len(),
+            cached_count
+        );
+        let paths: Vec<&str> = files_to_read.iter().map(|m| m.path.as_str()).collect();
+
+        // Process in batches
+        for chunk in paths.chunks(100) {
+            for res in fs.batch_read(chunk) {
+                match res {
+                    Ok((path, bytes)) => {
+                        if bytes.len() >= 4 {
+                            let rows = u32::from_le_bytes(bytes[0..4].try_into().unwrap());
+                            let name = std::path::Path::new(path)
+                                .file_stem()
+                                .unwrap()
+                                .to_string_lossy()
+                                .to_string();
+
+                            // Find metadata for this file to cache it
+                            if let Some(meta) = files_to_read.iter().find(|m| m.path == path) {
+                                files.insert(
+                                    name,
+                                    CachedFile {
+                                        rows,
+                                        bundle_name: meta.bundle_name.clone(),
+                                        offset: meta.offset,
+                                        size: meta.size,
+                                    },
+                                );
+                            }
+                        }
+                    }
+                    Err((path, e)) => {
+                        eprintln!("Failed to read {}: {}", path, e);
+                    }
+                }
+            }
+        }
+    } else {
+        eprintln!("All {} files up to date in cache.", cached_count);
+    }
+
     eprintln!("Found {} files for version {}", files.len(), version);
-    for (name, rows) in files.iter().take(10) {
-        eprintln!("  {}: {}", name, rows);
+    for (name, entry) in files.iter().take(10) {
+        eprintln!("  {}: {}", name, entry.rows);
     }
     Ok(files)
 }

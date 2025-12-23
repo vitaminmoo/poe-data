@@ -1,8 +1,6 @@
 use anyhow::{anyhow, bail, Result};
 use bytes::{Buf, Bytes};
 use std::collections::HashMap;
-use std::fs;
-use std::path::PathBuf;
 use std::sync::{LazyLock, RwLock};
 
 // datc64 column types
@@ -14,13 +12,15 @@ pub enum Scalar {
     EnumRow,
     Bool,
     String,
+    Interval,
     I16,
     U16,
     I32,
     U32,
-    F32,
     I64,
     U64,
+    F32,
+    F64,
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Cell {
@@ -31,21 +31,26 @@ pub enum Cell {
 impl Cell {
     pub fn bytes(&self) -> usize {
         match self {
-            // index to the current table, 0xfe filled if null
+            // index to a row in the current table, 0xfe filled if null
             Cell::Scalar(Scalar::SelfRow) => 8,
             // index to some other table, 0xfe filled if null
-            Cell::Scalar(Scalar::ForeignRow) => 16,
-            // index to a non-table enum (not a dat, can be zero or 1 indexed), 0xfe filled if null
+            Cell::Scalar(Scalar::ForeignRow) => 8,
+            // index to a non-table enum (not in a datc64, can be zero or 1 indexed), 0xfe filled if null
             Cell::Scalar(Scalar::EnumRow) => 4,
             // uint8_le 0 or 1
             Cell::Scalar(Scalar::Bool) => 1,
-            // index into a utf-16 string in the data table with double-null termination
+            // index into a utf-16 string in the variable width data with double-null termination
             Cell::Scalar(Scalar::String) => 8,
+            // a pair of I32s that generally form a range
+            Cell::Scalar(Scalar::Interval) => 16,
             Cell::Scalar(Scalar::I16) => 2,
             Cell::Scalar(Scalar::U16) => 2,
             Cell::Scalar(Scalar::I32) => 4,
             Cell::Scalar(Scalar::U32) => 4,
+            Cell::Scalar(Scalar::I64) => 8,
+            Cell::Scalar(Scalar::U64) => 8,
             Cell::Scalar(Scalar::F32) => 4,
+            Cell::Scalar(Scalar::F64) => 8,
             // 8 bytes of count, 8 bytes of offset in the data field. Offset is always increasing and interleaved evenly in column, row order
             // note that if count is 0 then offset is still valid but points to zero bytes, which means it can point to the last byte of the data section, and multiple adjacent empty array cells could point to the same offset if no other columns point to data
             Cell::Array(_) => 16,
@@ -69,26 +74,6 @@ pub enum ScalarRef {
     F32(f32),
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum CellRef {
-    Scalar(ScalarRef),
-    Array(ScalarRef),
-}
-
-#[derive(Debug)]
-pub enum ScalarValue {
-    SelfRow(u32),
-    ForeignRow(u64),
-    EnumRow(u16),
-    Bool(bool),
-    String(String),
-    I16(i16),
-    U16(u16),
-    I32(i32),
-    U32(u32),
-    F32(f32),
-}
-
 // A ColumnClaim is a object that declares that a column may or does exist at a particular offset in the row bytes
 #[derive(Debug)]
 pub struct ColumnClaim {
@@ -105,7 +90,6 @@ pub struct DatLoader {
     // path -> dat file struct
     pub dat_files: HashMap<String, DatFile>,
     fs: poe_data_tools::bundle_fs::FS,
-    cache_dir: PathBuf,
 }
 
 impl Default for DatLoader {
@@ -118,7 +102,6 @@ impl Default for DatLoader {
         DatLoader {
             fs,
             dat_files: HashMap::new(),
-            cache_dir,
         }
     }
 }
@@ -143,16 +126,7 @@ impl DatLoader {
     }
     // load_file gets a file from the cache or cdn and returns their Bytes
     fn load_file(&mut self, name: &str) -> Result<Bytes> {
-        let file: Bytes;
-        let cache_file = self.cache_dir.join("tables").join(name);
-        if let Ok(cached_file) = fs::read(&cache_file) {
-            file = cached_file.into();
-        } else {
-            file = self.fs.read(name).unwrap();
-            fs::create_dir_all(cache_file.parent().unwrap()).expect("failed to create cache dir");
-            fs::write(&cache_file, &file).expect("failed to write cache file");
-        }
-        Ok(file)
+        self.fs.read(name)
     }
     pub fn get_tables<'a>(
         &mut self,
@@ -178,25 +152,10 @@ impl DatLoader {
     }
     // load_files efficiently gets all specified files from the cache or cdn and returns their Bytes
     pub fn load_files<'a>(&'a self, names: &[&'a str]) -> impl Iterator<Item = (&'a str, Bytes)> {
-        let mut missing = Vec::new();
-        let files = names
-            .iter()
-            .filter_map(|n| match fs::read(self.cache_dir.join("tables").join(n)) {
-                Ok(f) => Some((*n, f.into())),
-                Err(_) => {
-                    missing.push(*n);
-                    None
-                }
-            })
-            .collect::<Vec<(&str, Bytes)>>();
-        let from_cdn = self.fs.batch_read(&missing).map(|f| match f {
-            Ok(x) => x,
-            Err((path, e)) => {
-                panic!("Failed to extract file: {:?}: {:?}", path, e);
-            }
-        });
-
-        files.into_iter().chain(from_cdn)
+        self.fs.batch_read(names).map(|res| match res {
+            Ok((n, b)) => (n, b),
+            Err((n, e)) => panic!("Failed to read file {}: {}", n, e),
+        })
     }
 }
 
@@ -223,8 +182,8 @@ fn parse_file(source: &str, file: Bytes) -> Result<DatFile> {
     let mut dat_file = DatFile {
         source: source.to_string(),
         table,
-        row_len_bytes,
-        data,
+        bytes_per_row: row_len_bytes,
+        vdata: data,
         table_row_or: vec![0; row_len_bytes],
         table_row_min: vec![0xFF; row_len_bytes],
         table_row_max: vec![0; row_len_bytes],
@@ -248,9 +207,9 @@ fn parse_file(source: &str, file: Bytes) -> Result<DatFile> {
 #[derive(Debug, Clone)]
 pub struct DatFile {
     pub source: String,         // path to the file that we got this data from
-    pub table: Bytes,           // The entire fixed-length table section without the rows header
-    pub row_len_bytes: usize,   // how many bytes per row
-    pub data: Bytes, // The entire variable-length data section, including 8 bytes of magic
+    pub table: Bytes,           // the entire fixed-length table section without the rows header
+    pub bytes_per_row: usize,   // how many bytes per row
+    pub vdata: Bytes, // the entire variable-length data section, including 8 bytes of magic
     pub table_row_or: Vec<u8>, // 1 byte per row byte, all rows bitwise or'd together
     pub table_row_min: Vec<u8>, // 1 byte per row byte, containing the min value of all rows
     pub table_row_max: Vec<u8>, // 1 byte per row byte, containing the max value of all rows
@@ -263,7 +222,7 @@ impl DatFile {
     }
     pub fn rows_iter(&self) -> impl Iterator<Item = Bytes> + '_ {
         self.table
-            .chunks_exact(self.row_len_bytes)
+            .chunks_exact(self.bytes_per_row)
             .map(|x| self.table.slice_ref(x))
     }
     // Get all rows of a column by offset and length
@@ -293,12 +252,12 @@ impl DatFile {
         let start = offset;
         let end = start + member_count * member_bytes;
         let data = self
-            .data
+            .vdata
             .get(start..end)
             .ok_or_else(|| anyhow!("invalid data range: {}:{}-{}", self.source, start, end))?;
         let result = data
             .chunks_exact(member_bytes)
-            .map(|x| self.data.slice_ref(x))
+            .map(|x| self.vdata.slice_ref(x))
             .collect();
         Ok(result)
     }
@@ -314,7 +273,7 @@ impl DatFile {
     pub fn strings_from_offset(&self, offset: usize, count: usize) -> Result<Vec<String>> {
         let mut strings = Vec::new();
         //let mut current_offset = offset;
-        let mut string_offset_bytes = self.data.slice(offset..offset + (4 * count));
+        let mut string_offset_bytes = self.vdata.slice(offset..offset + (4 * count));
         for _ in 0..count {
             let string_offset = string_offset_bytes.get_u32_le() as usize;
             let s = self.string_from_offset_if_valid(string_offset)?;
@@ -326,7 +285,7 @@ impl DatFile {
 
     // Get a string by offset
     fn string_from_offset_if_valid(&self, offset: usize) -> Result<String> {
-        let mut start = self.data.slice(offset..);
+        let mut start = self.vdata.slice(offset..);
         let mut utf16string = Vec::new();
         let mut complete = false;
         while start.has_remaining() {
@@ -370,14 +329,15 @@ impl DatFile {
 
         Ok(String::from_utf16(&utf16string)?)
     }
+
     // check if an offset is valid for the data
     pub fn valid_data_ref(&self, offset: usize) -> Result<()> {
-        if offset > self.data.len() {
+        if offset > self.vdata.len() {
             bail!(
                 "offset out of bounds: {}:{} (data len {})",
                 self.source,
                 offset,
-                self.data.len()
+                self.vdata.len()
             );
         }
         if offset < 8 {
@@ -566,21 +526,29 @@ mod tests {
             .fs
             .list()
             .filter(|x| x.ends_with(".datc64"))
+            .filter(|x| {
+                if let Some(rest) = x.strip_prefix("data/balance/") {
+                    !rest.contains('/')
+                } else if let Some(rest) = x.strip_prefix("data/") {
+                    !rest.contains('/')
+                } else {
+                    false
+                }
+            })
             .collect::<Vec<String>>();
 
-        let dat_paths = vec!["data/balance/worldareas.datc64".to_string()];
+        //let shit = vec!["data/balance/worldareas.datc64"];
+        let shit = dat_paths.iter().map(|x| x.as_str()).collect::<Vec<_>>();
 
         println!("converting dat_paths");
-
-        let shit = dat_paths.iter().map(|x| x.as_str()).collect::<Vec<_>>();
 
         for (_, dat_file) in dl.get_tables(&shit) {
             //for bytes in [1, 2, 4, 8, 16] {
             for bytes in [8] {
-                if dat_file.row_len_bytes < bytes + 1 {
+                if dat_file.bytes_per_row < bytes + 1 {
                     continue;
                 }
-                let last_col = dat_file.row_len_bytes - bytes - 1;
+                let last_col = dat_file.bytes_per_row - bytes - 1;
                 for index in 0..last_col {
                     let claims = dat_file.get_column_claims(index, bytes);
                     for claim in claims {
@@ -593,19 +561,18 @@ mod tests {
                         );
                         if claim.column_type == Cell::Scalar(Scalar::String) {
                             let mut empty = true;
-                            for (i, s) in dat_file
+                            for s in dat_file
                                 .column_rows_iter(claim.offset, claim.bytes)
                                 .map(|cell| {
                                     dat_file
                                         .string_from_offset(cell.clone().get_i32_le() as usize)
                                         .unwrap()
                                 })
-                                .enumerate()
                                 .take(5)
-                                .filter(|s| !s.1.is_empty())
+                                .filter(|s| !s.is_empty())
                             {
                                 empty = false;
-                                print!(" {}: {:?}, ", i, s,);
+                                print!("{}, ", s,);
                             }
                             if empty {
                                 print!(" <all empty strings> ");
