@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_ChatIcons: LazyLock<Vec<ChatIconsRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/chaticons.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/chaticons.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| ChatIconsRow {
             r#icon: {
@@ -65,10 +60,7 @@ impl ChatIconsRef {
         TABLE_ChatIcons.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static ChatIconsRow)> {
-        TABLE_ChatIcons
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_ChatIcons.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

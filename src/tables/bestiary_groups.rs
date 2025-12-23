@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_BestiaryGroups: LazyLock<Vec<BestiaryGroupsRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/bestiarygroups.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/bestiarygroups.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| BestiaryGroupsRow {
             r#id: {
@@ -77,10 +72,7 @@ pub static TABLE_BestiaryGroups: LazyLock<Vec<BestiaryGroupsRow>> = LazyLock::ne
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| AchievementItemsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| AchievementItemsRef::new(value as usize)).collect()
             },
         })
         .collect()
@@ -119,16 +111,10 @@ impl BestiaryGroupsRef {
         &TABLE_BestiaryGroups[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_BestiaryGroups
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_BestiaryGroups.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static BestiaryGroupsRow)> {
-        TABLE_BestiaryGroups
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_BestiaryGroups.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_MonsterPacks: LazyLock<Vec<MonsterPacksRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/monsterpacks.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/monsterpacks.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| MonsterPacksRow {
             r#id: {
@@ -36,10 +31,7 @@ pub static TABLE_MonsterPacks: LazyLock<Vec<MonsterPacksRow>> = LazyLock::new(||
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| WorldAreasRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| WorldAreasRef::new(value as usize)).collect()
             },
             r#min_count: {
                 // array_mutator column.array == false && column.type != 'string|bool'
@@ -77,10 +69,7 @@ pub static TABLE_MonsterPacks: LazyLock<Vec<MonsterPacksRow>> = LazyLock::new(||
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| MonsterVarietiesRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| MonsterVarietiesRef::new(value as usize)).collect()
             },
             r#unknown56: {
                 // array_mutator column.array == false && column.type == 'bool'
@@ -123,10 +112,7 @@ pub static TABLE_MonsterPacks: LazyLock<Vec<MonsterPacksRow>> = LazyLock::new(||
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| TagsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| TagsRef::new(value as usize)).collect()
             },
             r#min_level: {
                 // array_mutator column.array == false && column.type != 'string|bool'
@@ -219,10 +205,7 @@ pub static TABLE_MonsterPacks: LazyLock<Vec<MonsterPacksRow>> = LazyLock::new(||
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| MonsterVarietiesRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| MonsterVarietiesRef::new(value as usize)).collect()
             },
             r#additional_counts: {
                 // array_mutator column.array == true
@@ -295,10 +278,7 @@ impl MonsterPacksRef {
         TABLE_MonsterPacks.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static MonsterPacksRow)> {
-        TABLE_MonsterPacks
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_MonsterPacks.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_DivinationCardArt: LazyLock<Vec<DivinationCardArtRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/divinationcardart.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/divinationcardart.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| DivinationCardArtRow {
             r#base_item_types_key: {
@@ -42,10 +37,7 @@ pub static TABLE_DivinationCardArt: LazyLock<Vec<DivinationCardArtRow>> = LazyLo
                     .iter()
                     .map(|x| x.clone().get_i32_le())
                     .collect::<Vec<i32>>();
-                values
-                    .into_iter()
-                    .map(|value| InfluenceTypes::from_repr(value as usize))
-                    .collect()
+                values.into_iter().map(|value| InfluenceTypes::from_repr(value as usize)).collect()
             },
             r#unknown40: {
                 // array_mutator column.array == false && column.type != 'string|bool'
@@ -86,16 +78,10 @@ impl DivinationCardArtRef {
         &TABLE_DivinationCardArt[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_DivinationCardArt
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_DivinationCardArt.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static DivinationCardArtRow)> {
-        TABLE_DivinationCardArt
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_DivinationCardArt.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

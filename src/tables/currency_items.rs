@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_CurrencyItems: LazyLock<Vec<CurrencyItemsRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/currencyitems.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/currencyitems.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| CurrencyItemsRow {
             r#base_item_type: {
@@ -74,10 +69,7 @@ pub static TABLE_CurrencyItems: LazyLock<Vec<CurrencyItemsRow>> = LazyLock::new(
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| AchievementItemsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| AchievementItemsRef::new(value as usize)).collect()
             },
             r#scroll: {
                 // array_mutator column.array == false && column.type == 'bool'
@@ -150,10 +142,7 @@ pub static TABLE_CurrencyItems: LazyLock<Vec<CurrencyItemsRow>> = LazyLock::new(
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| AchievementItemsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| AchievementItemsRef::new(value as usize)).collect()
             },
             r#modify_contracts_achievements: {
                 // array_mutator column.array == true
@@ -167,10 +156,7 @@ pub static TABLE_CurrencyItems: LazyLock<Vec<CurrencyItemsRow>> = LazyLock::new(
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| AchievementItemsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| AchievementItemsRef::new(value as usize)).collect()
             },
             r#combine_achievements: {
                 // array_mutator column.array == true
@@ -184,10 +170,7 @@ pub static TABLE_CurrencyItems: LazyLock<Vec<CurrencyItemsRow>> = LazyLock::new(
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| AchievementItemsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| AchievementItemsRef::new(value as usize)).collect()
             },
             r#changed_for_hardmode: {
                 // array_mutator column.array == false && column.type == 'bool'
@@ -290,10 +273,7 @@ impl CurrencyItemsRef {
         TABLE_CurrencyItems.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static CurrencyItemsRow)> {
-        TABLE_CurrencyItems
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_CurrencyItems.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

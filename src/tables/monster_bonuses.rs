@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_MonsterBonuses: LazyLock<Vec<MonsterBonusesRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/monsterbonuses.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/monsterbonuses.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| MonsterBonusesRow {
             r#id: {
@@ -36,10 +31,7 @@ pub static TABLE_MonsterBonuses: LazyLock<Vec<MonsterBonusesRow>> = LazyLock::ne
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| ModsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| ModsRef::new(value as usize)).collect()
             },
             r#unknown24: {
                 // array_mutator column.array == false && column.type != 'string|bool'
@@ -73,10 +65,7 @@ pub static TABLE_MonsterBonuses: LazyLock<Vec<MonsterBonusesRow>> = LazyLock::ne
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| StatsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| StatsRef::new(value as usize)).collect()
             },
             r#stat_values: {
                 // array_mutator column.array == true
@@ -127,16 +116,10 @@ impl MonsterBonusesRef {
         &TABLE_MonsterBonuses[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_MonsterBonuses
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_MonsterBonuses.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static MonsterBonusesRow)> {
-        TABLE_MonsterBonuses
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_MonsterBonuses.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

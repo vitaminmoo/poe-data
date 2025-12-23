@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_WorldAreas: LazyLock<Vec<WorldAreasRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/worldareas.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/worldareas.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| WorldAreasRow {
             r#id: {
@@ -61,10 +56,7 @@ pub static TABLE_WorldAreas: LazyLock<Vec<WorldAreasRow>> = LazyLock::new(|| {
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| WorldAreasRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| WorldAreasRef::new(value as usize)).collect()
             },
             r#area_level: {
                 // array_mutator column.array == false && column.type != 'string|bool'
@@ -99,10 +91,7 @@ pub static TABLE_WorldAreas: LazyLock<Vec<WorldAreasRow>> = LazyLock::new(|| {
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| QuestFlagsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| QuestFlagsRef::new(value as usize)).collect()
             },
             r#required_flags: {
                 // array_mutator column.array == true
@@ -116,10 +105,7 @@ pub static TABLE_WorldAreas: LazyLock<Vec<WorldAreasRow>> = LazyLock::new(|| {
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| QuestFlagsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| QuestFlagsRef::new(value as usize)).collect()
             },
             r#unknown92: {
                 // array_mutator column.array == false && column.type != 'string|bool'
@@ -139,10 +125,7 @@ pub static TABLE_WorldAreas: LazyLock<Vec<WorldAreasRow>> = LazyLock::new(|| {
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| TopologiesRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| TopologiesRef::new(value as usize)).collect()
             },
             r#parent_town: {
                 // array_mutator column.array == false && column.type != 'string|bool'
@@ -180,10 +163,7 @@ pub static TABLE_WorldAreas: LazyLock<Vec<WorldAreasRow>> = LazyLock::new(|| {
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| MonsterVarietiesRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| MonsterVarietiesRef::new(value as usize)).collect()
             },
             r#unknown172: {
                 // array_mutator column.array == true
@@ -251,10 +231,7 @@ pub static TABLE_WorldAreas: LazyLock<Vec<WorldAreasRow>> = LazyLock::new(|| {
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| ModsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| ModsRef::new(value as usize)).collect()
             },
             r#unknown285: {
                 // array_mutator column.array == false && column.type != 'string|bool'
@@ -310,10 +287,7 @@ pub static TABLE_WorldAreas: LazyLock<Vec<WorldAreasRow>> = LazyLock::new(|| {
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| TagsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| TagsRef::new(value as usize)).collect()
             },
             r#unknown323: {
                 // array_mutator column.array == false && column.type != 'string|bool'
@@ -489,10 +463,7 @@ impl WorldAreasRef {
         TABLE_WorldAreas.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static WorldAreasRow)> {
-        TABLE_WorldAreas
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_WorldAreas.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

@@ -118,16 +118,10 @@ impl DelveStashTabLayoutRef {
         &TABLE_DelveStashTabLayout[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_DelveStashTabLayout
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_DelveStashTabLayout.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static DelveStashTabLayoutRow)> {
-        TABLE_DelveStashTabLayout
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_DelveStashTabLayout.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_CoreLeagues: LazyLock<Vec<CoreLeaguesRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/coreleagues.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/coreleagues.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| CoreLeaguesRow {
             r#id: {
@@ -54,10 +49,7 @@ pub static TABLE_CoreLeagues: LazyLock<Vec<CoreLeaguesRow>> = LazyLock::new(|| {
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| StatsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| StatsRef::new(value as usize)).collect()
             },
             r#unknown42: {
                 // array_mutator column.array == false && column.type != 'string|bool'
@@ -89,10 +81,7 @@ pub static TABLE_CoreLeagues: LazyLock<Vec<CoreLeaguesRow>> = LazyLock::new(|| {
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| StatsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| StatsRef::new(value as usize)).collect()
             },
             r#unknown106: {
                 // array_mutator column.array == false && column.type != 'string|bool'
@@ -148,10 +137,7 @@ pub static TABLE_CoreLeagues: LazyLock<Vec<CoreLeaguesRow>> = LazyLock::new(|| {
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| StatsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| StatsRef::new(value as usize)).collect()
             },
             r#unknown177: {
                 // array_mutator column.array == false && column.type == 'bool'
@@ -209,10 +195,7 @@ impl CoreLeaguesRef {
         TABLE_CoreLeagues.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static CoreLeaguesRow)> {
-        TABLE_CoreLeagues
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_CoreLeagues.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

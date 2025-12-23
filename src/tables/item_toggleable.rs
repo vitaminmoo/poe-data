@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_ItemToggleable: LazyLock<Vec<ItemToggleableRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/itemtoggleable.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/itemtoggleable.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| ItemToggleableRow {
             r#base_item_type: {
@@ -53,16 +48,10 @@ impl ItemToggleableRef {
         &TABLE_ItemToggleable[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_ItemToggleable
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_ItemToggleable.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static ItemToggleableRow)> {
-        TABLE_ItemToggleable
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_ItemToggleable.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

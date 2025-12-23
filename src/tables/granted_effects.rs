@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_GrantedEffects: LazyLock<Vec<GrantedEffectsRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/grantedeffects.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/grantedeffects.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| GrantedEffectsRow {
             r#id: {
@@ -42,10 +37,7 @@ pub static TABLE_GrantedEffects: LazyLock<Vec<GrantedEffectsRow>> = LazyLock::ne
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| ActiveSkillTypeRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| ActiveSkillTypeRef::new(value as usize)).collect()
             },
             r#support_gem_letter: {
                 // array_mutator column.array == false && column.type == 'string'
@@ -66,10 +58,7 @@ pub static TABLE_GrantedEffects: LazyLock<Vec<GrantedEffectsRow>> = LazyLock::ne
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| ActiveSkillTypeRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| ActiveSkillTypeRef::new(value as usize)).collect()
             },
             r#excluded_active_skill_types: {
                 // array_mutator column.array == true
@@ -83,10 +72,7 @@ pub static TABLE_GrantedEffects: LazyLock<Vec<GrantedEffectsRow>> = LazyLock::ne
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| ActiveSkillTypeRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| ActiveSkillTypeRef::new(value as usize)).collect()
             },
             r#supports_gems_only: {
                 // array_mutator column.array == false && column.type == 'bool'
@@ -148,10 +134,7 @@ pub static TABLE_GrantedEffects: LazyLock<Vec<GrantedEffectsRow>> = LazyLock::ne
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| ActiveSkillTypeRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| ActiveSkillTypeRef::new(value as usize)).collect()
             },
             r#animation: {
                 // array_mutator column.array == false && column.type != 'string|bool'
@@ -225,10 +208,7 @@ pub static TABLE_GrantedEffects: LazyLock<Vec<GrantedEffectsRow>> = LazyLock::ne
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| GrantedEffectStatSetsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| GrantedEffectStatSetsRef::new(value as usize)).collect()
             },
             r#audio: {
                 // array_mutator column.array == false && column.type == 'string'
@@ -249,10 +229,7 @@ pub static TABLE_GrantedEffects: LazyLock<Vec<GrantedEffectsRow>> = LazyLock::ne
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| CostTypesRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| CostTypesRef::new(value as usize)).collect()
             },
             r#unknown224: {
                 // array_mutator column.array == false && column.type == 'bool'
@@ -292,10 +269,7 @@ pub static TABLE_GrantedEffects: LazyLock<Vec<GrantedEffectsRow>> = LazyLock::ne
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| ItemClassesRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| ItemClassesRef::new(value as usize)).collect()
             },
             r#unknown261: {
                 // array_mutator column.array == false && column.type == 'string'
@@ -394,16 +368,10 @@ impl GrantedEffectsRef {
         &TABLE_GrantedEffects[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_GrantedEffects
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_GrantedEffects.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static GrantedEffectsRow)> {
-        TABLE_GrantedEffects
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_GrantedEffects.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

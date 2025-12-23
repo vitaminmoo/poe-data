@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_MicroMigrationData: LazyLock<Vec<MicroMigrationDataRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/micromigrationdata.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/micromigrationdata.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| MicroMigrationDataRow {
             r#base_item_types_key: {
@@ -74,16 +69,10 @@ impl MicroMigrationDataRef {
         &TABLE_MicroMigrationData[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_MicroMigrationData
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_MicroMigrationData.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static MicroMigrationDataRow)> {
-        TABLE_MicroMigrationData
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_MicroMigrationData.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

@@ -8,31 +8,30 @@ use super::*;
 use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
-pub static TABLE_MinionGemLevelScaling: LazyLock<Vec<MinionGemLevelScalingRow>> =
-    LazyLock::new(|| {
-        let df = DAT_LOADER
-            .write()
-            .unwrap()
-            .get_table("data/balance/miniongemlevelscaling.datc64")
-            .unwrap()
-            .clone();
-        df.rows_iter()
-            .map(|row| MinionGemLevelScalingRow {
-                r#gem_level: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(0..0 + 4).unwrap();
-                    let value = cell_bytes.get_i32_le();
-                    value
-                },
-                r#minion_level: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(4..4 + 4).unwrap();
-                    let value = cell_bytes.get_i32_le();
-                    value
-                },
-            })
-            .collect()
-    });
+pub static TABLE_MinionGemLevelScaling: LazyLock<Vec<MinionGemLevelScalingRow>> = LazyLock::new(|| {
+    let df = DAT_LOADER
+        .write()
+        .unwrap()
+        .get_table("data/balance/miniongemlevelscaling.datc64")
+        .unwrap()
+        .clone();
+    df.rows_iter()
+        .map(|row| MinionGemLevelScalingRow {
+            r#gem_level: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(0..0 + 4).unwrap();
+                let value = cell_bytes.get_i32_le();
+                value
+            },
+            r#minion_level: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(4..4 + 4).unwrap();
+                let value = cell_bytes.get_i32_le();
+                value
+            },
+        })
+        .collect()
+});
 
 #[derive(Debug)]
 pub struct MinionGemLevelScalingRow {
@@ -61,16 +60,10 @@ impl MinionGemLevelScalingRef {
         &TABLE_MinionGemLevelScaling[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_MinionGemLevelScaling
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_MinionGemLevelScaling.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static MinionGemLevelScalingRow)> {
-        TABLE_MinionGemLevelScaling
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_MinionGemLevelScaling.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

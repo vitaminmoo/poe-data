@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_BuffVisualOrbs: LazyLock<Vec<BuffVisualOrbsRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/buffvisualorbs.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/buffvisualorbs.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| BuffVisualOrbsRow {
             r#id: {
@@ -42,10 +37,7 @@ pub static TABLE_BuffVisualOrbs: LazyLock<Vec<BuffVisualOrbsRow>> = LazyLock::ne
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| BuffVisualOrbArtRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| BuffVisualOrbArtRef::new(value as usize)).collect()
             },
             r#player_buff_visual_orb_art_keys: {
                 // array_mutator column.array == true
@@ -59,10 +51,7 @@ pub static TABLE_BuffVisualOrbs: LazyLock<Vec<BuffVisualOrbsRow>> = LazyLock::ne
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| BuffVisualOrbArtRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| BuffVisualOrbArtRef::new(value as usize)).collect()
             },
             r#buff_visual_orb_art_keys2: {
                 // array_mutator column.array == true
@@ -76,10 +65,7 @@ pub static TABLE_BuffVisualOrbs: LazyLock<Vec<BuffVisualOrbsRow>> = LazyLock::ne
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| BuffVisualOrbArtRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| BuffVisualOrbArtRef::new(value as usize)).collect()
             },
         })
         .collect()
@@ -115,16 +101,10 @@ impl BuffVisualOrbsRef {
         &TABLE_BuffVisualOrbs[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_BuffVisualOrbs
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_BuffVisualOrbs.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static BuffVisualOrbsRow)> {
-        TABLE_BuffVisualOrbs
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_BuffVisualOrbs.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

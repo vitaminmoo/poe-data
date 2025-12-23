@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_Realms: LazyLock<Vec<RealmsRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/realms.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/realms.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| RealmsRow {
             r#id: {
@@ -74,10 +69,7 @@ pub static TABLE_Realms: LazyLock<Vec<RealmsRow>> = LazyLock::new(|| {
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| RealmsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| RealmsRef::new(value as usize)).collect()
             },
             r#unknown73: {
                 // array_mutator column.array == false && column.type != 'string|bool'

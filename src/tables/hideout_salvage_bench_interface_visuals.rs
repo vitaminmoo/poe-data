@@ -8,9 +8,7 @@ use super::*;
 use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
-pub static TABLE_HideoutSalvageBenchInterfaceVisuals: LazyLock<
-    Vec<HideoutSalvageBenchInterfaceVisualsRow>,
-> = LazyLock::new(|| {
+pub static TABLE_HideoutSalvageBenchInterfaceVisuals: LazyLock<Vec<HideoutSalvageBenchInterfaceVisualsRow>> = LazyLock::new(|| {
     let df = DAT_LOADER
         .write()
         .unwrap()
@@ -108,17 +106,10 @@ impl HideoutSalvageBenchInterfaceVisualsRef {
         &TABLE_HideoutSalvageBenchInterfaceVisuals[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_HideoutSalvageBenchInterfaceVisuals
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_HideoutSalvageBenchInterfaceVisuals.iter().enumerate().map(|(i, _)| Self(i))
     }
-    pub fn iter_with_refs(
-    ) -> impl Iterator<Item = (Self, &'static HideoutSalvageBenchInterfaceVisualsRow)> {
-        TABLE_HideoutSalvageBenchInterfaceVisuals
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+    pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static HideoutSalvageBenchInterfaceVisualsRow)> {
+        TABLE_HideoutSalvageBenchInterfaceVisuals.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

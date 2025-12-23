@@ -41,10 +41,7 @@ pub static TABLE_BlightCraftingItems: LazyLock<Vec<BlightCraftingItemsRow>> = La
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| AchievementItemsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| AchievementItemsRef::new(value as usize)).collect()
             },
             r#use_type: {
                 // array_mutator column.array == false && column.type != 'string|bool'
@@ -100,16 +97,10 @@ impl BlightCraftingItemsRef {
         &TABLE_BlightCraftingItems[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_BlightCraftingItems
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_BlightCraftingItems.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static BlightCraftingItemsRow)> {
-        TABLE_BlightCraftingItems
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_BlightCraftingItems.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

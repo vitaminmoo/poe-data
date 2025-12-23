@@ -8,9 +8,7 @@ use super::*;
 use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
-pub static TABLE_AlternateTreeExtraPassiveOverridesFromJewelStats: LazyLock<
-    Vec<AlternateTreeExtraPassiveOverridesFromJewelStatsRow>,
-> = LazyLock::new(|| {
+pub static TABLE_AlternateTreeExtraPassiveOverridesFromJewelStats: LazyLock<Vec<AlternateTreeExtraPassiveOverridesFromJewelStatsRow>> = LazyLock::new(|| {
     let df = DAT_LOADER
         .write()
         .unwrap()
@@ -77,17 +75,9 @@ impl AlternateTreeExtraPassiveOverridesFromJewelStatsRef {
         &TABLE_AlternateTreeExtraPassiveOverridesFromJewelStats[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_AlternateTreeExtraPassiveOverridesFromJewelStats
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_AlternateTreeExtraPassiveOverridesFromJewelStats.iter().enumerate().map(|(i, _)| Self(i))
     }
-    pub fn iter_with_refs() -> impl Iterator<
-        Item = (
-            Self,
-            &'static AlternateTreeExtraPassiveOverridesFromJewelStatsRow,
-        ),
-    > {
+    pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static AlternateTreeExtraPassiveOverridesFromJewelStatsRow)> {
         TABLE_AlternateTreeExtraPassiveOverridesFromJewelStats
             .iter()
             .enumerate()

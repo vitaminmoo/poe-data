@@ -115,10 +115,7 @@ pub static TABLE_HarvestCraftOptions: LazyLock<Vec<HarvestCraftOptionsRow>> = La
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| AchievementItemsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| AchievementItemsRef::new(value as usize)).collect()
             },
             r#unknown104: {
                 // array_mutator column.array == false && column.type != 'string|bool'
@@ -170,16 +167,10 @@ impl HarvestCraftOptionsRef {
         &TABLE_HarvestCraftOptions[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_HarvestCraftOptions
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_HarvestCraftOptions.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static HarvestCraftOptionsRow)> {
-        TABLE_HarvestCraftOptions
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_HarvestCraftOptions.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

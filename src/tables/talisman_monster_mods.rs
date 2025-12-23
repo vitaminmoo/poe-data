@@ -60,16 +60,10 @@ impl TalismanMonsterModsRef {
         &TABLE_TalismanMonsterMods[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_TalismanMonsterMods
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_TalismanMonsterMods.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static TalismanMonsterModsRow)> {
-        TABLE_TalismanMonsterMods
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_TalismanMonsterMods.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

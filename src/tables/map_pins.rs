@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_MapPins: LazyLock<Vec<MapPinsRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/mappins.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/mappins.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| MapPinsRow {
             r#id: {
@@ -42,10 +37,7 @@ pub static TABLE_MapPins: LazyLock<Vec<MapPinsRow>> = LazyLock::new(|| {
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| WorldAreasRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| WorldAreasRef::new(value as usize)).collect()
             },
             r#name: {
                 // array_mutator column.array == false && column.type == 'string'
@@ -73,10 +65,7 @@ pub static TABLE_MapPins: LazyLock<Vec<MapPinsRow>> = LazyLock::new(|| {
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| QuestFlagsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| QuestFlagsRef::new(value as usize)).collect()
             },
             r#act: {
                 // array_mutator column.array == false && column.type != 'string|bool'
@@ -96,10 +85,7 @@ pub static TABLE_MapPins: LazyLock<Vec<MapPinsRow>> = LazyLock::new(|| {
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| QuestFlagsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| QuestFlagsRef::new(value as usize)).collect()
             },
             r#quest_flags3: {
                 // array_mutator column.array == true
@@ -113,10 +99,7 @@ pub static TABLE_MapPins: LazyLock<Vec<MapPinsRow>> = LazyLock::new(|| {
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| QuestFlagsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| QuestFlagsRef::new(value as usize)).collect()
             },
             r#quest_flag1: {
                 // array_mutator column.array == false && column.type != 'string|bool'

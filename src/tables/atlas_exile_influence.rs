@@ -35,10 +35,7 @@ pub static TABLE_AtlasExileInfluence: LazyLock<Vec<AtlasExileInfluenceRow>> = La
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| AtlasInfluenceSetsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| AtlasInfluenceSetsRef::new(value as usize)).collect()
             },
         })
         .collect()
@@ -71,16 +68,10 @@ impl AtlasExileInfluenceRef {
         &TABLE_AtlasExileInfluence[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_AtlasExileInfluence
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_AtlasExileInfluence.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static AtlasExileInfluenceRow)> {
-        TABLE_AtlasExileInfluence
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_AtlasExileInfluence.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

@@ -8,9 +8,7 @@ use super::*;
 use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
-pub static TABLE_StatisticTrackingMicrotransactionsOnKill: LazyLock<
-    Vec<StatisticTrackingMicrotransactionsOnKillRow>,
-> = LazyLock::new(|| {
+pub static TABLE_StatisticTrackingMicrotransactionsOnKill: LazyLock<Vec<StatisticTrackingMicrotransactionsOnKillRow>> = LazyLock::new(|| {
     let df = DAT_LOADER
         .write()
         .unwrap()
@@ -62,17 +60,10 @@ impl StatisticTrackingMicrotransactionsOnKillRef {
         &TABLE_StatisticTrackingMicrotransactionsOnKill[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_StatisticTrackingMicrotransactionsOnKill
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_StatisticTrackingMicrotransactionsOnKill.iter().enumerate().map(|(i, _)| Self(i))
     }
-    pub fn iter_with_refs(
-    ) -> impl Iterator<Item = (Self, &'static StatisticTrackingMicrotransactionsOnKillRow)> {
-        TABLE_StatisticTrackingMicrotransactionsOnKill
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+    pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static StatisticTrackingMicrotransactionsOnKillRow)> {
+        TABLE_StatisticTrackingMicrotransactionsOnKill.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

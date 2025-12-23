@@ -8,170 +8,169 @@ use super::*;
 use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
-pub static TABLE_WorldAreaLeagueChances: LazyLock<Vec<WorldAreaLeagueChancesRow>> =
-    LazyLock::new(|| {
-        let df = DAT_LOADER
-            .write()
-            .unwrap()
-            .get_table("data/balance/worldarealeaguechances.datc64")
-            .unwrap()
-            .clone();
-        df.rows_iter()
-            .map(|row| WorldAreaLeagueChancesRow {
-                r#id: {
-                    // array_mutator column.array == false && column.type == 'string'
-                    let mut cell_bytes = row.get(0..0 + 8).unwrap();
-                    let offset = cell_bytes.get_i32_le() as usize;
-                    let value = df.string_from_offset(offset).unwrap();
-                    value
-                },
-                r#unknown8: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(8..8 + 4).unwrap();
-                    let value = cell_bytes.get_i32_le();
-                    value
-                },
-                r#unknown12: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(12..12 + 4).unwrap();
-                    let value = cell_bytes.get_i32_le();
-                    value
-                },
-                r#unknown16: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(16..16 + 4).unwrap();
-                    let value = cell_bytes.get_i32_le();
-                    value
-                },
-                r#unknown20: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(20..20 + 4).unwrap();
-                    let value = cell_bytes.get_i32_le();
-                    value
-                },
-                r#unknown24: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(24..24 + 4).unwrap();
-                    let value = cell_bytes.get_i32_le();
-                    value
-                },
-                r#unknown28: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(28..28 + 4).unwrap();
-                    let value = cell_bytes.get_i32_le();
-                    value
-                },
-                r#unknown32: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(32..32 + 4).unwrap();
-                    let value = cell_bytes.get_i32_le();
-                    value
-                },
-                r#unknown36: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(36..36 + 4).unwrap();
-                    let value = cell_bytes.get_i32_le();
-                    value
-                },
-                r#unknown40: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(40..40 + 4).unwrap();
-                    let value = cell_bytes.get_i32_le();
-                    value
-                },
-                r#unknown44: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(44..44 + 4).unwrap();
-                    let value = cell_bytes.get_i32_le();
-                    value
-                },
-                r#unknown48: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(48..48 + 4).unwrap();
-                    let value = cell_bytes.get_i32_le();
-                    value
-                },
-                r#unknown52: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(52..52 + 4).unwrap();
-                    let value = cell_bytes.get_i32_le();
-                    value
-                },
-                r#unknown56: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(56..56 + 4).unwrap();
-                    let value = cell_bytes.get_i32_le();
-                    value
-                },
-                r#unknown60: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(60..60 + 4).unwrap();
-                    let value = cell_bytes.get_i32_le();
-                    value
-                },
-                r#unknown64: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(64..64 + 4).unwrap();
-                    let value = cell_bytes.get_i32_le();
-                    value
-                },
-                r#abyss_chance: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(68..68 + 4).unwrap();
-                    let value = cell_bytes.get_i32_le();
-                    value
-                },
-                r#unknown72: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(72..72 + 4).unwrap();
-                    let value = cell_bytes.get_i32_le();
-                    value
-                },
-                r#unknown76: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(76..76 + 4).unwrap();
-                    let value = cell_bytes.get_i32_le();
-                    value
-                },
-                r#unknown80: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(80..80 + 4).unwrap();
-                    let value = cell_bytes.get_i32_le();
-                    value
-                },
-                r#unknown84: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(84..84 + 4).unwrap();
-                    let value = cell_bytes.get_i32_le();
-                    value
-                },
-                r#unknown88: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(88..88 + 4).unwrap();
-                    let value = cell_bytes.get_i32_le();
-                    value
-                },
-                r#unknown92: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(92..92 + 4).unwrap();
-                    let value = cell_bytes.get_i32_le();
-                    value
-                },
-                r#unknown96: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(96..96 + 4).unwrap();
-                    let value = cell_bytes.get_i32_le();
-                    value
-                },
-                r#stone_circles_chance: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(100..100 + 4).unwrap();
-                    let value = cell_bytes.get_i32_le();
-                    value
-                },
-            })
-            .collect()
-    });
+pub static TABLE_WorldAreaLeagueChances: LazyLock<Vec<WorldAreaLeagueChancesRow>> = LazyLock::new(|| {
+    let df = DAT_LOADER
+        .write()
+        .unwrap()
+        .get_table("data/balance/worldarealeaguechances.datc64")
+        .unwrap()
+        .clone();
+    df.rows_iter()
+        .map(|row| WorldAreaLeagueChancesRow {
+            r#id: {
+                // array_mutator column.array == false && column.type == 'string'
+                let mut cell_bytes = row.get(0..0 + 8).unwrap();
+                let offset = cell_bytes.get_i32_le() as usize;
+                let value = df.string_from_offset(offset).unwrap();
+                value
+            },
+            r#unknown8: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(8..8 + 4).unwrap();
+                let value = cell_bytes.get_i32_le();
+                value
+            },
+            r#unknown12: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(12..12 + 4).unwrap();
+                let value = cell_bytes.get_i32_le();
+                value
+            },
+            r#unknown16: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(16..16 + 4).unwrap();
+                let value = cell_bytes.get_i32_le();
+                value
+            },
+            r#unknown20: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(20..20 + 4).unwrap();
+                let value = cell_bytes.get_i32_le();
+                value
+            },
+            r#unknown24: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(24..24 + 4).unwrap();
+                let value = cell_bytes.get_i32_le();
+                value
+            },
+            r#unknown28: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(28..28 + 4).unwrap();
+                let value = cell_bytes.get_i32_le();
+                value
+            },
+            r#unknown32: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(32..32 + 4).unwrap();
+                let value = cell_bytes.get_i32_le();
+                value
+            },
+            r#unknown36: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(36..36 + 4).unwrap();
+                let value = cell_bytes.get_i32_le();
+                value
+            },
+            r#unknown40: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(40..40 + 4).unwrap();
+                let value = cell_bytes.get_i32_le();
+                value
+            },
+            r#unknown44: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(44..44 + 4).unwrap();
+                let value = cell_bytes.get_i32_le();
+                value
+            },
+            r#unknown48: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(48..48 + 4).unwrap();
+                let value = cell_bytes.get_i32_le();
+                value
+            },
+            r#unknown52: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(52..52 + 4).unwrap();
+                let value = cell_bytes.get_i32_le();
+                value
+            },
+            r#unknown56: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(56..56 + 4).unwrap();
+                let value = cell_bytes.get_i32_le();
+                value
+            },
+            r#unknown60: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(60..60 + 4).unwrap();
+                let value = cell_bytes.get_i32_le();
+                value
+            },
+            r#unknown64: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(64..64 + 4).unwrap();
+                let value = cell_bytes.get_i32_le();
+                value
+            },
+            r#abyss_chance: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(68..68 + 4).unwrap();
+                let value = cell_bytes.get_i32_le();
+                value
+            },
+            r#unknown72: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(72..72 + 4).unwrap();
+                let value = cell_bytes.get_i32_le();
+                value
+            },
+            r#unknown76: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(76..76 + 4).unwrap();
+                let value = cell_bytes.get_i32_le();
+                value
+            },
+            r#unknown80: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(80..80 + 4).unwrap();
+                let value = cell_bytes.get_i32_le();
+                value
+            },
+            r#unknown84: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(84..84 + 4).unwrap();
+                let value = cell_bytes.get_i32_le();
+                value
+            },
+            r#unknown88: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(88..88 + 4).unwrap();
+                let value = cell_bytes.get_i32_le();
+                value
+            },
+            r#unknown92: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(92..92 + 4).unwrap();
+                let value = cell_bytes.get_i32_le();
+                value
+            },
+            r#unknown96: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(96..96 + 4).unwrap();
+                let value = cell_bytes.get_i32_le();
+                value
+            },
+            r#stone_circles_chance: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(100..100 + 4).unwrap();
+                let value = cell_bytes.get_i32_le();
+                value
+            },
+        })
+        .collect()
+});
 
 #[derive(Debug)]
 pub struct WorldAreaLeagueChancesRow {
@@ -223,16 +222,10 @@ impl WorldAreaLeagueChancesRef {
         &TABLE_WorldAreaLeagueChances[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_WorldAreaLeagueChances
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_WorldAreaLeagueChances.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static WorldAreaLeagueChancesRow)> {
-        TABLE_WorldAreaLeagueChances
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_WorldAreaLeagueChances.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_ExpeditionAreas: LazyLock<Vec<ExpeditionAreasRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/expeditionareas.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/expeditionareas.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| ExpeditionAreasRow {
             r#area: {
@@ -47,10 +42,7 @@ pub static TABLE_ExpeditionAreas: LazyLock<Vec<ExpeditionAreasRow>> = LazyLock::
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| TagsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| TagsRef::new(value as usize)).collect()
             },
             r#unknown40: {
                 // array_mutator column.array == true
@@ -90,10 +82,7 @@ pub static TABLE_ExpeditionAreas: LazyLock<Vec<ExpeditionAreasRow>> = LazyLock::
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| AchievementItemsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| AchievementItemsRef::new(value as usize)).collect()
             },
         })
         .collect()
@@ -132,16 +121,10 @@ impl ExpeditionAreasRef {
         &TABLE_ExpeditionAreas[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_ExpeditionAreas
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_ExpeditionAreas.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static ExpeditionAreasRow)> {
-        TABLE_ExpeditionAreas
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_ExpeditionAreas.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

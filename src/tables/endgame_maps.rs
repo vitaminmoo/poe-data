@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_EndgameMaps: LazyLock<Vec<EndgameMapsRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/endgamemaps.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/endgamemaps.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| EndgameMapsRow {
             r#unknown0: {
@@ -144,10 +139,7 @@ pub static TABLE_EndgameMaps: LazyLock<Vec<EndgameMapsRow>> = LazyLock::new(|| {
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| EndgameMapLocationRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| EndgameMapLocationRef::new(value as usize)).collect()
             },
             r#special_map_text: {
                 // array_mutator column.array == false && column.type == 'string'
@@ -221,10 +213,7 @@ impl EndgameMapsRef {
         TABLE_EndgameMaps.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static EndgameMapsRow)> {
-        TABLE_EndgameMaps
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_EndgameMaps.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_AtlasMods: LazyLock<Vec<AtlasModsRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/atlasmods.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/atlasmods.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| AtlasModsRow {
             r#mods_key: {
@@ -63,10 +58,7 @@ impl AtlasModsRef {
         TABLE_AtlasMods.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static AtlasModsRow)> {
-        TABLE_AtlasMods
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_AtlasMods.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

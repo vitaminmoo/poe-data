@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_Environments: LazyLock<Vec<EnvironmentsRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/environments.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/environments.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| EnvironmentsRow {
             r#id: {
@@ -129,10 +124,7 @@ impl EnvironmentsRef {
         TABLE_Environments.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static EnvironmentsRow)> {
-        TABLE_Environments
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_Environments.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

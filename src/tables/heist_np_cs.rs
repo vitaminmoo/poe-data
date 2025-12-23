@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_HeistNPCs: LazyLock<Vec<HeistNPCsRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/heistnpcs.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/heistnpcs.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| HeistNPCsRow {
             r#np_cs_key: {
@@ -41,10 +36,7 @@ pub static TABLE_HeistNPCs: LazyLock<Vec<HeistNPCsRow>> = LazyLock::new(|| {
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| HeistJobsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| HeistJobsRef::new(value as usize)).collect()
             },
             r#portrait_file: {
                 // array_mutator column.array == false && column.type == 'string'
@@ -65,10 +57,7 @@ pub static TABLE_HeistNPCs: LazyLock<Vec<HeistNPCsRow>> = LazyLock::new(|| {
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| HeistNPCStatsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| HeistNPCStatsRef::new(value as usize)).collect()
             },
             r#stat_values: {
                 // array_mutator column.array == true
@@ -181,10 +170,7 @@ pub static TABLE_HeistNPCs: LazyLock<Vec<HeistNPCsRow>> = LazyLock::new(|| {
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| AchievementItemsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| AchievementItemsRef::new(value as usize)).collect()
             },
             r#ao_file: {
                 // array_mutator column.array == false && column.type == 'string'
@@ -251,10 +237,7 @@ impl HeistNPCsRef {
         TABLE_HeistNPCs.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static HeistNPCsRow)> {
-        TABLE_HeistNPCs
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_HeistNPCs.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

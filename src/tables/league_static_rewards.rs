@@ -74,16 +74,10 @@ impl LeagueStaticRewardsRef {
         &TABLE_LeagueStaticRewards[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_LeagueStaticRewards
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_LeagueStaticRewards.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static LeagueStaticRewardsRow)> {
-        TABLE_LeagueStaticRewards
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_LeagueStaticRewards.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

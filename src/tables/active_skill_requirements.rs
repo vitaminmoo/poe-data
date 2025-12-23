@@ -8,85 +8,84 @@ use super::*;
 use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
-pub static TABLE_ActiveSkillRequirements: LazyLock<Vec<ActiveSkillRequirementsRow>> =
-    LazyLock::new(|| {
-        let df = DAT_LOADER
-            .write()
-            .unwrap()
-            .get_table("data/balance/activeskillrequirements.datc64")
-            .unwrap()
-            .clone();
-        df.rows_iter()
-            .map(|row| ActiveSkillRequirementsRow {
-                r#granted_effect: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(0..0 + 16).unwrap();
-                    let value = cell_bytes.get_i64_le();
-                    GrantedEffectsRef::new(value as usize)
-                },
-                r#buff_definition: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(16..16 + 16).unwrap();
-                    let value = cell_bytes.get_i64_le();
-                    BuffDefinitionsRef::new(value as usize)
-                },
-                r#unknown32: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(32..32 + 4).unwrap();
-                    let value = cell_bytes.get_i32_le();
-                    value
-                },
-                r#unknown36: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(36..36 + 4).unwrap();
-                    let value = cell_bytes.get_i32_le();
-                    value
-                },
-                r#unknown40: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(40..40 + 16).unwrap();
-                    let value = cell_bytes.get_i64_le();
-                    value
-                },
-                r#unknown56: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(56..56 + 16).unwrap();
-                    let value = cell_bytes.get_i64_le();
-                    value
-                },
-                r#stat: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(72..72 + 16).unwrap();
-                    let value = cell_bytes.get_i64_le();
-                    StatsRef::new(value as usize)
-                },
-                r#unknown88: {
-                    // array_mutator column.array == false && column.type == 'bool'
-                    let cell_bytes = row.get(88).unwrap();
-                    let value = cell_bytes.to_le() != 0;
-                    value
-                },
-                r#unknown89: {
-                    // array_mutator column.array == false && column.type == 'bool'
-                    let cell_bytes = row.get(89).unwrap();
-                    let value = cell_bytes.to_le() != 0;
-                    value
-                },
-                r#unknown90: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(90..90 + 4).unwrap();
-                    let value = cell_bytes.get_i32_le();
-                    value
-                },
-                r#unknown94: {
-                    // array_mutator column.array == false && column.type == 'bool'
-                    let cell_bytes = row.get(94).unwrap();
-                    let value = cell_bytes.to_le() != 0;
-                    value
-                },
-            })
-            .collect()
-    });
+pub static TABLE_ActiveSkillRequirements: LazyLock<Vec<ActiveSkillRequirementsRow>> = LazyLock::new(|| {
+    let df = DAT_LOADER
+        .write()
+        .unwrap()
+        .get_table("data/balance/activeskillrequirements.datc64")
+        .unwrap()
+        .clone();
+    df.rows_iter()
+        .map(|row| ActiveSkillRequirementsRow {
+            r#granted_effect: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(0..0 + 16).unwrap();
+                let value = cell_bytes.get_i64_le();
+                GrantedEffectsRef::new(value as usize)
+            },
+            r#buff_definition: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(16..16 + 16).unwrap();
+                let value = cell_bytes.get_i64_le();
+                BuffDefinitionsRef::new(value as usize)
+            },
+            r#unknown32: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(32..32 + 4).unwrap();
+                let value = cell_bytes.get_i32_le();
+                value
+            },
+            r#unknown36: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(36..36 + 4).unwrap();
+                let value = cell_bytes.get_i32_le();
+                value
+            },
+            r#unknown40: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(40..40 + 16).unwrap();
+                let value = cell_bytes.get_i64_le();
+                value
+            },
+            r#unknown56: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(56..56 + 16).unwrap();
+                let value = cell_bytes.get_i64_le();
+                value
+            },
+            r#stat: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(72..72 + 16).unwrap();
+                let value = cell_bytes.get_i64_le();
+                StatsRef::new(value as usize)
+            },
+            r#unknown88: {
+                // array_mutator column.array == false && column.type == 'bool'
+                let cell_bytes = row.get(88).unwrap();
+                let value = cell_bytes.to_le() != 0;
+                value
+            },
+            r#unknown89: {
+                // array_mutator column.array == false && column.type == 'bool'
+                let cell_bytes = row.get(89).unwrap();
+                let value = cell_bytes.to_le() != 0;
+                value
+            },
+            r#unknown90: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(90..90 + 4).unwrap();
+                let value = cell_bytes.get_i32_le();
+                value
+            },
+            r#unknown94: {
+                // array_mutator column.array == false && column.type == 'bool'
+                let cell_bytes = row.get(94).unwrap();
+                let value = cell_bytes.to_le() != 0;
+                value
+            },
+        })
+        .collect()
+});
 
 #[derive(Debug)]
 pub struct ActiveSkillRequirementsRow {
@@ -124,16 +123,10 @@ impl ActiveSkillRequirementsRef {
         &TABLE_ActiveSkillRequirements[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_ActiveSkillRequirements
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_ActiveSkillRequirements.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static ActiveSkillRequirementsRow)> {
-        TABLE_ActiveSkillRequirements
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_ActiveSkillRequirements.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

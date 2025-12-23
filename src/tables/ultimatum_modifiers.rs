@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_UltimatumModifiers: LazyLock<Vec<UltimatumModifiersRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/ultimatummodifiers.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/ultimatummodifiers.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| UltimatumModifiersRow {
             r#id: {
@@ -36,10 +31,7 @@ pub static TABLE_UltimatumModifiers: LazyLock<Vec<UltimatumModifiersRow>> = Lazy
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| UltimatumModifierTypesRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| UltimatumModifierTypesRef::new(value as usize)).collect()
             },
             r#extra_mods: {
                 // array_mutator column.array == true
@@ -53,10 +45,7 @@ pub static TABLE_UltimatumModifiers: LazyLock<Vec<UltimatumModifiersRow>> = Lazy
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| ModsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| ModsRef::new(value as usize)).collect()
             },
             r#types_filtered: {
                 // array_mutator column.array == true
@@ -70,10 +59,7 @@ pub static TABLE_UltimatumModifiers: LazyLock<Vec<UltimatumModifiersRow>> = Lazy
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| UltimatumModifierTypesRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| UltimatumModifierTypesRef::new(value as usize)).collect()
             },
             r#previous_tier: {
                 // array_mutator column.array == true
@@ -87,10 +73,7 @@ pub static TABLE_UltimatumModifiers: LazyLock<Vec<UltimatumModifiersRow>> = Lazy
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| UltimatumModifiersRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| UltimatumModifiersRef::new(value as usize)).collect()
             },
             r#unknown72: {
                 // array_mutator column.array == false && column.type == 'bool'
@@ -145,10 +128,7 @@ pub static TABLE_UltimatumModifiers: LazyLock<Vec<UltimatumModifiersRow>> = Lazy
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| BuffTemplatesRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| BuffTemplatesRef::new(value as usize)).collect()
             },
             r#tier: {
                 // array_mutator column.array == false && column.type != 'string|bool'
@@ -196,10 +176,7 @@ pub static TABLE_UltimatumModifiers: LazyLock<Vec<UltimatumModifiersRow>> = Lazy
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| StatsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| StatsRef::new(value as usize)).collect()
             },
             r#map_stat_values: {
                 // array_mutator column.array == true
@@ -227,10 +204,7 @@ pub static TABLE_UltimatumModifiers: LazyLock<Vec<UltimatumModifiersRow>> = Lazy
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| ModsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| ModsRef::new(value as usize)).collect()
             },
         })
         .collect()
@@ -281,16 +255,10 @@ impl UltimatumModifiersRef {
         &TABLE_UltimatumModifiers[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_UltimatumModifiers
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_UltimatumModifiers.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static UltimatumModifiersRow)> {
-        TABLE_UltimatumModifiers
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_UltimatumModifiers.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

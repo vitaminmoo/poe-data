@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_Incursion2Rooms: LazyLock<Vec<Incursion2RoomsRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/incursion2rooms.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/incursion2rooms.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| Incursion2RoomsRow {
             r#id: {
@@ -42,10 +37,7 @@ pub static TABLE_Incursion2Rooms: LazyLock<Vec<Incursion2RoomsRow>> = LazyLock::
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| Incursion2RoomsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| Incursion2RoomsRef::new(value as usize)).collect()
             },
             r#unknown25: {
                 // array_mutator column.array == true
@@ -59,10 +51,7 @@ pub static TABLE_Incursion2Rooms: LazyLock<Vec<Incursion2RoomsRow>> = LazyLock::
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| Incursion2RoomsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| Incursion2RoomsRef::new(value as usize)).collect()
             },
             r#unknown41: {
                 // array_mutator column.array == true
@@ -76,10 +65,7 @@ pub static TABLE_Incursion2Rooms: LazyLock<Vec<Incursion2RoomsRow>> = LazyLock::
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| Incursion2RoomsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| Incursion2RoomsRef::new(value as usize)).collect()
             },
             r#unknown57: {
                 // array_mutator column.array == false && column.type != 'string|bool'
@@ -152,16 +138,10 @@ impl Incursion2RoomsRef {
         &TABLE_Incursion2Rooms[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_Incursion2Rooms
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_Incursion2Rooms.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static Incursion2RoomsRow)> {
-        TABLE_Incursion2Rooms
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_Incursion2Rooms.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

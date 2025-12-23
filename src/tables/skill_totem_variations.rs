@@ -8,37 +8,36 @@ use super::*;
 use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
-pub static TABLE_SkillTotemVariations: LazyLock<Vec<SkillTotemVariationsRow>> =
-    LazyLock::new(|| {
-        let df = DAT_LOADER
-            .write()
-            .unwrap()
-            .get_table("data/balance/skilltotemvariations.datc64")
-            .unwrap()
-            .clone();
-        df.rows_iter()
-            .map(|row| SkillTotemVariationsRow {
-                r#skill_totems_key: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(0..0 + 4).unwrap();
-                    let value = cell_bytes.get_i32_le();
-                    SkillTotems::from_repr(value as usize)
-                },
-                r#totem_skin_id: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(4..4 + 4).unwrap();
-                    let value = cell_bytes.get_i32_le();
-                    value
-                },
-                r#monster_varieties_key: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(8..8 + 16).unwrap();
-                    let value = cell_bytes.get_i64_le();
-                    MonsterVarietiesRef::new(value as usize)
-                },
-            })
-            .collect()
-    });
+pub static TABLE_SkillTotemVariations: LazyLock<Vec<SkillTotemVariationsRow>> = LazyLock::new(|| {
+    let df = DAT_LOADER
+        .write()
+        .unwrap()
+        .get_table("data/balance/skilltotemvariations.datc64")
+        .unwrap()
+        .clone();
+    df.rows_iter()
+        .map(|row| SkillTotemVariationsRow {
+            r#skill_totems_key: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(0..0 + 4).unwrap();
+                let value = cell_bytes.get_i32_le();
+                SkillTotems::from_repr(value as usize)
+            },
+            r#totem_skin_id: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(4..4 + 4).unwrap();
+                let value = cell_bytes.get_i32_le();
+                value
+            },
+            r#monster_varieties_key: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(8..8 + 16).unwrap();
+                let value = cell_bytes.get_i64_le();
+                MonsterVarietiesRef::new(value as usize)
+            },
+        })
+        .collect()
+});
 
 #[derive(Debug)]
 pub struct SkillTotemVariationsRow {
@@ -68,16 +67,10 @@ impl SkillTotemVariationsRef {
         &TABLE_SkillTotemVariations[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_SkillTotemVariations
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_SkillTotemVariations.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static SkillTotemVariationsRow)> {
-        TABLE_SkillTotemVariations
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_SkillTotemVariations.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

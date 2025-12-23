@@ -8,49 +8,48 @@ use super::*;
 use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
-pub static TABLE_MonsterSpawnerGroupsPerLevel: LazyLock<Vec<MonsterSpawnerGroupsPerLevelRow>> =
-    LazyLock::new(|| {
-        let df = DAT_LOADER
-            .write()
-            .unwrap()
-            .get_table("data/balance/monsterspawnergroupsperlevel.datc64")
-            .unwrap()
-            .clone();
-        df.rows_iter()
-            .map(|row| MonsterSpawnerGroupsPerLevelRow {
-                r#monster_spawner_groups_key: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(0..0 + 16).unwrap();
-                    let value = cell_bytes.get_i64_le();
-                    MonsterSpawnerGroupsRef::new(value as usize)
-                },
-                r#min_level: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(16..16 + 4).unwrap();
-                    let value = cell_bytes.get_i32_le();
-                    value
-                },
-                r#unknown20: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(20..20 + 4).unwrap();
-                    let value = cell_bytes.get_i32_le();
-                    value
-                },
-                r#unknown24: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(24..24 + 4).unwrap();
-                    let value = cell_bytes.get_i32_le();
-                    value
-                },
-                r#unknown28: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(28..28 + 4).unwrap();
-                    let value = cell_bytes.get_i32_le();
-                    value
-                },
-            })
-            .collect()
-    });
+pub static TABLE_MonsterSpawnerGroupsPerLevel: LazyLock<Vec<MonsterSpawnerGroupsPerLevelRow>> = LazyLock::new(|| {
+    let df = DAT_LOADER
+        .write()
+        .unwrap()
+        .get_table("data/balance/monsterspawnergroupsperlevel.datc64")
+        .unwrap()
+        .clone();
+    df.rows_iter()
+        .map(|row| MonsterSpawnerGroupsPerLevelRow {
+            r#monster_spawner_groups_key: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(0..0 + 16).unwrap();
+                let value = cell_bytes.get_i64_le();
+                MonsterSpawnerGroupsRef::new(value as usize)
+            },
+            r#min_level: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(16..16 + 4).unwrap();
+                let value = cell_bytes.get_i32_le();
+                value
+            },
+            r#unknown20: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(20..20 + 4).unwrap();
+                let value = cell_bytes.get_i32_le();
+                value
+            },
+            r#unknown24: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(24..24 + 4).unwrap();
+                let value = cell_bytes.get_i32_le();
+                value
+            },
+            r#unknown28: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(28..28 + 4).unwrap();
+                let value = cell_bytes.get_i32_le();
+                value
+            },
+        })
+        .collect()
+});
 
 #[derive(Debug)]
 pub struct MonsterSpawnerGroupsPerLevelRow {
@@ -82,17 +81,10 @@ impl MonsterSpawnerGroupsPerLevelRef {
         &TABLE_MonsterSpawnerGroupsPerLevel[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_MonsterSpawnerGroupsPerLevel
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_MonsterSpawnerGroupsPerLevel.iter().enumerate().map(|(i, _)| Self(i))
     }
-    pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static MonsterSpawnerGroupsPerLevelRow)>
-    {
-        TABLE_MonsterSpawnerGroupsPerLevel
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+    pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static MonsterSpawnerGroupsPerLevelRow)> {
+        TABLE_MonsterSpawnerGroupsPerLevel.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

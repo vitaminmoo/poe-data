@@ -83,16 +83,10 @@ impl UltimatumWagerTypesRef {
         &TABLE_UltimatumWagerTypes[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_UltimatumWagerTypes
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_UltimatumWagerTypes.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static UltimatumWagerTypesRow)> {
-        TABLE_UltimatumWagerTypes
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_UltimatumWagerTypes.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

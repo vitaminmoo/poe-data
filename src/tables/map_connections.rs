@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_MapConnections: LazyLock<Vec<MapConnectionsRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/mapconnections.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/mapconnections.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| MapConnectionsRow {
             r#map_pins_key0: {
@@ -110,16 +105,10 @@ impl MapConnectionsRef {
         &TABLE_MapConnections[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_MapConnections
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_MapConnections.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static MapConnectionsRow)> {
-        TABLE_MapConnections
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_MapConnections.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

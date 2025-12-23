@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_UncutGemTiers: LazyLock<Vec<UncutGemTiersRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/uncutgemtiers.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/uncutgemtiers.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| UncutGemTiersRow {
             r#base_item_type: {
@@ -70,10 +65,7 @@ impl UncutGemTiersRef {
         TABLE_UncutGemTiers.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static UncutGemTiersRow)> {
-        TABLE_UncutGemTiers
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_UncutGemTiers.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

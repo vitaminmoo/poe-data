@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_MonsterVarieties: LazyLock<Vec<MonsterVarietiesRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/monstervarieties.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/monstervarieties.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| MonsterVarietiesRow {
             r#id: {
@@ -91,10 +86,7 @@ pub static TABLE_MonsterVarieties: LazyLock<Vec<MonsterVarietiesRow>> = LazyLock
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| ModsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| ModsRef::new(value as usize)).collect()
             },
             r#unknown96: {
                 // array_mutator column.array == false && column.type != 'string|bool'
@@ -164,10 +156,7 @@ pub static TABLE_MonsterVarieties: LazyLock<Vec<MonsterVarietiesRow>> = LazyLock
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| TagsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| TagsRef::new(value as usize)).collect()
             },
             r#experience_multiplier: {
                 // array_mutator column.array == false && column.type != 'string|bool'
@@ -231,10 +220,7 @@ pub static TABLE_MonsterVarieties: LazyLock<Vec<MonsterVarietiesRow>> = LazyLock
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| GrantedEffectsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| GrantedEffectsRef::new(value as usize)).collect()
             },
             r#ais_file: {
                 // array_mutator column.array == false && column.type == 'string'
@@ -255,10 +241,7 @@ pub static TABLE_MonsterVarieties: LazyLock<Vec<MonsterVarietiesRow>> = LazyLock
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| ModsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| ModsRef::new(value as usize)).collect()
             },
             r#stance: {
                 // array_mutator column.array == false && column.type == 'string'
@@ -310,10 +293,7 @@ pub static TABLE_MonsterVarieties: LazyLock<Vec<MonsterVarietiesRow>> = LazyLock
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| ItemVisualIdentityRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| ItemVisualIdentityRef::new(value as usize)).collect()
             },
             r#weapon2_item_visual_identity: {
                 // array_mutator column.array == true
@@ -327,10 +307,7 @@ pub static TABLE_MonsterVarieties: LazyLock<Vec<MonsterVarietiesRow>> = LazyLock
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| ItemVisualIdentityRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| ItemVisualIdentityRef::new(value as usize)).collect()
             },
             r#back_item_visual_identity: {
                 // array_mutator column.array == false && column.type != 'string|bool'
@@ -374,10 +351,7 @@ pub static TABLE_MonsterVarieties: LazyLock<Vec<MonsterVarietiesRow>> = LazyLock
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| AchievementItemsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| AchievementItemsRef::new(value as usize)).collect()
             },
             r#special_mods: {
                 // array_mutator column.array == true
@@ -391,10 +365,7 @@ pub static TABLE_MonsterVarieties: LazyLock<Vec<MonsterVarietiesRow>> = LazyLock
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| ModsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| ModsRef::new(value as usize)).collect()
             },
             r#kill_rare_achievement_items: {
                 // array_mutator column.array == true
@@ -408,10 +379,7 @@ pub static TABLE_MonsterVarieties: LazyLock<Vec<MonsterVarietiesRow>> = LazyLock
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| AchievementItemsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| AchievementItemsRef::new(value as usize)).collect()
             },
             r#unknown440: {
                 // array_mutator column.array == false && column.type == 'bool'
@@ -510,10 +478,7 @@ pub static TABLE_MonsterVarieties: LazyLock<Vec<MonsterVarietiesRow>> = LazyLock
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| ModsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| ModsRef::new(value as usize)).collect()
             },
             r#part2_mods: {
                 // array_mutator column.array == true
@@ -527,10 +492,7 @@ pub static TABLE_MonsterVarieties: LazyLock<Vec<MonsterVarietiesRow>> = LazyLock
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| ModsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| ModsRef::new(value as usize)).collect()
             },
             r#endgame_mods: {
                 // array_mutator column.array == true
@@ -544,10 +506,7 @@ pub static TABLE_MonsterVarieties: LazyLock<Vec<MonsterVarietiesRow>> = LazyLock
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| ModsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| ModsRef::new(value as usize)).collect()
             },
             r#unknown588: {
                 // array_mutator column.array == false && column.type != 'string|bool'
@@ -593,10 +552,7 @@ pub static TABLE_MonsterVarieties: LazyLock<Vec<MonsterVarietiesRow>> = LazyLock
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| MultiPartAchievementsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| MultiPartAchievementsRef::new(value as usize)).collect()
             },
             r#unknown644: {
                 // array_mutator column.array == false && column.type != 'string|bool'
@@ -1136,16 +1092,10 @@ impl MonsterVarietiesRef {
         &TABLE_MonsterVarieties[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_MonsterVarieties
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_MonsterVarieties.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static MonsterVarietiesRow)> {
-        TABLE_MonsterVarieties
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_MonsterVarieties.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

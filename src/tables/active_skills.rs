@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_ActiveSkills: LazyLock<Vec<ActiveSkillsRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/activeskills.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/activeskills.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| ActiveSkillsRow {
             r#id: {
@@ -63,10 +58,7 @@ pub static TABLE_ActiveSkills: LazyLock<Vec<ActiveSkillsRow>> = LazyLock::new(||
                     .iter()
                     .map(|x| x.clone().get_i32_le())
                     .collect::<Vec<i32>>();
-                values
-                    .into_iter()
-                    .map(|value| ActiveSkillTargetTypes::from_repr(value as usize))
-                    .collect()
+                values.into_iter().map(|value| ActiveSkillTargetTypes::from_repr(value as usize)).collect()
             },
             r#active_skill_types: {
                 // array_mutator column.array == true
@@ -80,10 +72,7 @@ pub static TABLE_ActiveSkills: LazyLock<Vec<ActiveSkillsRow>> = LazyLock::new(||
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| ActiveSkillTypeRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| ActiveSkillTypeRef::new(value as usize)).collect()
             },
             r#website_description: {
                 // array_mutator column.array == false && column.type == 'string'
@@ -142,10 +131,7 @@ pub static TABLE_ActiveSkills: LazyLock<Vec<ActiveSkillsRow>> = LazyLock::new(||
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| StatsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| StatsRef::new(value as usize)).collect()
             },
             r#output_stats: {
                 // array_mutator column.array == true
@@ -159,10 +145,7 @@ pub static TABLE_ActiveSkills: LazyLock<Vec<ActiveSkillsRow>> = LazyLock::new(||
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| StatsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| StatsRef::new(value as usize)).collect()
             },
             r#minion_active_skill_types: {
                 // array_mutator column.array == true
@@ -176,10 +159,7 @@ pub static TABLE_ActiveSkills: LazyLock<Vec<ActiveSkillsRow>> = LazyLock::new(||
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| ActiveSkillTypeRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| ActiveSkillTypeRef::new(value as usize)).collect()
             },
             r#unknown159: {
                 // array_mutator column.array == false && column.type == 'bool'
@@ -205,10 +185,7 @@ pub static TABLE_ActiveSkills: LazyLock<Vec<ActiveSkillsRow>> = LazyLock::new(||
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| StatsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| StatsRef::new(value as usize)).collect()
             },
             r#skill_mine: {
                 // array_mutator column.array == false && column.type != 'string|bool'
@@ -247,10 +224,7 @@ pub static TABLE_ActiveSkills: LazyLock<Vec<ActiveSkillsRow>> = LazyLock::new(||
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| VirtualStatContextFlagsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| VirtualStatContextFlagsRef::new(value as usize)).collect()
             },
             r#unknown222: {
                 // array_mutator column.array == false && column.type == 'bool'
@@ -411,10 +385,7 @@ impl ActiveSkillsRef {
         TABLE_ActiveSkills.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static ActiveSkillsRow)> {
-        TABLE_ActiveSkills
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_ActiveSkills.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

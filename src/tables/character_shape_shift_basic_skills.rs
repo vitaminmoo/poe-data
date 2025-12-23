@@ -8,31 +8,30 @@ use super::*;
 use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
-pub static TABLE_CharacterShapeShiftBasicSkills: LazyLock<Vec<CharacterShapeShiftBasicSkillsRow>> =
-    LazyLock::new(|| {
-        let df = DAT_LOADER
-            .write()
-            .unwrap()
-            .get_table("data/balance/charactershapeshiftbasicskills.datc64")
-            .unwrap()
-            .clone();
-        df.rows_iter()
-            .map(|row| CharacterShapeShiftBasicSkillsRow {
-                r#shape_shift_form: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(0..0 + 16).unwrap();
-                    let value = cell_bytes.get_i64_le();
-                    ShapeShiftFormsRef::new(value as usize)
-                },
-                r#skill: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(16..16 + 16).unwrap();
-                    let value = cell_bytes.get_i64_le();
-                    SkillGemsRef::new(value as usize)
-                },
-            })
-            .collect()
-    });
+pub static TABLE_CharacterShapeShiftBasicSkills: LazyLock<Vec<CharacterShapeShiftBasicSkillsRow>> = LazyLock::new(|| {
+    let df = DAT_LOADER
+        .write()
+        .unwrap()
+        .get_table("data/balance/charactershapeshiftbasicskills.datc64")
+        .unwrap()
+        .clone();
+    df.rows_iter()
+        .map(|row| CharacterShapeShiftBasicSkillsRow {
+            r#shape_shift_form: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(0..0 + 16).unwrap();
+                let value = cell_bytes.get_i64_le();
+                ShapeShiftFormsRef::new(value as usize)
+            },
+            r#skill: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(16..16 + 16).unwrap();
+                let value = cell_bytes.get_i64_le();
+                SkillGemsRef::new(value as usize)
+            },
+        })
+        .collect()
+});
 
 #[derive(Debug)]
 pub struct CharacterShapeShiftBasicSkillsRow {
@@ -61,17 +60,10 @@ impl CharacterShapeShiftBasicSkillsRef {
         &TABLE_CharacterShapeShiftBasicSkills[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_CharacterShapeShiftBasicSkills
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_CharacterShapeShiftBasicSkills.iter().enumerate().map(|(i, _)| Self(i))
     }
-    pub fn iter_with_refs(
-    ) -> impl Iterator<Item = (Self, &'static CharacterShapeShiftBasicSkillsRow)> {
-        TABLE_CharacterShapeShiftBasicSkills
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+    pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static CharacterShapeShiftBasicSkillsRow)> {
+        TABLE_CharacterShapeShiftBasicSkills.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

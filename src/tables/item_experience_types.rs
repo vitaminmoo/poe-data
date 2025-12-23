@@ -54,16 +54,10 @@ impl ItemExperienceTypesRef {
         &TABLE_ItemExperienceTypes[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_ItemExperienceTypes
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_ItemExperienceTypes.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static ItemExperienceTypesRow)> {
-        TABLE_ItemExperienceTypes
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_ItemExperienceTypes.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

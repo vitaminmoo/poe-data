@@ -8,31 +8,30 @@ use super::*;
 use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
-pub static TABLE_JobAssassinationSpawnerGroups: LazyLock<Vec<JobAssassinationSpawnerGroupsRow>> =
-    LazyLock::new(|| {
-        let df = DAT_LOADER
-            .write()
-            .unwrap()
-            .get_table("data/balance/jobassassinationspawnergroups.datc64")
-            .unwrap()
-            .clone();
-        df.rows_iter()
-            .map(|row| JobAssassinationSpawnerGroupsRow {
-                r#unknown0: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(0..0 + 16).unwrap();
-                    let value = cell_bytes.get_i64_le();
-                    value
-                },
-                r#unknown16: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(16..16 + 16).unwrap();
-                    let value = cell_bytes.get_i64_le();
-                    value
-                },
-            })
-            .collect()
-    });
+pub static TABLE_JobAssassinationSpawnerGroups: LazyLock<Vec<JobAssassinationSpawnerGroupsRow>> = LazyLock::new(|| {
+    let df = DAT_LOADER
+        .write()
+        .unwrap()
+        .get_table("data/balance/jobassassinationspawnergroups.datc64")
+        .unwrap()
+        .clone();
+    df.rows_iter()
+        .map(|row| JobAssassinationSpawnerGroupsRow {
+            r#unknown0: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(0..0 + 16).unwrap();
+                let value = cell_bytes.get_i64_le();
+                value
+            },
+            r#unknown16: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(16..16 + 16).unwrap();
+                let value = cell_bytes.get_i64_le();
+                value
+            },
+        })
+        .collect()
+});
 
 #[derive(Debug)]
 pub struct JobAssassinationSpawnerGroupsRow {
@@ -61,17 +60,10 @@ impl JobAssassinationSpawnerGroupsRef {
         &TABLE_JobAssassinationSpawnerGroups[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_JobAssassinationSpawnerGroups
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_JobAssassinationSpawnerGroups.iter().enumerate().map(|(i, _)| Self(i))
     }
-    pub fn iter_with_refs(
-    ) -> impl Iterator<Item = (Self, &'static JobAssassinationSpawnerGroupsRow)> {
-        TABLE_JobAssassinationSpawnerGroups
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+    pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static JobAssassinationSpawnerGroupsRow)> {
+        TABLE_JobAssassinationSpawnerGroups.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

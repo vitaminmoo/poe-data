@@ -8,43 +8,42 @@ use super::*;
 use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
-pub static TABLE_CharacterCreationDialogue: LazyLock<Vec<CharacterCreationDialogueRow>> =
-    LazyLock::new(|| {
-        let df = DAT_LOADER
-            .write()
-            .unwrap()
-            .get_table("data/balance/charactercreationdialogue.datc64")
-            .unwrap()
-            .clone();
-        df.rows_iter()
-            .map(|row| CharacterCreationDialogueRow {
-                r#character: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(0..0 + 16).unwrap();
-                    let value = cell_bytes.get_i64_le();
-                    CharactersRef::new(value as usize)
-                },
-                r#unknown16: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(16..16 + 16).unwrap();
-                    let value = cell_bytes.get_i64_le();
-                    value
-                },
-                r#unknown32: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(32..32 + 16).unwrap();
-                    let value = cell_bytes.get_i64_le();
-                    value
-                },
-                r#unknown48: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(48..48 + 16).unwrap();
-                    let value = cell_bytes.get_i64_le();
-                    value
-                },
-            })
-            .collect()
-    });
+pub static TABLE_CharacterCreationDialogue: LazyLock<Vec<CharacterCreationDialogueRow>> = LazyLock::new(|| {
+    let df = DAT_LOADER
+        .write()
+        .unwrap()
+        .get_table("data/balance/charactercreationdialogue.datc64")
+        .unwrap()
+        .clone();
+    df.rows_iter()
+        .map(|row| CharacterCreationDialogueRow {
+            r#character: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(0..0 + 16).unwrap();
+                let value = cell_bytes.get_i64_le();
+                CharactersRef::new(value as usize)
+            },
+            r#unknown16: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(16..16 + 16).unwrap();
+                let value = cell_bytes.get_i64_le();
+                value
+            },
+            r#unknown32: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(32..32 + 16).unwrap();
+                let value = cell_bytes.get_i64_le();
+                value
+            },
+            r#unknown48: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(48..48 + 16).unwrap();
+                let value = cell_bytes.get_i64_le();
+                value
+            },
+        })
+        .collect()
+});
 
 #[derive(Debug)]
 pub struct CharacterCreationDialogueRow {
@@ -75,16 +74,10 @@ impl CharacterCreationDialogueRef {
         &TABLE_CharacterCreationDialogue[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_CharacterCreationDialogue
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_CharacterCreationDialogue.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static CharacterCreationDialogueRow)> {
-        TABLE_CharacterCreationDialogue
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_CharacterCreationDialogue.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

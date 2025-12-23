@@ -194,16 +194,10 @@ impl DefaultMonsterStatsRef {
         &TABLE_DefaultMonsterStats[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_DefaultMonsterStats
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_DefaultMonsterStats.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static DefaultMonsterStatsRow)> {
-        TABLE_DefaultMonsterStats
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_DefaultMonsterStats.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

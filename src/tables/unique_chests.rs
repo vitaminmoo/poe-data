@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_UniqueChests: LazyLock<Vec<UniqueChestsRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/uniquechests.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/uniquechests.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| UniqueChestsRow {
             r#id: {
@@ -54,10 +49,7 @@ pub static TABLE_UniqueChests: LazyLock<Vec<UniqueChestsRow>> = LazyLock::new(||
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| ModsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| ModsRef::new(value as usize)).collect()
             },
             r#spawn_weight: {
                 // array_mutator column.array == false && column.type != 'string|bool'
@@ -177,10 +169,7 @@ impl UniqueChestsRef {
         TABLE_UniqueChests.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static UniqueChestsRow)> {
-        TABLE_UniqueChests
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_UniqueChests.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

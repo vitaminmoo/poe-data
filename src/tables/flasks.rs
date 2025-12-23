@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_Flasks: LazyLock<Vec<FlasksRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/flasks.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/flasks.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| FlasksRow {
             r#base_item_type: {
@@ -84,10 +79,7 @@ pub static TABLE_Flasks: LazyLock<Vec<FlasksRow>> = LazyLock::new(|| {
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| UtilityFlaskBuffsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| UtilityFlaskBuffsRef::new(value as usize)).collect()
             },
         })
         .collect()

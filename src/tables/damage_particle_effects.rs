@@ -8,55 +8,54 @@ use super::*;
 use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
-pub static TABLE_DamageParticleEffects: LazyLock<Vec<DamageParticleEffectsRow>> =
-    LazyLock::new(|| {
-        let df = DAT_LOADER
-            .write()
-            .unwrap()
-            .get_table("data/balance/damageparticleeffects.datc64")
-            .unwrap()
-            .clone();
-        df.rows_iter()
-            .map(|row| DamageParticleEffectsRow {
-                r#damage_particle_effect_types: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(0..0 + 4).unwrap();
-                    let value = cell_bytes.get_i32_le();
-                    DamageParticleEffectTypes::from_repr(value as usize)
-                },
-                r#variation: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(4..4 + 4).unwrap();
-                    let value = cell_bytes.get_i32_le();
-                    value
-                },
-                r#unknown8: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(8..8 + 4).unwrap();
-                    let value = cell_bytes.get_i32_le();
-                    value
-                },
-                r#unknown12: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(12..12 + 16).unwrap();
-                    let value = cell_bytes.get_i64_le();
-                    value
-                },
-                r#unknown28: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(28..28 + 16).unwrap();
-                    let value = cell_bytes.get_i64_le();
-                    value
-                },
-                r#unknown44: {
-                    // array_mutator column.array == false && column.type == 'bool'
-                    let cell_bytes = row.get(44).unwrap();
-                    let value = cell_bytes.to_le() != 0;
-                    value
-                },
-            })
-            .collect()
-    });
+pub static TABLE_DamageParticleEffects: LazyLock<Vec<DamageParticleEffectsRow>> = LazyLock::new(|| {
+    let df = DAT_LOADER
+        .write()
+        .unwrap()
+        .get_table("data/balance/damageparticleeffects.datc64")
+        .unwrap()
+        .clone();
+    df.rows_iter()
+        .map(|row| DamageParticleEffectsRow {
+            r#damage_particle_effect_types: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(0..0 + 4).unwrap();
+                let value = cell_bytes.get_i32_le();
+                DamageParticleEffectTypes::from_repr(value as usize)
+            },
+            r#variation: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(4..4 + 4).unwrap();
+                let value = cell_bytes.get_i32_le();
+                value
+            },
+            r#unknown8: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(8..8 + 4).unwrap();
+                let value = cell_bytes.get_i32_le();
+                value
+            },
+            r#unknown12: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(12..12 + 16).unwrap();
+                let value = cell_bytes.get_i64_le();
+                value
+            },
+            r#unknown28: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(28..28 + 16).unwrap();
+                let value = cell_bytes.get_i64_le();
+                value
+            },
+            r#unknown44: {
+                // array_mutator column.array == false && column.type == 'bool'
+                let cell_bytes = row.get(44).unwrap();
+                let value = cell_bytes.to_le() != 0;
+                value
+            },
+        })
+        .collect()
+});
 
 #[derive(Debug)]
 pub struct DamageParticleEffectsRow {
@@ -89,16 +88,10 @@ impl DamageParticleEffectsRef {
         &TABLE_DamageParticleEffects[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_DamageParticleEffects
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_DamageParticleEffects.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static DamageParticleEffectsRow)> {
-        TABLE_DamageParticleEffects
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_DamageParticleEffects.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

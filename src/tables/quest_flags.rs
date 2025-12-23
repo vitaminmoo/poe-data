@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_QuestFlags: LazyLock<Vec<QuestFlagsRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/questflags.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/questflags.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| QuestFlagsRow {
             r#id: {
@@ -64,10 +59,7 @@ impl QuestFlagsRef {
         TABLE_QuestFlags.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static QuestFlagsRow)> {
-        TABLE_QuestFlags
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_QuestFlags.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

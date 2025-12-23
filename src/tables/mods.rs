@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_Mods: LazyLock<Vec<ModsRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/mods.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/mods.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| ModsRow {
             r#id: {
@@ -97,10 +92,7 @@ pub static TABLE_Mods: LazyLock<Vec<ModsRow>> = LazyLock::new(|| {
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| ModFamilyRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| ModFamilyRef::new(value as usize)).collect()
             },
             r#stat1_value: {
                 // array_mutator column.array == false && column.type == 'interval'
@@ -138,10 +130,7 @@ pub static TABLE_Mods: LazyLock<Vec<ModsRow>> = LazyLock::new(|| {
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| TagsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| TagsRef::new(value as usize)).collect()
             },
             r#unknown174: {
                 // array_mutator column.array == true
@@ -169,10 +158,7 @@ pub static TABLE_Mods: LazyLock<Vec<ModsRow>> = LazyLock::new(|| {
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| TagsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| TagsRef::new(value as usize)).collect()
             },
             r#granted_effects_per_level: {
                 // array_mutator column.array == true
@@ -186,10 +172,7 @@ pub static TABLE_Mods: LazyLock<Vec<ModsRow>> = LazyLock::new(|| {
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| GrantedEffectsPerLevelRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| GrantedEffectsPerLevelRef::new(value as usize)).collect()
             },
             r#aura_flags: {
                 // array_mutator column.array == true
@@ -203,10 +186,7 @@ pub static TABLE_Mods: LazyLock<Vec<ModsRow>> = LazyLock::new(|| {
                     .iter()
                     .map(|x| x.clone().get_i32_le())
                     .collect::<Vec<i32>>();
-                values
-                    .into_iter()
-                    .map(|value| ModAuraFlags::from_repr(value as usize))
-                    .collect()
+                values.into_iter().map(|value| ModAuraFlags::from_repr(value as usize)).collect()
             },
             r#monster_metadata: {
                 // array_mutator column.array == false && column.type == 'string'
@@ -227,10 +207,7 @@ pub static TABLE_Mods: LazyLock<Vec<ModsRow>> = LazyLock::new(|| {
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| AchievementItemsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| AchievementItemsRef::new(value as usize)).collect()
             },
             r#chest_mod_type: {
                 // array_mutator column.array == true
@@ -244,10 +221,7 @@ pub static TABLE_Mods: LazyLock<Vec<ModsRow>> = LazyLock::new(|| {
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| ModTypeRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| ModTypeRef::new(value as usize)).collect()
             },
             r#stat5_value: {
                 // array_mutator column.array == false && column.type == 'interval'
@@ -273,10 +247,7 @@ pub static TABLE_Mods: LazyLock<Vec<ModsRow>> = LazyLock::new(|| {
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| AchievementItemsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| AchievementItemsRef::new(value as usize)).collect()
             },
             r#achievement_items: {
                 // array_mutator column.array == true
@@ -290,10 +261,7 @@ pub static TABLE_Mods: LazyLock<Vec<ModsRow>> = LazyLock::new(|| {
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| AchievementItemsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| AchievementItemsRef::new(value as usize)).collect()
             },
             r#generation_weight_tags: {
                 // array_mutator column.array == true
@@ -307,10 +275,7 @@ pub static TABLE_Mods: LazyLock<Vec<ModsRow>> = LazyLock::new(|| {
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| TagsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| TagsRef::new(value as usize)).collect()
             },
             r#generation_weight_values: {
                 // array_mutator column.array == true
@@ -338,10 +303,7 @@ pub static TABLE_Mods: LazyLock<Vec<ModsRow>> = LazyLock::new(|| {
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| AchievementItemsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| AchievementItemsRef::new(value as usize)).collect()
             },
             r#stat6_value: {
                 // array_mutator column.array == false && column.type == 'interval'
@@ -379,10 +341,7 @@ pub static TABLE_Mods: LazyLock<Vec<ModsRow>> = LazyLock::new(|| {
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| ItemClassesRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| ItemClassesRef::new(value as usize)).collect()
             },
             r#monster_on_death: {
                 // array_mutator column.array == false && column.type == 'string'
@@ -409,10 +368,7 @@ pub static TABLE_Mods: LazyLock<Vec<ModsRow>> = LazyLock::new(|| {
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| AchievementItemsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| AchievementItemsRef::new(value as usize)).collect()
             },
             r#heist_sub_stat_value1: {
                 // array_mutator column.array == false && column.type != 'string|bool'
@@ -468,10 +424,7 @@ pub static TABLE_Mods: LazyLock<Vec<ModsRow>> = LazyLock::new(|| {
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| TagsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| TagsRef::new(value as usize)).collect()
             },
             r#unknown523: {
                 // array_mutator column.array == false && column.type == 'bool'
@@ -625,10 +578,7 @@ pub static TABLE_Mods: LazyLock<Vec<ModsRow>> = LazyLock::new(|| {
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| GrantedEffectsPerLevelRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| GrantedEffectsPerLevelRef::new(value as usize)).collect()
             },
             r#radius_jewel_type: {
                 // array_mutator column.array == false && column.type != 'string|bool'

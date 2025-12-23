@@ -8,9 +8,7 @@ use super::*;
 use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
-pub static TABLE_HarvestCraftCostScalingByBasetype: LazyLock<
-    Vec<HarvestCraftCostScalingByBasetypeRow>,
-> = LazyLock::new(|| {
+pub static TABLE_HarvestCraftCostScalingByBasetype: LazyLock<Vec<HarvestCraftCostScalingByBasetypeRow>> = LazyLock::new(|| {
     let df = DAT_LOADER
         .write()
         .unwrap()
@@ -69,17 +67,10 @@ impl HarvestCraftCostScalingByBasetypeRef {
         &TABLE_HarvestCraftCostScalingByBasetype[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_HarvestCraftCostScalingByBasetype
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_HarvestCraftCostScalingByBasetype.iter().enumerate().map(|(i, _)| Self(i))
     }
-    pub fn iter_with_refs(
-    ) -> impl Iterator<Item = (Self, &'static HarvestCraftCostScalingByBasetypeRow)> {
-        TABLE_HarvestCraftCostScalingByBasetype
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+    pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static HarvestCraftCostScalingByBasetypeRow)> {
+        TABLE_HarvestCraftCostScalingByBasetype.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

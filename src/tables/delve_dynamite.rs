@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_DelveDynamite: LazyLock<Vec<DelveDynamiteRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/delvedynamite.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/delvedynamite.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| DelveDynamiteRow {
             r#unknown0: {
@@ -140,10 +135,7 @@ impl DelveDynamiteRef {
         TABLE_DelveDynamite.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static DelveDynamiteRow)> {
-        TABLE_DelveDynamite
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_DelveDynamite.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

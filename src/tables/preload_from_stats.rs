@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_PreloadFromStats: LazyLock<Vec<PreloadFromStatsRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/preloadfromstats.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/preloadfromstats.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| PreloadFromStatsRow {
             r#unknown0: {
@@ -100,16 +95,10 @@ impl PreloadFromStatsRef {
         &TABLE_PreloadFromStats[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_PreloadFromStats
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_PreloadFromStats.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static PreloadFromStatsRow)> {
-        TABLE_PreloadFromStats
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_PreloadFromStats.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_NPCShop: LazyLock<Vec<NPCShopRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/npcshop.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/npcshop.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| NPCShopRow {
             r#id: {

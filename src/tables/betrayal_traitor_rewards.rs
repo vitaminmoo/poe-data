@@ -8,51 +8,50 @@ use super::*;
 use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
-pub static TABLE_BetrayalTraitorRewards: LazyLock<Vec<BetrayalTraitorRewardsRow>> =
-    LazyLock::new(|| {
-        let df = DAT_LOADER
-            .write()
-            .unwrap()
-            .get_table("data/balance/betrayaltraitorrewards.datc64")
-            .unwrap()
-            .clone();
-        df.rows_iter()
-            .map(|row| BetrayalTraitorRewardsRow {
-                r#betrayal_jobs_key: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(0..0 + 16).unwrap();
-                    let value = cell_bytes.get_i64_le();
-                    BetrayalJobsRef::new(value as usize)
-                },
-                r#betrayal_targets_key: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(16..16 + 16).unwrap();
-                    let value = cell_bytes.get_i64_le();
-                    BetrayalTargetsRef::new(value as usize)
-                },
-                r#betrayal_ranks_key: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(32..32 + 16).unwrap();
-                    let value = cell_bytes.get_i64_le();
-                    BetrayalRanksRef::new(value as usize)
-                },
-                r#description: {
-                    // array_mutator column.array == false && column.type == 'string'
-                    let mut cell_bytes = row.get(48..48 + 8).unwrap();
-                    let offset = cell_bytes.get_i32_le() as usize;
-                    let value = df.string_from_offset(offset).unwrap();
-                    value
-                },
-                r#description2: {
-                    // array_mutator column.array == false && column.type == 'string'
-                    let mut cell_bytes = row.get(56..56 + 8).unwrap();
-                    let offset = cell_bytes.get_i32_le() as usize;
-                    let value = df.string_from_offset(offset).unwrap();
-                    value
-                },
-            })
-            .collect()
-    });
+pub static TABLE_BetrayalTraitorRewards: LazyLock<Vec<BetrayalTraitorRewardsRow>> = LazyLock::new(|| {
+    let df = DAT_LOADER
+        .write()
+        .unwrap()
+        .get_table("data/balance/betrayaltraitorrewards.datc64")
+        .unwrap()
+        .clone();
+    df.rows_iter()
+        .map(|row| BetrayalTraitorRewardsRow {
+            r#betrayal_jobs_key: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(0..0 + 16).unwrap();
+                let value = cell_bytes.get_i64_le();
+                BetrayalJobsRef::new(value as usize)
+            },
+            r#betrayal_targets_key: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(16..16 + 16).unwrap();
+                let value = cell_bytes.get_i64_le();
+                BetrayalTargetsRef::new(value as usize)
+            },
+            r#betrayal_ranks_key: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(32..32 + 16).unwrap();
+                let value = cell_bytes.get_i64_le();
+                BetrayalRanksRef::new(value as usize)
+            },
+            r#description: {
+                // array_mutator column.array == false && column.type == 'string'
+                let mut cell_bytes = row.get(48..48 + 8).unwrap();
+                let offset = cell_bytes.get_i32_le() as usize;
+                let value = df.string_from_offset(offset).unwrap();
+                value
+            },
+            r#description2: {
+                // array_mutator column.array == false && column.type == 'string'
+                let mut cell_bytes = row.get(56..56 + 8).unwrap();
+                let offset = cell_bytes.get_i32_le() as usize;
+                let value = df.string_from_offset(offset).unwrap();
+                value
+            },
+        })
+        .collect()
+});
 
 #[derive(Debug)]
 pub struct BetrayalTraitorRewardsRow {
@@ -84,16 +83,10 @@ impl BetrayalTraitorRewardsRef {
         &TABLE_BetrayalTraitorRewards[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_BetrayalTraitorRewards
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_BetrayalTraitorRewards.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static BetrayalTraitorRewardsRow)> {
-        TABLE_BetrayalTraitorRewards
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_BetrayalTraitorRewards.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

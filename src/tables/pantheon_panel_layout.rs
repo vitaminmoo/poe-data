@@ -75,10 +75,7 @@ pub static TABLE_PantheonPanelLayout: LazyLock<Vec<PantheonPanelLayoutRow>> = La
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| StatsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| StatsRef::new(value as usize)).collect()
             },
             r#effect1_values: {
                 // array_mutator column.array == true
@@ -106,10 +103,7 @@ pub static TABLE_PantheonPanelLayout: LazyLock<Vec<PantheonPanelLayoutRow>> = La
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| StatsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| StatsRef::new(value as usize)).collect()
             },
             r#god_name3: {
                 // array_mutator column.array == false && column.type == 'string'
@@ -144,10 +138,7 @@ pub static TABLE_PantheonPanelLayout: LazyLock<Vec<PantheonPanelLayoutRow>> = La
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| StatsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| StatsRef::new(value as usize)).collect()
             },
             r#god_name4: {
                 // array_mutator column.array == false && column.type == 'string'
@@ -168,10 +159,7 @@ pub static TABLE_PantheonPanelLayout: LazyLock<Vec<PantheonPanelLayoutRow>> = La
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| StatsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| StatsRef::new(value as usize)).collect()
             },
             r#effect4_values: {
                 // array_mutator column.array == true
@@ -300,16 +288,10 @@ impl PantheonPanelLayoutRef {
         &TABLE_PantheonPanelLayout[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_PantheonPanelLayout
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_PantheonPanelLayout.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static PantheonPanelLayoutRow)> {
-        TABLE_PantheonPanelLayout
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_PantheonPanelLayout.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

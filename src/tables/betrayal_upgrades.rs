@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_BetrayalUpgrades: LazyLock<Vec<BetrayalUpgradesRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/betrayalupgrades.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/betrayalupgrades.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| BetrayalUpgradesRow {
             r#id: {
@@ -50,10 +45,7 @@ pub static TABLE_BetrayalUpgrades: LazyLock<Vec<BetrayalUpgradesRow>> = LazyLock
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| ModsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| ModsRef::new(value as usize)).collect()
             },
             r#art_file: {
                 // array_mutator column.array == false && column.type == 'string'
@@ -153,16 +145,10 @@ impl BetrayalUpgradesRef {
         &TABLE_BetrayalUpgrades[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_BetrayalUpgrades
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_BetrayalUpgrades.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static BetrayalUpgradesRow)> {
-        TABLE_BetrayalUpgrades
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_BetrayalUpgrades.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

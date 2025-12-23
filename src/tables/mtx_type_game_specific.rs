@@ -90,16 +90,10 @@ impl MtxTypeGameSpecificRef {
         &TABLE_MtxTypeGameSpecific[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_MtxTypeGameSpecific
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_MtxTypeGameSpecific.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static MtxTypeGameSpecificRow)> {
-        TABLE_MtxTypeGameSpecific
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_MtxTypeGameSpecific.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

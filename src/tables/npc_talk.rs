@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_NPCTalk: LazyLock<Vec<NPCTalkRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/npctalk.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/npctalk.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| NPCTalkRow {
             r#npc_key: {
@@ -48,10 +43,7 @@ pub static TABLE_NPCTalk: LazyLock<Vec<NPCTalkRow>> = LazyLock::new(|| {
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| QuestFlagsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| QuestFlagsRef::new(value as usize)).collect()
             },
             r#unknown44: {
                 // array_mutator column.array == true
@@ -65,10 +57,7 @@ pub static TABLE_NPCTalk: LazyLock<Vec<NPCTalkRow>> = LazyLock::new(|| {
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| QuestFlagsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| QuestFlagsRef::new(value as usize)).collect()
             },
             r#unknown60: {
                 // array_mutator column.array == true
@@ -82,10 +71,7 @@ pub static TABLE_NPCTalk: LazyLock<Vec<NPCTalkRow>> = LazyLock::new(|| {
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| QuestFlagsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| QuestFlagsRef::new(value as usize)).collect()
             },
             r#script: {
                 // array_mutator column.array == false && column.type == 'string'
@@ -130,10 +116,7 @@ pub static TABLE_NPCTalk: LazyLock<Vec<NPCTalkRow>> = LazyLock::new(|| {
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| NPCTextAudioRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| NPCTextAudioRef::new(value as usize)).collect()
             },
             r#script2: {
                 // array_mutator column.array == false && column.type == 'string'

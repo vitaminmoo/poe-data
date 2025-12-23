@@ -4,40 +4,28 @@ use std::fs::File;
 use std::io::{BufReader, Read};
 use std::str::FromStr;
 
+use winnow::ModalResult;
+use winnow::Parser;
 use winnow::ascii::{dec_int, dec_uint, digit1, float, multispace0, multispace1, space1};
-use winnow::combinator::{
-    alt, delimited, empty, opt, preceded, repeat, separated, separated_pair, terminated,
-};
+use winnow::combinator::{alt, delimited, empty, opt, preceded, repeat, separated, separated_pair, terminated};
 use winnow::error::{ContextError, ParseError};
 use winnow::stream::Stream;
 use winnow::token::{take, take_until, take_while};
-use winnow::ModalResult;
-use winnow::Parser;
 
-use crate::statdescriptions::{
-    self, Descriptor, Language, LineFunction, LineSpec, Pattern, StatFunction,
-};
+use crate::statdescriptions::{self, Descriptor, Language, LineFunction, LineSpec, Pattern, StatFunction};
 
 pub fn load_file(path: &str) -> Result<statdescriptions::StatFile, StatLoaderError> {
-    let real_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("data/files")
-        .join(path.replace('/', "@"));
-    let file = File::open(real_path.clone())
-        .unwrap_or_else(|x| panic!("Failed to open file {:?}: {}", real_path, x));
+    let real_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("data/files").join(path.replace('/', "@"));
+    let file = File::open(real_path.clone()).unwrap_or_else(|x| panic!("Failed to open file {:?}: {}", real_path, x));
     let mut raw: Vec<u8> = Vec::new();
     let mut bytes = BufReader::new(file);
     bytes.read_to_end(&mut raw).expect("Failed to read file");
 
-    let converted: Vec<u16> = raw
-        .chunks_exact(2)
-        .map(|chunk| u16::from_le_bytes([chunk[0], chunk[1]]))
-        .collect();
+    let converted: Vec<u16> = raw.chunks_exact(2).map(|chunk| u16::from_le_bytes([chunk[0], chunk[1]])).collect();
 
     let decoded = String::from_utf16_lossy(&converted);
 
-    stats_file
-        .parse(decoded.as_str())
-        .map_err(|e| StatLoaderError::from_parse(e, &decoded))
+    stats_file.parse(decoded.as_str()).map_err(|e| StatLoaderError::from_parse(e, &decoded))
 }
 
 #[derive(Debug)]
@@ -52,9 +40,7 @@ impl StatLoaderError {
         let message = error.inner().to_string();
         let input = input.to_owned();
         let start = error.offset();
-        let end = (start + 1..)
-            .find(|e| input.is_char_boundary(*e))
-            .unwrap_or(start);
+        let end = (start + 1..).find(|e| input.is_char_boundary(*e)).unwrap_or(start);
         Self {
             message,
             span: start..end,
@@ -65,13 +51,11 @@ impl StatLoaderError {
 
 impl std::fmt::Display for StatLoaderError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let message = annotate_snippets::Level::Error
-            .title(&self.message)
-            .snippet(
-                annotate_snippets::Snippet::source(&self.input)
-                    .fold(true)
-                    .annotation(annotate_snippets::Level::Error.span(self.span.clone())),
-            );
+        let message = annotate_snippets::Level::Error.title(&self.message).snippet(
+            annotate_snippets::Snippet::source(&self.input)
+                .fold(true)
+                .annotation(annotate_snippets::Level::Error.span(self.span.clone())),
+        );
         let renderer = annotate_snippets::Renderer::plain();
         let rendered = renderer.render(message);
         rendered.fmt(f)
@@ -95,18 +79,12 @@ pub fn stats_file(input: &mut &str) -> ModalResult<statdescriptions::StatFile> {
     let _ = multispace0.parse_next(input)?; // leading whitespace if there
 
     let _includes: Vec<String> = terminated(includes, multispace0).parse_next(input)?;
-    let no_descriptions: Vec<String> =
-        terminated(no_descriptions, multispace0).parse_next(input)?;
+    let no_descriptions: Vec<String> = terminated(no_descriptions, multispace0).parse_next(input)?;
 
-    let no_identifiers = opt(terminated("no_identifiers", multispace1))
-        .parse_next(input)?
-        .is_some();
-    let has_identifiers = opt(terminated("has_identifiers", multispace1))
-        .parse_next(input)?
-        .is_some();
+    let no_identifiers = opt(terminated("no_identifiers", multispace1)).parse_next(input)?.is_some();
+    let has_identifiers = opt(terminated("has_identifiers", multispace1)).parse_next(input)?.is_some();
 
-    let descriptions: HashMap<Vec<String>, Descriptor> =
-        separated(1.., description, multispace1).parse_next(input)?;
+    let descriptions: HashMap<Vec<String>, Descriptor> = separated(1.., description, multispace1).parse_next(input)?;
     let _ = multispace0.parse_next(input)?;
 
     let mut indexed_descriptions: HashMap<String, (Vec<String>, Descriptor)> = HashMap::new();
@@ -129,37 +107,19 @@ pub fn stats_file(input: &mut &str) -> ModalResult<statdescriptions::StatFile> {
     Child parsers in order of appearance-ish
 */
 pub fn includes(input: &mut &str) -> ModalResult<Vec<String>> {
-    separated(
-        0..,
-        preceded(("include", space1), doublequoted).map(|x| x.to_string()),
-        multispace1,
-    )
-    .parse_next(input)
+    separated(0.., preceded(("include", space1), doublequoted).map(|x| x.to_string()), multispace1).parse_next(input)
 }
 
 pub fn no_descriptions(input: &mut &str) -> ModalResult<Vec<String>> {
-    separated(
-        0..,
-        preceded(("no_description", space1), identifier).map(|x| x.to_string()),
-        multispace1,
-    )
-    .parse_next(input)
+    separated(0.., preceded(("no_description", space1), identifier).map(|x| x.to_string()), multispace1).parse_next(input)
 }
 
 pub fn description(input: &mut &str) -> ModalResult<(Vec<String>, Descriptor)> {
-    let name: Option<&str> = delimited(
-        "description",
-        opt(preceded(space1, identifier)),
-        multispace1,
-    )
-    .parse_next(input)?;
+    let name: Option<&str> = delimited("description", opt(preceded(space1, identifier)), multispace1).parse_next(input)?;
 
-    let num_keys: usize = terminated(digit1, space1)
-        .map(|x: &str| x.parse::<usize>().unwrap())
-        .parse_next(input)?;
+    let num_keys: usize = terminated(digit1, space1).map(|x: &str| x.parse::<usize>().unwrap()).parse_next(input)?;
 
-    let keys: Vec<&str> =
-        terminated(separated(num_keys, identifier, space1), multispace1).parse_next(input)?;
+    let keys: Vec<&str> = terminated(separated(num_keys, identifier, space1), multispace1).parse_next(input)?;
 
     let english_linespecs = statsblock(num_keys).parse_next(input)?;
 
@@ -171,9 +131,7 @@ pub fn description(input: &mut &str) -> ModalResult<(Vec<String>, Descriptor)> {
             (
                 delimited(
                     ("lang", space1),
-                    doublequoted.map(|x: &str| {
-                        Language::from_str(x).unwrap_or_else(|_| panic!("language {}", x))
-                    }),
+                    doublequoted.map(|x: &str| Language::from_str(x).unwrap_or_else(|_| panic!("language {}", x))),
                     multispace1,
                 ),
                 statsblock(num_keys),
@@ -198,9 +156,7 @@ pub fn description(input: &mut &str) -> ModalResult<(Vec<String>, Descriptor)> {
 
 pub fn statsblock(num_keys: usize) -> impl FnMut(&mut &str) -> ModalResult<Vec<LineSpec>> {
     move |input: &mut &str| {
-        let num_lines: usize = terminated(digit1, multispace1)
-            .map(|x: &str| x.parse::<usize>().unwrap())
-            .parse_next(input)?;
+        let num_lines: usize = terminated(digit1, multispace1).map(|x: &str| x.parse::<usize>().unwrap()).parse_next(input)?;
 
         separated(num_lines, linespec(num_keys), multispace1).parse_next(input)
     }
@@ -208,8 +164,7 @@ pub fn statsblock(num_keys: usize) -> impl FnMut(&mut &str) -> ModalResult<Vec<L
 
 pub fn linespec(num_keys: usize) -> impl FnMut(&mut &str) -> ModalResult<LineSpec> {
     move |input: &mut &str| {
-        let conditions: Vec<Pattern> =
-            terminated(separated(num_keys, pattern_part, space1), space1).parse_next(input)?;
+        let conditions: Vec<Pattern> = terminated(separated(num_keys, pattern_part, space1), space1).parse_next(input)?;
         let text = doublequoted.parse_next(input)?;
         let extras = extra.parse_next(input)?;
         Ok(LineSpec {
@@ -276,11 +231,7 @@ pub fn value(input: &mut &str) -> ModalResult<f64> {
         "point_eight".value(0.8),
         "point_nine".value(0.9),
     ));
-    let magword = alt((
-        "hundred".value(100.0),
-        "thousand".value(1000.0),
-        "million".value(1_000_000.0),
-    ));
+    let magword = alt(("hundred".value(100.0), "thousand".value(1000.0), "million".value(1_000_000.0)));
 
     let x = alt((numword, float)).parse_next(input)?;
     let y = alt((preceded("_", decimal), empty.value(0.0))).parse_next(input)?;
@@ -353,18 +304,15 @@ pub fn function(input: &mut &str) -> ModalResult<Vec<LineFunction>> {
         });
 
     alt((
-        separated_pair(functions, space1, dec_uint).map(
-            |(stat_functions, idx): (Vec<StatFunction>, usize)| {
-                stat_functions
-                    .into_iter()
-                    .map(|stat_function| LineFunction::StatFunction(stat_function, idx - 1))
-                    .collect()
-            },
-        ),
+        separated_pair(functions, space1, dec_uint).map(|(stat_functions, idx): (Vec<StatFunction>, usize)| {
+            stat_functions
+                .into_iter()
+                .map(|stat_function| LineFunction::StatFunction(stat_function, idx - 1))
+                .collect()
+        }),
         ("canonical_line" as &str).value(vec![LineFunction::CanonicalLine]),
         ("markup" as &str).value(vec![LineFunction::Markup]),
-        preceded(("reminderstring" as &str, space1), identifier)
-            .map(|ident| vec![LineFunction::ReminderString(ident.to_string())]),
+        preceded(("reminderstring" as &str, space1), identifier).map(|ident| vec![LineFunction::ReminderString(ident.to_string())]),
     ))
     .parse_next(input)
 }

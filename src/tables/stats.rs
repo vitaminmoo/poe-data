@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_Stats: LazyLock<Vec<StatsRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/stats.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/stats.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| StatsRow {
             r#id: {
@@ -129,10 +124,7 @@ pub static TABLE_Stats: LazyLock<Vec<StatsRow>> = LazyLock::new(|| {
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| VirtualStatContextFlagsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| VirtualStatContextFlagsRef::new(value as usize)).collect()
             },
             r#dot_flag: {
                 // array_mutator column.array == true
@@ -146,10 +138,7 @@ pub static TABLE_Stats: LazyLock<Vec<StatsRow>> = LazyLock::new(|| {
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| VirtualStatContextFlagsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| VirtualStatContextFlagsRef::new(value as usize)).collect()
             },
             r#weapon_hand_check: {
                 // array_mutator column.array == false && column.type == 'bool'

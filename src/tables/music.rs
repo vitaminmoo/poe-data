@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_Music: LazyLock<Vec<MusicRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/music.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/music.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| MusicRow {
             r#id: {
@@ -76,10 +71,7 @@ pub static TABLE_Music: LazyLock<Vec<MusicRow>> = LazyLock::new(|| {
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| MusicCategoriesRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| MusicCategoriesRef::new(value as usize)).collect()
             },
             r#unknown61: {
                 // array_mutator column.array == false && column.type == 'bool'

@@ -36,10 +36,7 @@ pub static TABLE_MapTierAchievements: LazyLock<Vec<MapTierAchievementsRow>> = La
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| AchievementItemsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| AchievementItemsRef::new(value as usize)).collect()
             },
             r#map_tiers: {
                 // array_mutator column.array == true
@@ -87,16 +84,10 @@ impl MapTierAchievementsRef {
         &TABLE_MapTierAchievements[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_MapTierAchievements
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_MapTierAchievements.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static MapTierAchievementsRow)> {
-        TABLE_MapTierAchievements
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_MapTierAchievements.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

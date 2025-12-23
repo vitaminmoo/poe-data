@@ -18,29 +18,19 @@ impl<T> MaybeVariant<T> {
     }
 }
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum AbyssRegions {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum AbyssTheme {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum AccountQuestFlags {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum AchievementSets {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum ActiveSkillTargetTypes {
     TargetableGround = 1,
     Enemy = 2,
@@ -54,78 +44,50 @@ pub enum ActiveSkillTargetTypes {
     RotateToTarget = 11,
 }
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum AdditionalLifeScalingPerLevel {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum AdditionalMonsterPacksStatMode {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum AfflictionRewardTypes {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum AlternateBehaviourTypes {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum AlternateTreePassiveSizes {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum AncestralTrialMonsterRanks {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum AncestralTrialOpinionTypes {
     Neutral = 0,
     Likes = 1,
     Dislikes = 2,
 }
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum AncestralTrialShopSlots {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum AncestralTrialUnitTypes {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum AreaType {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum ArmourClasses {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum ArmourSurfaceTypes {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum AtlasEntities {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum AtlasInfluenceOutcomeTypes {
     MonsterPacks = 0,
     EmpoweredBoss = 1,
@@ -134,14 +96,10 @@ pub enum AtlasInfluenceOutcomeTypes {
     Awakener = 4,
 }
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum AtlasModTiers {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum Attributes {
     Strength = 1,
     Dexterity = 2,
@@ -149,122 +107,76 @@ pub enum Attributes {
     None = 4,
 }
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum AudioCharacterClass {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum AzmeriEncounterThemes {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum BattlePassRewardTypes {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum BetrayalDialogueCue {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum BetrayalFlags {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum BetrayalTargetFlags {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum BetrayalUpgradeSlots {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum BuffCategories {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum BuffGroups {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum BuffMergeModes {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum BuffStackUIModes {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum BuffVisualSets {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum CharacterPanelStatContexts {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum ClientUIScreens {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum CooldownBypassTypes {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum CooldownGroups {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum CraftingBenchCustomActions {
     RemoveCraftedMods = 0,
     RemoveEnchantMods = 1,
 }
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum CurrencyUseTypes {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum CustomLeagueTemplate {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum DamageHitTypes {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum DamageParticleEffectTypes {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum Default {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum DelveUpgradeType {
     SulphiteCapacity = 0,
     FlareCapacity = 1,
@@ -277,39 +189,25 @@ pub enum DelveUpgradeType {
     FlareDuration = 9,
 }
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum Directions {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum DropReplacementCustomReplacements {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum DropReplacementCustomTargets {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum DuplicateGrantedEffect {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum Effectiveness {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum EvergreenAchievementTypes {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum ExpeditionDealFamilies {
     RerollPrefixesBest = 1,
     RerollSuffixesBest = 2,
@@ -335,9 +233,7 @@ pub enum ExpeditionDealFamilies {
     RemoveAllSuffixes = 22,
 }
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum ExpeditionRelicModCategories {
     Generic = 0,
     Runic = 1,
@@ -345,9 +241,7 @@ pub enum ExpeditionRelicModCategories {
     RewardPackSize = 3,
 }
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum FlaskType {
     Life = 1,
     Mana = 2,
@@ -355,59 +249,37 @@ pub enum FlaskType {
     Utility = 4,
 }
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum FlavourTextImages {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum GemItemVisualEffect {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum GemTypes {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum GrantedEffectGroups {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum GroundEffectEffectTypes {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum HarvestColours {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum HeistBlueprintWindowTypes {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum HeistChestTypes {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum HeistFormationMarkerType {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum HeistRoomTypes {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum InfluenceTypes {
     Shaper = 0,
     Elder = 1,
@@ -418,24 +290,16 @@ pub enum InfluenceTypes {
     None = 6,
 }
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum InvasionMonsterGroups {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum InvasionMonsterRoles {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum InventoryType {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum ItemClassFlags {
     Weapon = 0,
     OneHand = 1,
@@ -447,69 +311,43 @@ pub enum ItemClassFlags {
     Currency = 7,
 }
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum ItemCreationTemplateCustomAction {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum ItemSetNames {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum LabyrinthCraftOptionFamily {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum LabyrinthSecretLocations {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum LeagueCategory {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum LeagueQuestFlags {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum LegionMonsterTypes {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum LegionRankTypes {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum LegionRewardTypes {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum MapDeviceCustomEffects {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum MapDevicePortalFormation {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum MapFragmentFamilies {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum MapGenerations {
     Original = 1,
     TheAwakening = 2,
@@ -517,49 +355,31 @@ pub enum MapGenerations {
     WarForTheAtlas = 4,
 }
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum MicrotransactionConditionalApparitionEventType {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum MicrotransactionConditionalApparitionOrientation {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum MicrotransactionConditionalApparitionPosition {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum MicrotransactionRecycleCategories {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum MicrotransactionSlotId {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum MicrotransactionTrackedStatistics {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum MissionTileMap {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum ModAuraFlags {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum ModDomains {
     Item = 1,
     Flask = 2,
@@ -599,9 +419,7 @@ pub enum ModDomains {
     Idol = 38,
 }
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum ModGenerationType {
     Prefix = 1,
     Suffix = 2,
@@ -636,212 +454,130 @@ pub enum ModGenerationType {
     NecropolisDevoted = 35,
 }
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum ModSetNames {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum MonsterBehavior {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum MonsterFleeConditions {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum MonsterGroupNames {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum MonsterPushTypes {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum MonsterScalingByLevel {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum MonsterSize {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum MonsterSkillsAliveDead {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum MonsterSkillsAttackSpell {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum MonsterSkillsClientInstance {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum MonsterSkillsHull {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum MonsterSkillsOrientation {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum MonsterSkillsPlacement {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum MonsterSkillsReference {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum MonsterSkillsSequenceMode {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum MonsterSkillsShape {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum MonsterSkillsTargets {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum MonsterSkillsWaveDirection {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum NPCShopSellPriceType {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum NPCTalkQuickActions {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum NPCTextAudioInterruptRules {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum OnHitEffectTarget {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum Orientations {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum PantheonMapBossSelection {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum PassiveSkillTattooTargets {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum PassiveSkillTypes {
     PassiveTree = 0,
     AtlasTree = 1,
 }
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum PassiveTattooVendorGroups {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum PerLevelValues {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum PreloadPriorities {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum ProjectileCollisionTypes {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum QuestStateCalculation {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum RarityMask {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum RelativeImportanceConstants {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum SanctumEffectTriggers {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum SanctumImmediateEffectType {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum SanctumPersistentEffectFamily {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum SkillMines {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum SkillMorphDisplayOverlayCondition {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum SkillMorphDisplayOverlayStyle {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum SkillTotems {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum StashId {
     Normal = 0,
     Premium = 1,
@@ -867,27 +603,21 @@ pub enum StashId {
     Ritual = 21,
 }
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum StatDescriptionTypes {
     Generic = 0,
     Specific = 1,
     Statset = 2,
 }
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum StatInterpolationTypes {
     Constant = 1,
     Linear = 2,
     Exponential = 3,
 }
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum StatSemantics {
     Percent = 1,
     OverrideValue = 2,
@@ -898,54 +628,34 @@ pub enum StatSemantics {
     OverridePermyriad = 7,
 }
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum SurgeCategory {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum TradeMarketCategoryStyleFlag {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum UITalkCategories {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum UniqueSetNames {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum UserInterfaceModeCondition {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum VisualItemSlotId {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum WeaponArmourCommon {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum WeaponDamageScaling {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum WeaponSoundTypes {}
 
-#[derive(
-    Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display,
-)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone, Copy, FromRepr, EnumIter, Display)]
 pub enum Wordlists {
     ItemPrefix = 1,
     ItemSuffix = 2,

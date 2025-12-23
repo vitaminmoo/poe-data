@@ -8,9 +8,7 @@ use super::*;
 use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
-pub static TABLE_Incursion2TempleLevelPerCharacterLevel: LazyLock<
-    Vec<Incursion2TempleLevelPerCharacterLevelRow>,
-> = LazyLock::new(|| {
+pub static TABLE_Incursion2TempleLevelPerCharacterLevel: LazyLock<Vec<Incursion2TempleLevelPerCharacterLevelRow>> = LazyLock::new(|| {
     let df = DAT_LOADER
         .write()
         .unwrap()
@@ -69,17 +67,10 @@ impl Incursion2TempleLevelPerCharacterLevelRef {
         &TABLE_Incursion2TempleLevelPerCharacterLevel[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_Incursion2TempleLevelPerCharacterLevel
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_Incursion2TempleLevelPerCharacterLevel.iter().enumerate().map(|(i, _)| Self(i))
     }
-    pub fn iter_with_refs(
-    ) -> impl Iterator<Item = (Self, &'static Incursion2TempleLevelPerCharacterLevelRow)> {
-        TABLE_Incursion2TempleLevelPerCharacterLevel
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+    pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static Incursion2TempleLevelPerCharacterLevelRow)> {
+        TABLE_Incursion2TempleLevelPerCharacterLevel.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

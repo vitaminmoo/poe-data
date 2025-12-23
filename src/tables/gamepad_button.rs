@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_GamepadButton: LazyLock<Vec<GamepadButtonRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/gamepadbutton.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/gamepadbutton.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| GamepadButtonRow {
             r#unknown0: {
@@ -97,10 +92,7 @@ impl GamepadButtonRef {
         TABLE_GamepadButton.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static GamepadButtonRow)> {
-        TABLE_GamepadButton
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_GamepadButton.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

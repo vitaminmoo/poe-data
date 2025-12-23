@@ -93,10 +93,7 @@ pub struct LineSpec {
 
 impl LineSpec {
     fn matches(&self, vals: &[i32]) -> bool {
-        self.conditions
-            .iter()
-            .enumerate()
-            .all(|(i, c)| c.matches(vals[i]))
+        self.conditions.iter().enumerate().all(|(i, c)| c.matches(vals[i]))
     }
 }
 
@@ -162,8 +159,7 @@ impl Pattern {
     }
 }
 
-pub static STAT_LOADER: LazyLock<RwLock<StatLoader>> =
-    LazyLock::new(|| RwLock::new(StatLoader::default()));
+pub static STAT_LOADER: LazyLock<RwLock<StatLoader>> = LazyLock::new(|| RwLock::new(StatLoader::default()));
 
 impl StatLoader {
     pub fn load_file(&mut self, path: &str) {
@@ -186,8 +182,7 @@ impl StatLoader {
             if !vals.contains_key(stat_key) {
                 continue;
             }
-            if let Some((ids, descriptor)) = self.stat_files[path].indexed_descriptors.get(stat_key)
-            {
+            if let Some((ids, descriptor)) = self.stat_files[path].indexed_descriptors.get(stat_key) {
                 let mut stat = Vec::new();
                 for id in ids.iter() {
                     if let Some(x) = vals.remove_entry(id) {
@@ -209,9 +204,7 @@ impl StatLoader {
         for stat in stats.iter() {
             let (stat, descriptor) = stat;
 
-            if let Some(description) =
-                descriptor.find(&stat.iter().map(|(_, v)| *v).collect::<Vec<_>>())
-            {
+            if let Some(description) = descriptor.find(&stat.iter().map(|(_, v)| *v).collect::<Vec<_>>()) {
                 let stat_vals: Vec<_> = stat.iter().map(|(_, v)| Stat::new(*v as f64)).collect();
                 let mut stats_line = StatsLine {
                     stats: stat_vals,
@@ -251,10 +244,7 @@ impl StatLoader {
                 }
                 texts.push(text);
             } else {
-                panic!(
-                    "No descriptor found for statkeys: {:?}",
-                    stat.iter().map(|(x, _)| x)
-                );
+                panic!("No descriptor found for statkeys: {:?}", stat.iter().map(|(x, _)| x));
             }
         }
 
@@ -379,9 +369,7 @@ impl LineFunction {
             }
             LineFunction::Markup => stats_line.markup = true,
             LineFunction::CanonicalLine => stats_line.canonical_line = true,
-            LineFunction::ReminderString(reminder) => {
-                stats_line.reminder_strings.push(reminder.clone())
-            }
+            LineFunction::ReminderString(reminder) => stats_line.reminder_strings.push(reminder.clone()),
         }
     }
 }
@@ -414,21 +402,11 @@ mod tests {
         let mut sl = StatLoader::default();
 
         // first key only
-        let result = sl.get_affix_text(
-            path,
-            [("local_physical_damage_+%".to_string(), -50)]
-                .into_iter()
-                .collect(),
-        );
+        let result = sl.get_affix_text(path, [("local_physical_damage_+%".to_string(), -50)].into_iter().collect());
         assert_eq!(result, "50% reduced Physical Damage");
 
         // second key only
-        let result = sl.get_affix_text(
-            path,
-            [("local_weapon_no_physical_damage".to_string(), 1)]
-                .into_iter()
-                .collect(),
-        );
+        let result = sl.get_affix_text(path, [("local_weapon_no_physical_damage".to_string(), 1)].into_iter().collect());
         assert_eq!(result, "No Physical Damage");
     }
 
@@ -439,10 +417,7 @@ mod tests {
 
         let result = sl.get_affix_text(
             path,
-            BTreeMap::from([
-                ("local_evasion_rating_+%".to_string(), 80),
-                ("base_maximum_life".to_string(), 10),
-            ]),
+            BTreeMap::from([("local_evasion_rating_+%".to_string(), 80), ("base_maximum_life".to_string(), 10)]),
         );
 
         assert_eq!(result, "80% increased Evasion Rating\n+10 to maximum Life");
@@ -453,21 +428,11 @@ mod tests {
         let path = "Metadata/StatDescriptions/Stat_Descriptions.txt";
         let mut sl = StatLoader::default();
         assert_eq!(
-            sl.get_affix_text(
-                path,
-                [("chest_item_quantity_+%".to_string(), 50)]
-                    .into_iter()
-                    .collect()
-            ),
+            sl.get_affix_text(path, [("chest_item_quantity_+%".to_string(), 50)].into_iter().collect()),
             "50% increased Quantity of Items Found from Chests"
         );
         assert_eq!(
-            sl.get_affix_text(
-                path,
-                [("chest_item_quantity_+%".to_owned(), -50)]
-                    .into_iter()
-                    .collect()
-            ),
+            sl.get_affix_text(path, [("chest_item_quantity_+%".to_owned(), -50)].into_iter().collect()),
             "50% reduced Quantity of Items Found from Chests"
         );
     }

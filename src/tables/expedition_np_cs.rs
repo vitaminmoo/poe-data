@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_ExpeditionNPCs: LazyLock<Vec<ExpeditionNPCsRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/expeditionnpcs.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/expeditionnpcs.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| ExpeditionNPCsRow {
             r#id: {
@@ -36,10 +31,7 @@ pub static TABLE_ExpeditionNPCs: LazyLock<Vec<ExpeditionNPCsRow>> = LazyLock::ne
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| NPCsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| NPCsRef::new(value as usize)).collect()
             },
             r#reroll_item: {
                 // array_mutator column.array == false && column.type != 'string|bool'
@@ -170,16 +162,10 @@ impl ExpeditionNPCsRef {
         &TABLE_ExpeditionNPCs[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_ExpeditionNPCs
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_ExpeditionNPCs.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static ExpeditionNPCsRow)> {
-        TABLE_ExpeditionNPCs
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_ExpeditionNPCs.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

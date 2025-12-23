@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_SkillGemSupports: LazyLock<Vec<SkillGemSupportsRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/skillgemsupports.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/skillgemsupports.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| SkillGemSupportsRow {
             r#skill_gem: {
@@ -35,10 +30,7 @@ pub static TABLE_SkillGemSupports: LazyLock<Vec<SkillGemSupportsRow>> = LazyLock
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| SkillGemsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| SkillGemsRef::new(value as usize)).collect()
             },
         })
         .collect()
@@ -71,16 +63,10 @@ impl SkillGemSupportsRef {
         &TABLE_SkillGemSupports[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_SkillGemSupports
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_SkillGemSupports.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static SkillGemSupportsRow)> {
-        TABLE_SkillGemSupports
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_SkillGemSupports.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

@@ -1,4 +1,4 @@
-use anyhow::{anyhow, bail, Result};
+use anyhow::{Result, anyhow, bail};
 use bytes::{Buf, Bytes};
 use std::collections::HashMap;
 use std::sync::{LazyLock, RwLock};
@@ -77,14 +77,13 @@ pub enum ScalarRef {
 // A ColumnClaim is a object that declares that a column may or does exist at a particular offset in the row bytes
 #[derive(Debug)]
 pub struct ColumnClaim {
-    pub offset: usize, // offset in bytes, either per row or for the data section (including 0xBB magic)
-    pub bytes: usize,  // how many bytes the claim covers
-    pub column_type: Cell, // what type of field is this claim for
+    pub offset: usize,                   // offset in bytes, either per row or for the data section (including 0xBB magic)
+    pub bytes: usize,                    // how many bytes the claim covers
+    pub column_type: Cell,               // what type of field is this claim for
     pub labels: HashMap<String, String>, // arbitrary metadata for the claim
 }
 
-pub static DAT_LOADER: LazyLock<RwLock<DatLoader>> =
-    LazyLock::new(|| RwLock::new(DatLoader::default()));
+pub static DAT_LOADER: LazyLock<RwLock<DatLoader>> = LazyLock::new(|| RwLock::new(DatLoader::default()));
 
 pub struct DatLoader {
     // path -> dat file struct
@@ -99,10 +98,7 @@ impl Default for DatLoader {
         let base_url = poe_data_tools::bundle_loader::cdn_base_url(&cache_dir, "2").unwrap();
         eprintln!("loading fs");
         let fs = poe_data_tools::bundle_fs::FS::from_cdn(&base_url, &cache_dir).unwrap();
-        DatLoader {
-            fs,
-            dat_files: HashMap::new(),
-        }
+        DatLoader { fs, dat_files: HashMap::new() }
     }
 }
 
@@ -128,19 +124,12 @@ impl DatLoader {
     fn load_file(&mut self, name: &str) -> Result<Bytes> {
         self.fs.read(name)
     }
-    pub fn get_tables<'a>(
-        &mut self,
-        names: &'a [&'a str],
-    ) -> impl Iterator<Item = (&'a str, &DatFile)> {
+    pub fn get_tables<'a>(&mut self, names: &'a [&'a str]) -> impl Iterator<Item = (&'a str, &DatFile)> {
         self.load_tables(names);
         names.iter().map(|n| (*n, self.dat_files.get(*n).unwrap()))
     }
     pub fn load_tables<'a>(&'a mut self, names: &[&'a str]) {
-        let missing = names
-            .iter()
-            .copied()
-            .filter(|n| !self.dat_files.contains_key(*n))
-            .collect::<Vec<&str>>();
+        let missing = names.iter().copied().filter(|n| !self.dat_files.contains_key(*n)).collect::<Vec<&str>>();
         let loaded = self
             .load_files(&missing)
             .map(|(n, b)| match parse_file(n, b) {
@@ -165,10 +154,7 @@ fn parse_file(source: &str, file: Bytes) -> Result<DatFile> {
         bail!("file too short");
     }
 
-    let magic_index = file
-        .windows(8)
-        .position(|window| window == [0xBB; 8])
-        .ok_or(anyhow!("magic bytes not found"))?;
+    let magic_index = file.windows(8).position(|window| window == [0xBB; 8]).ok_or(anyhow!("magic bytes not found"))?;
 
     let mut data = Bytes::from_owner(file);
     let mut table = data.split_to(magic_index);
@@ -209,8 +195,8 @@ pub struct DatFile {
     pub source: String,         // path to the file that we got this data from
     pub table: Bytes,           // the entire fixed-length table section without the rows header
     pub bytes_per_row: usize,   // how many bytes per row
-    pub vdata: Bytes, // the entire variable-length data section, including 8 bytes of magic
-    pub table_row_or: Vec<u8>, // 1 byte per row byte, all rows bitwise or'd together
+    pub vdata: Bytes,           // the entire variable-length data section, including 8 bytes of magic
+    pub table_row_or: Vec<u8>,  // 1 byte per row byte, all rows bitwise or'd together
     pub table_row_min: Vec<u8>, // 1 byte per row byte, containing the min value of all rows
     pub table_row_max: Vec<u8>, // 1 byte per row byte, containing the max value of all rows
 }
@@ -221,29 +207,17 @@ impl DatFile {
         self.rows_iter().collect()
     }
     pub fn rows_iter(&self) -> impl Iterator<Item = Bytes> + '_ {
-        self.table
-            .chunks_exact(self.bytes_per_row)
-            .map(|x| self.table.slice_ref(x))
+        self.table.chunks_exact(self.bytes_per_row).map(|x| self.table.slice_ref(x))
     }
     // Get all rows of a column by offset and length
     pub fn column_rows(&self, offset: usize, bytes: usize) -> Vec<Bytes> {
         self.column_rows_iter(offset, bytes).collect()
     }
-    pub fn column_rows_iter(
-        &self,
-        offset: usize,
-        bytes: usize,
-    ) -> impl Iterator<Item = Bytes> + '_ {
-        self.rows_iter()
-            .map(move |x| x.slice(offset..offset + bytes))
+    pub fn column_rows_iter(&self, offset: usize, bytes: usize) -> impl Iterator<Item = Bytes> + '_ {
+        self.rows_iter().map(move |x| x.slice(offset..offset + bytes))
     }
 
-    pub fn array_from_offset(
-        &self,
-        offset: usize,
-        member_count: usize,
-        member_bytes: usize,
-    ) -> Result<Vec<Bytes>> {
+    pub fn array_from_offset(&self, offset: usize, member_count: usize, member_bytes: usize) -> Result<Vec<Bytes>> {
         if member_count == 0 {
             return Ok(Vec::new());
         }
@@ -255,10 +229,7 @@ impl DatFile {
             .vdata
             .get(start..end)
             .ok_or_else(|| anyhow!("invalid data range: {}:{}-{}", self.source, start, end))?;
-        let result = data
-            .chunks_exact(member_bytes)
-            .map(|x| self.vdata.slice_ref(x))
-            .collect();
+        let result = data.chunks_exact(member_bytes).map(|x| self.vdata.slice_ref(x)).collect();
         Ok(result)
     }
 
@@ -290,28 +261,16 @@ impl DatFile {
         let mut complete = false;
         while start.has_remaining() {
             if start.remaining() < 2 {
-                bail!(
-                    "eof before double null-termination: {}:{}",
-                    self.source,
-                    offset,
-                );
+                bail!("eof before double null-termination: {}:{}", self.source, offset,);
             }
             let utf16_val = start.get_u16_le();
             if utf16_val == 0 {
                 if start.remaining() < 2 {
-                    bail!(
-                        "not enough bytes or some shit I don't know: {}:{}",
-                        self.source,
-                        offset
-                    )
+                    bail!("not enough bytes or some shit I don't know: {}:{}", self.source, offset)
                 }
                 let next = start.get_u16_le();
                 if next != 0 {
-                    bail!(
-                        "string lacks second null-termination: {}:{}",
-                        self.source,
-                        offset,
-                    );
+                    bail!("string lacks second null-termination: {}:{}", self.source, offset,);
                 }
                 complete = true;
                 break;
@@ -320,11 +279,7 @@ impl DatFile {
         }
 
         if !complete {
-            bail!(
-                "string not null-terminated before eof: {}:{}",
-                self.source,
-                offset,
-            );
+            bail!("string not null-terminated before eof: {}:{}", self.source, offset,);
         }
 
         Ok(String::from_utf16(&utf16string)?)
@@ -333,19 +288,10 @@ impl DatFile {
     // check if an offset is valid for the data
     pub fn valid_data_ref(&self, offset: usize) -> Result<()> {
         if offset > self.vdata.len() {
-            bail!(
-                "offset out of bounds: {}:{} (data len {})",
-                self.source,
-                offset,
-                self.vdata.len()
-            );
+            bail!("offset out of bounds: {}:{} (data len {})", self.source, offset, self.vdata.len());
         }
         if offset < 8 {
-            bail!(
-                "string offset is pointing to magic bytes: {}:{}",
-                self.source,
-                offset
-            );
+            bail!("string offset is pointing to magic bytes: {}:{}", self.source, offset);
         }
         Ok(())
     }
@@ -395,23 +341,17 @@ impl DatFile {
                                     return true;
                                 }
                             }
-                            if self.table_row_min[col_index..col_index + 8]
-                                == self.table_row_max[col_index..col_index + 8]
-                            {
+                            if self.table_row_min[col_index..col_index + 8] == self.table_row_max[col_index..col_index + 8] {
                                 // if all rows have the same value, it's probably not a string, unless it's ""
                                 if !s.is_empty() {
                                     return true;
                                 }
                             }
-                            if self.table_row_min[col_index..col_index + 1] == [0xfe; 1]
-                                && self.table_row_max[col_index..col_index + 1] == [0xfe; 1]
-                            {
+                            if self.table_row_min[col_index..col_index + 1] == [0xfe; 1] && self.table_row_max[col_index..col_index + 1] == [0xfe; 1] {
                                 // if the first byte is all fe it's probably overlapping an empty thing
                                 return true;
                             }
-                            if self.table_row_min[col_index..col_index + 1] == [0x00; 1]
-                                && self.table_row_max[col_index..col_index + 1] == [0x00; 1]
-                            {
+                            if self.table_row_min[col_index..col_index + 1] == [0x00; 1] && self.table_row_max[col_index..col_index + 1] == [0x00; 1] {
                                 // if the first byte is all 00 it's probably not a string unless it's ""
                                 if !s.is_empty() {
                                     return true;
@@ -458,11 +398,7 @@ impl DatFile {
                     });
                 }
 
-                let col_max = cells
-                    .iter_mut()
-                    .map(|cell| cell.get_u128_le() as usize)
-                    .max()
-                    .unwrap();
+                let col_max = cells.iter_mut().map(|cell| cell.get_u128_le() as usize).max().unwrap();
                 if col_max > 0 && col_max <= 30000 {
                     claims.push(ColumnClaim {
                         offset: col_index,
@@ -563,11 +499,7 @@ mod tests {
                             let mut empty = true;
                             for s in dat_file
                                 .column_rows_iter(claim.offset, claim.bytes)
-                                .map(|cell| {
-                                    dat_file
-                                        .string_from_offset(cell.clone().get_i32_le() as usize)
-                                        .unwrap()
-                                })
+                                .map(|cell| dat_file.string_from_offset(cell.clone().get_i32_le() as usize).unwrap())
                                 .take(5)
                                 .filter(|s| !s.is_empty())
                             {

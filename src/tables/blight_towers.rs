@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_BlightTowers: LazyLock<Vec<BlightTowersRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/blighttowers.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/blighttowers.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| BlightTowersRow {
             r#id: {
@@ -57,10 +52,7 @@ pub static TABLE_BlightTowers: LazyLock<Vec<BlightTowersRow>> = LazyLock::new(||
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| BlightTowersRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| BlightTowersRef::new(value as usize)).collect()
             },
             r#unknown48: {
                 // array_mutator column.array == false && column.type != 'string|bool'
@@ -111,10 +103,7 @@ pub static TABLE_BlightTowers: LazyLock<Vec<BlightTowersRow>> = LazyLock::new(||
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| StatsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| StatsRef::new(value as usize)).collect()
             },
             r#stats_keys2: {
                 // array_mutator column.array == true
@@ -128,10 +117,7 @@ pub static TABLE_BlightTowers: LazyLock<Vec<BlightTowersRow>> = LazyLock::new(||
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| StatsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| StatsRef::new(value as usize)).collect()
             },
             r#unknown132: {
                 // array_mutator column.array == false && column.type == 'bool'
@@ -185,10 +171,7 @@ impl BlightTowersRef {
         TABLE_BlightTowers.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static BlightTowersRow)> {
-        TABLE_BlightTowers
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_BlightTowers.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

@@ -102,16 +102,10 @@ impl LegionMonsterCountsRef {
         &TABLE_LegionMonsterCounts[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_LegionMonsterCounts
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_LegionMonsterCounts.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static LegionMonsterCountsRow)> {
-        TABLE_LegionMonsterCounts
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_LegionMonsterCounts.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

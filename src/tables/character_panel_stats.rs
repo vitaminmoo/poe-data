@@ -43,10 +43,7 @@ pub static TABLE_CharacterPanelStats: LazyLock<Vec<CharacterPanelStatsRow>> = La
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| StatsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| StatsRef::new(value as usize)).collect()
             },
             r#character_panel_description_modes_key: {
                 // array_mutator column.array == false && column.type != 'string|bool'
@@ -66,10 +63,7 @@ pub static TABLE_CharacterPanelStats: LazyLock<Vec<CharacterPanelStatsRow>> = La
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| StatsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| StatsRef::new(value as usize)).collect()
             },
             r#stats_keys3: {
                 // array_mutator column.array == true
@@ -83,10 +77,7 @@ pub static TABLE_CharacterPanelStats: LazyLock<Vec<CharacterPanelStatsRow>> = La
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| StatsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| StatsRef::new(value as usize)).collect()
             },
             r#character_panel_tabs_key: {
                 // array_mutator column.array == false && column.type != 'string|bool'
@@ -159,16 +150,10 @@ impl CharacterPanelStatsRef {
         &TABLE_CharacterPanelStats[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_CharacterPanelStats
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_CharacterPanelStats.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static CharacterPanelStatsRow)> {
-        TABLE_CharacterPanelStats
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_CharacterPanelStats.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

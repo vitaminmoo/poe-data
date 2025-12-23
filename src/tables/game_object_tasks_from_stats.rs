@@ -8,67 +8,66 @@ use super::*;
 use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
-pub static TABLE_GameObjectTasksFromStats: LazyLock<Vec<GameObjectTasksFromStatsRow>> =
-    LazyLock::new(|| {
-        let df = DAT_LOADER
-            .write()
-            .unwrap()
-            .get_table("data/balance/gameobjecttasksfromstats.datc64")
-            .unwrap()
-            .clone();
-        df.rows_iter()
-            .map(|row| GameObjectTasksFromStatsRow {
-                r#stat: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(0..0 + 16).unwrap();
-                    let value = cell_bytes.get_i64_le();
-                    StatsRef::new(value as usize)
-                },
-                r#game_object_task: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(16..16 + 16).unwrap();
-                    let value = cell_bytes.get_i64_le();
-                    GameObjectTasksRef::new(value as usize)
-                },
-                r#unknown32: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(32..32 + 4).unwrap();
-                    let value = cell_bytes.get_i32_le();
-                    value
-                },
-                r#unknown36: {
-                    // array_mutator column.array == false && column.type == 'bool'
-                    let cell_bytes = row.get(36).unwrap();
-                    let value = cell_bytes.to_le() != 0;
-                    value
-                },
-                r#unknown37: {
-                    // array_mutator column.array == false && column.type == 'bool'
-                    let cell_bytes = row.get(37).unwrap();
-                    let value = cell_bytes.to_le() != 0;
-                    value
-                },
-                r#unknown38: {
-                    // array_mutator column.array == false && column.type == 'bool'
-                    let cell_bytes = row.get(38).unwrap();
-                    let value = cell_bytes.to_le() != 0;
-                    value
-                },
-                r#unknown39: {
-                    // array_mutator column.array == false && column.type == 'bool'
-                    let cell_bytes = row.get(39).unwrap();
-                    let value = cell_bytes.to_le() != 0;
-                    value
-                },
-                r#unknown40: {
-                    // array_mutator column.array == false && column.type == 'bool'
-                    let cell_bytes = row.get(40).unwrap();
-                    let value = cell_bytes.to_le() != 0;
-                    value
-                },
-            })
-            .collect()
-    });
+pub static TABLE_GameObjectTasksFromStats: LazyLock<Vec<GameObjectTasksFromStatsRow>> = LazyLock::new(|| {
+    let df = DAT_LOADER
+        .write()
+        .unwrap()
+        .get_table("data/balance/gameobjecttasksfromstats.datc64")
+        .unwrap()
+        .clone();
+    df.rows_iter()
+        .map(|row| GameObjectTasksFromStatsRow {
+            r#stat: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(0..0 + 16).unwrap();
+                let value = cell_bytes.get_i64_le();
+                StatsRef::new(value as usize)
+            },
+            r#game_object_task: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(16..16 + 16).unwrap();
+                let value = cell_bytes.get_i64_le();
+                GameObjectTasksRef::new(value as usize)
+            },
+            r#unknown32: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(32..32 + 4).unwrap();
+                let value = cell_bytes.get_i32_le();
+                value
+            },
+            r#unknown36: {
+                // array_mutator column.array == false && column.type == 'bool'
+                let cell_bytes = row.get(36).unwrap();
+                let value = cell_bytes.to_le() != 0;
+                value
+            },
+            r#unknown37: {
+                // array_mutator column.array == false && column.type == 'bool'
+                let cell_bytes = row.get(37).unwrap();
+                let value = cell_bytes.to_le() != 0;
+                value
+            },
+            r#unknown38: {
+                // array_mutator column.array == false && column.type == 'bool'
+                let cell_bytes = row.get(38).unwrap();
+                let value = cell_bytes.to_le() != 0;
+                value
+            },
+            r#unknown39: {
+                // array_mutator column.array == false && column.type == 'bool'
+                let cell_bytes = row.get(39).unwrap();
+                let value = cell_bytes.to_le() != 0;
+                value
+            },
+            r#unknown40: {
+                // array_mutator column.array == false && column.type == 'bool'
+                let cell_bytes = row.get(40).unwrap();
+                let value = cell_bytes.to_le() != 0;
+                value
+            },
+        })
+        .collect()
+});
 
 #[derive(Debug)]
 pub struct GameObjectTasksFromStatsRow {
@@ -103,16 +102,10 @@ impl GameObjectTasksFromStatsRef {
         &TABLE_GameObjectTasksFromStats[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_GameObjectTasksFromStats
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_GameObjectTasksFromStats.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static GameObjectTasksFromStatsRow)> {
-        TABLE_GameObjectTasksFromStats
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_GameObjectTasksFromStats.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

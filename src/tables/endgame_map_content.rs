@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_EndgameMapContent: LazyLock<Vec<EndgameMapContentRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/endgamemapcontent.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/endgamemapcontent.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| EndgameMapContentRow {
             r#id: {
@@ -74,10 +69,7 @@ pub static TABLE_EndgameMapContent: LazyLock<Vec<EndgameMapContentRow>> = LazyLo
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| StatsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| StatsRef::new(value as usize)).collect()
             },
             r#inherent_stat_values: {
                 // array_mutator column.array == true
@@ -146,10 +138,7 @@ pub static TABLE_EndgameMapContent: LazyLock<Vec<EndgameMapContentRow>> = LazyLo
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| StatsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| StatsRef::new(value as usize)).collect()
             },
             r#unknown144: {
                 // array_mutator column.array == false && column.type != 'string|bool'
@@ -208,16 +197,10 @@ impl EndgameMapContentRef {
         &TABLE_EndgameMapContent[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_EndgameMapContent
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_EndgameMapContent.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static EndgameMapContentRow)> {
-        TABLE_EndgameMapContent
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_EndgameMapContent.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

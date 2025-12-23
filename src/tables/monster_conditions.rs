@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_MonsterConditions: LazyLock<Vec<MonsterConditionsRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/monsterconditions.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/monsterconditions.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| MonsterConditionsRow {
             r#id: {
@@ -54,10 +49,7 @@ pub static TABLE_MonsterConditions: LazyLock<Vec<MonsterConditionsRow>> = LazyLo
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| StatsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| StatsRef::new(value as usize)).collect()
             },
             r#map_boss: {
                 // array_mutator column.array == false && column.type == 'bool'
@@ -160,16 +152,10 @@ impl MonsterConditionsRef {
         &TABLE_MonsterConditions[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_MonsterConditions
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_MonsterConditions.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static MonsterConditionsRow)> {
-        TABLE_MonsterConditions
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_MonsterConditions.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

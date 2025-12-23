@@ -8,55 +8,54 @@ use super::*;
 use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
-pub static TABLE_PassiveJewelNodeModifyingStats: LazyLock<Vec<PassiveJewelNodeModifyingStatsRow>> =
-    LazyLock::new(|| {
-        let df = DAT_LOADER
-            .write()
-            .unwrap()
-            .get_table("data/balance/passivejewelnodemodifyingstats.datc64")
-            .unwrap()
-            .clone();
-        df.rows_iter()
-            .map(|row| PassiveJewelNodeModifyingStatsRow {
-                r#jwel_stat: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(0..0 + 16).unwrap();
-                    let value = cell_bytes.get_i64_le();
-                    StatsRef::new(value as usize)
-                },
-                r#stat: {
-                    // array_mutator column.array == false && column.type != 'string|bool'
-                    let mut cell_bytes = row.get(16..16 + 16).unwrap();
-                    let value = cell_bytes.get_i64_le();
-                    StatsRef::new(value as usize)
-                },
-                r#unknown32: {
-                    // array_mutator column.array == false && column.type == 'bool'
-                    let cell_bytes = row.get(32).unwrap();
-                    let value = cell_bytes.to_le() != 0;
-                    value
-                },
-                r#unknown33: {
-                    // array_mutator column.array == false && column.type == 'bool'
-                    let cell_bytes = row.get(33).unwrap();
-                    let value = cell_bytes.to_le() != 0;
-                    value
-                },
-                r#unknown34: {
-                    // array_mutator column.array == false && column.type == 'bool'
-                    let cell_bytes = row.get(34).unwrap();
-                    let value = cell_bytes.to_le() != 0;
-                    value
-                },
-                r#unknown35: {
-                    // array_mutator column.array == false && column.type == 'bool'
-                    let cell_bytes = row.get(35).unwrap();
-                    let value = cell_bytes.to_le() != 0;
-                    value
-                },
-            })
-            .collect()
-    });
+pub static TABLE_PassiveJewelNodeModifyingStats: LazyLock<Vec<PassiveJewelNodeModifyingStatsRow>> = LazyLock::new(|| {
+    let df = DAT_LOADER
+        .write()
+        .unwrap()
+        .get_table("data/balance/passivejewelnodemodifyingstats.datc64")
+        .unwrap()
+        .clone();
+    df.rows_iter()
+        .map(|row| PassiveJewelNodeModifyingStatsRow {
+            r#jwel_stat: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(0..0 + 16).unwrap();
+                let value = cell_bytes.get_i64_le();
+                StatsRef::new(value as usize)
+            },
+            r#stat: {
+                // array_mutator column.array == false && column.type != 'string|bool'
+                let mut cell_bytes = row.get(16..16 + 16).unwrap();
+                let value = cell_bytes.get_i64_le();
+                StatsRef::new(value as usize)
+            },
+            r#unknown32: {
+                // array_mutator column.array == false && column.type == 'bool'
+                let cell_bytes = row.get(32).unwrap();
+                let value = cell_bytes.to_le() != 0;
+                value
+            },
+            r#unknown33: {
+                // array_mutator column.array == false && column.type == 'bool'
+                let cell_bytes = row.get(33).unwrap();
+                let value = cell_bytes.to_le() != 0;
+                value
+            },
+            r#unknown34: {
+                // array_mutator column.array == false && column.type == 'bool'
+                let cell_bytes = row.get(34).unwrap();
+                let value = cell_bytes.to_le() != 0;
+                value
+            },
+            r#unknown35: {
+                // array_mutator column.array == false && column.type == 'bool'
+                let cell_bytes = row.get(35).unwrap();
+                let value = cell_bytes.to_le() != 0;
+                value
+            },
+        })
+        .collect()
+});
 
 #[derive(Debug)]
 pub struct PassiveJewelNodeModifyingStatsRow {
@@ -89,17 +88,10 @@ impl PassiveJewelNodeModifyingStatsRef {
         &TABLE_PassiveJewelNodeModifyingStats[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_PassiveJewelNodeModifyingStats
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_PassiveJewelNodeModifyingStats.iter().enumerate().map(|(i, _)| Self(i))
     }
-    pub fn iter_with_refs(
-    ) -> impl Iterator<Item = (Self, &'static PassiveJewelNodeModifyingStatsRow)> {
-        TABLE_PassiveJewelNodeModifyingStats
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+    pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static PassiveJewelNodeModifyingStatsRow)> {
+        TABLE_PassiveJewelNodeModifyingStats.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

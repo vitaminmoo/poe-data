@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_NPCTextAudio: LazyLock<Vec<NPCTextAudioRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/npctextaudio.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/npctextaudio.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| NPCTextAudioRow {
             r#id: {
@@ -36,10 +31,7 @@ pub static TABLE_NPCTextAudio: LazyLock<Vec<NPCTextAudioRow>> = LazyLock::new(||
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| CharactersRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| CharactersRef::new(value as usize)).collect()
             },
             r#text: {
                 // array_mutator column.array == false && column.type == 'string'
@@ -111,10 +103,7 @@ pub static TABLE_NPCTextAudio: LazyLock<Vec<NPCTextAudioRow>> = LazyLock::new(||
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| NPCsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| NPCsRef::new(value as usize)).collect()
             },
         })
         .collect()
@@ -160,10 +149,7 @@ impl NPCTextAudioRef {
         TABLE_NPCTextAudio.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static NPCTextAudioRow)> {
-        TABLE_NPCTextAudio
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_NPCTextAudio.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

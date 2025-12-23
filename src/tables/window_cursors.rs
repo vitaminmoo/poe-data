@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_WindowCursors: LazyLock<Vec<WindowCursorsRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/windowcursors.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/windowcursors.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| WindowCursorsRow {
             r#id: {
@@ -117,10 +112,7 @@ impl WindowCursorsRef {
         TABLE_WindowCursors.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static WindowCursorsRow)> {
-        TABLE_WindowCursors
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_WindowCursors.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

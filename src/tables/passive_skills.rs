@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_PassiveSkills: LazyLock<Vec<PassiveSkillsRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/passiveskills.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/passiveskills.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| PassiveSkillsRow {
             r#id: {
@@ -43,10 +38,7 @@ pub static TABLE_PassiveSkills: LazyLock<Vec<PassiveSkillsRow>> = LazyLock::new(
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| StatsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| StatsRef::new(value as usize)).collect()
             },
             r#stat1_value: {
                 // array_mutator column.array == false && column.type != 'string|bool'
@@ -97,10 +89,7 @@ pub static TABLE_PassiveSkills: LazyLock<Vec<PassiveSkillsRow>> = LazyLock::new(
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| CharactersRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| CharactersRef::new(value as usize)).collect()
             },
             r#is_keystone: {
                 // array_mutator column.array == false && column.type == 'bool'
@@ -163,10 +152,7 @@ pub static TABLE_PassiveSkills: LazyLock<Vec<PassiveSkillsRow>> = LazyLock::new(
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| ReminderTextRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| ReminderTextRef::new(value as usize)).collect()
             },
             r#skill_points_granted: {
                 // array_mutator column.array == false && column.type != 'string|bool'
@@ -204,10 +190,7 @@ pub static TABLE_PassiveSkills: LazyLock<Vec<PassiveSkillsRow>> = LazyLock::new(
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| BuffTemplatesRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| BuffTemplatesRef::new(value as usize)).collect()
             },
             r#is_anointment_only: {
                 // array_mutator column.array == false && column.type == 'bool'
@@ -406,10 +389,7 @@ pub static TABLE_PassiveSkills: LazyLock<Vec<PassiveSkillsRow>> = LazyLock::new(
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| PassiveSkillsRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| PassiveSkillsRef::new(value as usize)).collect()
             },
             r#visible_for_ascendancy: {
                 // array_mutator column.array == false && column.type != 'string|bool'
@@ -517,10 +497,7 @@ impl PassiveSkillsRef {
         TABLE_PassiveSkills.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static PassiveSkillsRow)> {
-        TABLE_PassiveSkills
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_PassiveSkills.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

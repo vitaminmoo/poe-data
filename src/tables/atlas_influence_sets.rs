@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_AtlasInfluenceSets: LazyLock<Vec<AtlasInfluenceSetsRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/atlasinfluencesets.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/atlasinfluencesets.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| AtlasInfluenceSetsRow {
             r#id: {
@@ -36,10 +31,7 @@ pub static TABLE_AtlasInfluenceSets: LazyLock<Vec<AtlasInfluenceSetsRow>> = Lazy
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| AtlasInfluenceOutcomesRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| AtlasInfluenceOutcomesRef::new(value as usize)).collect()
             },
         })
         .collect()
@@ -72,16 +64,10 @@ impl AtlasInfluenceSetsRef {
         &TABLE_AtlasInfluenceSets[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_AtlasInfluenceSets
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_AtlasInfluenceSets.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static AtlasInfluenceSetsRow)> {
-        TABLE_AtlasInfluenceSets
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_AtlasInfluenceSets.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

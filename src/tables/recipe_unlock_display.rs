@@ -42,10 +42,7 @@ pub static TABLE_RecipeUnlockDisplay: LazyLock<Vec<RecipeUnlockDisplayRow>> = La
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| CraftingItemClassCategoriesRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| CraftingItemClassCategoriesRef::new(value as usize)).collect()
             },
             r#unlock_description: {
                 // array_mutator column.array == false && column.type == 'string'
@@ -101,16 +98,10 @@ impl RecipeUnlockDisplayRef {
         &TABLE_RecipeUnlockDisplay[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_RecipeUnlockDisplay
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_RecipeUnlockDisplay.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static RecipeUnlockDisplayRow)> {
-        TABLE_RecipeUnlockDisplay
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_RecipeUnlockDisplay.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

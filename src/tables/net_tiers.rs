@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_NetTiers: LazyLock<Vec<NetTiersRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/nettiers.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/nettiers.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| NetTiersRow {
             r#base_item_types_key: {

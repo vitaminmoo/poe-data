@@ -8,9 +8,7 @@ use super::*;
 use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
-pub static TABLE_WorldObjectDisplayedApplicableItems: LazyLock<
-    Vec<WorldObjectDisplayedApplicableItemsRow>,
-> = LazyLock::new(|| {
+pub static TABLE_WorldObjectDisplayedApplicableItems: LazyLock<Vec<WorldObjectDisplayedApplicableItemsRow>> = LazyLock::new(|| {
     let df = DAT_LOADER
         .write()
         .unwrap()
@@ -38,10 +36,7 @@ pub static TABLE_WorldObjectDisplayedApplicableItems: LazyLock<
                     .iter()
                     .map(|x| x.clone().get_i64_le())
                     .collect::<Vec<i64>>();
-                values
-                    .into_iter()
-                    .map(|value| BaseItemTypesRef::new(value as usize))
-                    .collect()
+                values.into_iter().map(|value| BaseItemTypesRef::new(value as usize)).collect()
             },
         })
         .collect()
@@ -74,17 +69,10 @@ impl WorldObjectDisplayedApplicableItemsRef {
         &TABLE_WorldObjectDisplayedApplicableItems[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_WorldObjectDisplayedApplicableItems
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_WorldObjectDisplayedApplicableItems.iter().enumerate().map(|(i, _)| Self(i))
     }
-    pub fn iter_with_refs(
-    ) -> impl Iterator<Item = (Self, &'static WorldObjectDisplayedApplicableItemsRow)> {
-        TABLE_WorldObjectDisplayedApplicableItems
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+    pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static WorldObjectDisplayedApplicableItemsRow)> {
+        TABLE_WorldObjectDisplayedApplicableItems.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

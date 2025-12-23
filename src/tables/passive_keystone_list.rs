@@ -61,16 +61,10 @@ impl PassiveKeystoneListRef {
         &TABLE_PassiveKeystoneList[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_PassiveKeystoneList
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_PassiveKeystoneList.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static PassiveKeystoneListRow)> {
-        TABLE_PassiveKeystoneList
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_PassiveKeystoneList.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

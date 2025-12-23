@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_AegisVariations: LazyLock<Vec<AegisVariationsRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/aegisvariations.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/aegisvariations.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| AegisVariationsRow {
             r#id: {
@@ -134,16 +129,10 @@ impl AegisVariationsRef {
         &TABLE_AegisVariations[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_AegisVariations
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_AegisVariations.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static AegisVariationsRow)> {
-        TABLE_AegisVariations
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_AegisVariations.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

@@ -8,9 +8,7 @@ use super::*;
 use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
-pub static TABLE_MicrotransactionJewelVariations: LazyLock<
-    Vec<MicrotransactionJewelVariationsRow>,
-> = LazyLock::new(|| {
+pub static TABLE_MicrotransactionJewelVariations: LazyLock<Vec<MicrotransactionJewelVariationsRow>> = LazyLock::new(|| {
     let df = DAT_LOADER
         .write()
         .unwrap()
@@ -100,17 +98,10 @@ impl MicrotransactionJewelVariationsRef {
         &TABLE_MicrotransactionJewelVariations[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_MicrotransactionJewelVariations
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_MicrotransactionJewelVariations.iter().enumerate().map(|(i, _)| Self(i))
     }
-    pub fn iter_with_refs(
-    ) -> impl Iterator<Item = (Self, &'static MicrotransactionJewelVariationsRow)> {
-        TABLE_MicrotransactionJewelVariations
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+    pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static MicrotransactionJewelVariationsRow)> {
+        TABLE_MicrotransactionJewelVariations.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

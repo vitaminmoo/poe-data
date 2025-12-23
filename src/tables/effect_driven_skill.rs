@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_EffectDrivenSkill: LazyLock<Vec<EffectDrivenSkillRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/effectdrivenskill.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/effectdrivenskill.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| EffectDrivenSkillRow {
             r#unknown0: {
@@ -263,16 +258,10 @@ impl EffectDrivenSkillRef {
         &TABLE_EffectDrivenSkill[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_EffectDrivenSkill
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_EffectDrivenSkill.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static EffectDrivenSkillRow)> {
-        TABLE_EffectDrivenSkill
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_EffectDrivenSkill.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 

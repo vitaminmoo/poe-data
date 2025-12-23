@@ -26,20 +26,14 @@ struct RowCountsCache {
 
 fn main() -> Result<()> {
     let args: Vec<String> = env::args().collect();
-    let output_dir = if args.len() > 1 {
-        PathBuf::from(&args[1])
-    } else {
-        PathBuf::from(".")
-    };
+    let output_dir = if args.len() > 1 { PathBuf::from(&args[1]) } else { PathBuf::from(".") };
 
     if !output_dir.exists() {
         fs::create_dir_all(&output_dir)?;
     }
 
     // 0. Setup
-    let cache_dir = dirs::cache_dir()
-        .ok_or(anyhow::anyhow!("no cache dir"))?
-        .join("poe_data_tools");
+    let cache_dir = dirs::cache_dir().ok_or(anyhow::anyhow!("no cache dir"))?.join("poe_data_tools");
     fs::create_dir_all(&cache_dir)?;
 
     let schema_path = cache_dir.join("schema.min.json");
@@ -48,14 +42,12 @@ fn main() -> Result<()> {
 
     // 1. Download Schema (Conditional)
     let client = reqwest::blocking::Client::new();
-    let schema_url =
-        "https://github.com/poe-tool-dev/dat-schema/releases/download/latest/schema.min.json";
+    let schema_url = "https://github.com/poe-tool-dev/dat-schema/releases/download/latest/schema.min.json";
 
     let mut headers = reqwest::header::HeaderMap::new();
     if schema_path.exists() && headers_path.exists() {
         if let Ok(saved_headers) = fs::read_to_string(&headers_path) {
-            let h: HashMap<String, String> =
-                serde_json::from_str(&saved_headers).unwrap_or_default();
+            let h: HashMap<String, String> = serde_json::from_str(&saved_headers).unwrap_or_default();
             if let Some(etag) = h.get("etag") {
                 if let Ok(val) = etag.parse() {
                     headers.insert(IF_NONE_MATCH, val);
@@ -70,11 +62,7 @@ fn main() -> Result<()> {
     }
 
     // Handle redirects automatically by reqwest
-    let res = client
-        .get(schema_url)
-        .headers(headers)
-        .send()
-        .context("Failed to request schema")?;
+    let res = client.get(schema_url).headers(headers).send().context("Failed to request schema")?;
 
     let schema_changed = if res.status().is_success() {
         let resp_headers = res.headers().clone();
@@ -223,11 +211,7 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn process_schema(
-    original_schema: &Value,
-    files: &HashMap<String, CachedFile>,
-    version_num: u64,
-) -> Result<Value> {
+fn process_schema(original_schema: &Value, files: &HashMap<String, CachedFile>, version_num: u64) -> Result<Value> {
     let mut schema = original_schema.clone();
 
     if let Some(tables) = schema.get_mut("tables").and_then(|t| t.as_array_mut()) {
@@ -241,25 +225,14 @@ fn process_schema(
 
             let mut table_obj = table.as_object().unwrap().clone();
             // Clone the name string to avoid borrowing from table_obj while we mutate it
-            let name = table_obj
-                .get("name")
-                .and_then(|n| n.as_str())
-                .unwrap_or("")
-                .to_string();
+            let name = table_obj.get("name").and_then(|n| n.as_str()).unwrap_or("").to_string();
 
             // Remove validFor as it is implicit in the split file
             //table_obj.remove("validFor");
 
-            let tags = table_obj
-                .get("tags")
-                .and_then(|t| t.as_array())
-                .cloned()
-                .unwrap_or_default();
+            let tags = table_obj.get("tags").and_then(|t| t.as_array()).cloned().unwrap_or_default();
 
-            let mut tags_set: HashSet<String> = tags
-                .iter()
-                .filter_map(|v| v.as_str().map(|s| s.to_string()))
-                .collect();
+            let mut tags_set: HashSet<String> = tags.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect();
 
             let lookup_name = name.to_lowercase();
 
@@ -269,10 +242,7 @@ fn process_schema(
 
             // Add row count
             if let Some(entry) = files.get(&lookup_name) {
-                table_obj.insert(
-                    "num_rows".to_string(),
-                    Value::Number(serde_json::Number::from(entry.rows)),
-                );
+                table_obj.insert("num_rows".to_string(), Value::Number(serde_json::Number::from(entry.rows)));
             }
 
             // Clean tags: remove missing:1 / missing:2 if present, ensure only relevant 'missing' is there?
@@ -299,14 +269,8 @@ fn process_schema(
                 for col in columns.iter_mut() {
                     if let Some(col_obj) = col.as_object_mut() {
                         let size = get_column_size(col_obj);
-                        col_obj.insert(
-                            "offset".to_string(),
-                            Value::Number(serde_json::Number::from(current_offset)),
-                        );
-                        col_obj.insert(
-                            "cell_bytes".to_string(),
-                            Value::Number(serde_json::Number::from(size)),
-                        );
+                        col_obj.insert("offset".to_string(), Value::Number(serde_json::Number::from(current_offset)));
+                        col_obj.insert("cell_bytes".to_string(), Value::Number(serde_json::Number::from(size)));
                         current_offset += size;
                     }
                 }
@@ -328,11 +292,7 @@ fn get_column_size(col: &serde_json::Map<String, Value>) -> u32 {
     if col.get("array").and_then(|v| v.as_bool()).unwrap_or(false) {
         return 16;
     }
-    if col
-        .get("interval")
-        .and_then(|v| v.as_bool())
-        .unwrap_or(false)
-    {
+    if col.get("interval").and_then(|v| v.as_bool()).unwrap_or(false) {
         return 8;
     }
     let type_str = col.get("type").and_then(|v| v.as_str()).unwrap_or("");
@@ -350,12 +310,7 @@ fn get_column_size(col: &serde_json::Map<String, Value>) -> u32 {
     }
 }
 
-fn get_file_info(
-    cache_dir: &Path,
-    version: &str,
-    is_poe2: bool,
-    previous_cache: &HashMap<String, CachedFile>,
-) -> Result<HashMap<String, CachedFile>> {
+fn get_file_info(cache_dir: &Path, version: &str, is_poe2: bool, previous_cache: &HashMap<String, CachedFile>) -> Result<HashMap<String, CachedFile>> {
     let base_url = poe_data_tools::bundle_loader::cdn_base_url(cache_dir, version)?;
     let fs = poe_data_tools::bundle_fs::FS::from_cdn(&base_url, cache_dir)?;
     let mut files = HashMap::new();
@@ -372,19 +327,12 @@ fn get_file_info(
         };
 
         if is_interesting {
-            let name = std::path::Path::new(path)
-                .file_stem()
-                .unwrap()
-                .to_string_lossy()
-                .to_string();
+            let name = std::path::Path::new(path).file_stem().unwrap().to_string_lossy().to_string();
 
             // Check cache
             let mut used_cache = false;
             if let Some(cached_entry) = previous_cache.get(&name) {
-                if cached_entry.bundle_name == metadata.bundle_name
-                    && cached_entry.offset == metadata.offset
-                    && cached_entry.size == metadata.size
-                {
+                if cached_entry.bundle_name == metadata.bundle_name && cached_entry.offset == metadata.offset && cached_entry.size == metadata.size {
                     files.insert(
                         name.clone(),
                         CachedFile {
@@ -406,11 +354,7 @@ fn get_file_info(
     }
 
     if !files_to_read.is_empty() {
-        eprintln!(
-            "{} files changed or new, reading (cached {})...",
-            files_to_read.len(),
-            cached_count
-        );
+        eprintln!("{} files changed or new, reading (cached {})...", files_to_read.len(), cached_count);
         let paths: Vec<&str> = files_to_read.iter().map(|m| m.path.as_str()).collect();
 
         // Process in batches
@@ -420,11 +364,7 @@ fn get_file_info(
                     Ok((path, bytes)) => {
                         if bytes.len() >= 4 {
                             let rows = u32::from_le_bytes(bytes[0..4].try_into().unwrap());
-                            let name = std::path::Path::new(path)
-                                .file_stem()
-                                .unwrap()
-                                .to_string_lossy()
-                                .to_string();
+                            let name = std::path::Path::new(path).file_stem().unwrap().to_string_lossy().to_string();
 
                             // Find metadata for this file to cache it
                             if let Some(meta) = files_to_read.iter().find(|m| m.path == path) {

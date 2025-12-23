@@ -9,12 +9,7 @@ use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
 pub static TABLE_SkillWeaponEffects: LazyLock<Vec<SkillWeaponEffectsRow>> = LazyLock::new(|| {
-    let df = DAT_LOADER
-        .write()
-        .unwrap()
-        .get_table("data/balance/skillweaponeffects.datc64")
-        .unwrap()
-        .clone();
+    let df = DAT_LOADER.write().unwrap().get_table("data/balance/skillweaponeffects.datc64").unwrap().clone();
     df.rows_iter()
         .map(|row| SkillWeaponEffectsRow {
             r#unknown0: {
@@ -82,16 +77,10 @@ impl SkillWeaponEffectsRef {
         &TABLE_SkillWeaponEffects[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_SkillWeaponEffects
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Self(i))
+        TABLE_SkillWeaponEffects.iter().enumerate().map(|(i, _)| Self(i))
     }
     pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static SkillWeaponEffectsRow)> {
-        TABLE_SkillWeaponEffects
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (Self(i), x))
+        TABLE_SkillWeaponEffects.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 
