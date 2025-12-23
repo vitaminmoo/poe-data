@@ -1,4 +1,5 @@
 use anyhow::{Context, Result};
+use poe_data::versions::get_versions;
 use reqwest::header::{ETAG, IF_MODIFIED_SINCE, IF_NONE_MATCH, LAST_MODIFIED};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -6,12 +7,6 @@ use std::collections::{HashMap, HashSet};
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
-
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-struct PoeVersions {
-    poe: String,
-    poe2: String,
-}
 
 #[derive(Serialize, Deserialize, Debug)]
 struct RowCountsCache {
@@ -107,12 +102,7 @@ fn main() -> Result<()> {
     let schema_json: Value = serde_json::from_str(&fs::read_to_string(&schema_path)?)?;
 
     // 2. Check Versions
-    let versions_url = "https://poe-versions.obsoleet.org/";
-    let current_versions: PoeVersions = client
-        .get(versions_url)
-        .send()
-        .context("Failed to fetch versions")?
-        .json()?;
+    let current_versions = get_versions()?;
 
     // Load row count cache
     let mut cache = if row_counts_cache_path.exists() {
