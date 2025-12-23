@@ -292,6 +292,26 @@ fn process_schema(
             }
 
             table_obj.insert("tags".to_string(), Value::Array(new_tags));
+
+            // Calculate offsets and sizes
+            if let Some(columns) = table_obj.get_mut("columns").and_then(|c| c.as_array_mut()) {
+                let mut current_offset = 0;
+                for col in columns.iter_mut() {
+                    if let Some(col_obj) = col.as_object_mut() {
+                        let size = get_column_size(col_obj);
+                        col_obj.insert(
+                            "offset".to_string(),
+                            Value::Number(serde_json::Number::from(current_offset)),
+                        );
+                        col_obj.insert(
+                            "cell_bytes".to_string(),
+                            Value::Number(serde_json::Number::from(size)),
+                        );
+                        current_offset += size;
+                    }
+                }
+            }
+
             new_tables.push(Value::Object(table_obj));
         }
 
@@ -302,6 +322,32 @@ fn process_schema(
     }
 
     Ok(schema)
+}
+
+fn get_column_size(col: &serde_json::Map<String, Value>) -> u32 {
+    if col.get("array").and_then(|v| v.as_bool()).unwrap_or(false) {
+        return 16;
+    }
+    if col
+        .get("interval")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false)
+    {
+        return 8;
+    }
+    let type_str = col.get("type").and_then(|v| v.as_str()).unwrap_or("");
+    match type_str {
+        "bool" => 1,
+        "string" => 8,
+        "enumrow" | "i32" | "u32" | "f32" => 4,
+        "row" | "i64" | "u64" | "f64" => 8,
+        "foreignrow" => 16,
+        "i16" | "u16" => 2,
+        _ => {
+            eprintln!("Unknown type: {}", type_str);
+            0
+        }
+    }
 }
 
 fn get_file_info(
