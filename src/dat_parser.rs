@@ -1,6 +1,6 @@
 use anyhow::{anyhow, bail, Result};
 use bytes::{Buf, Bytes};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::sync::{LazyLock, RwLock};
 
 // datc64 column types
@@ -172,9 +172,7 @@ fn parse_file(source: &str, file: Bytes) -> Result<DatFile> {
         table,
         bytes_per_row: row_len_bytes,
         vdata: data,
-        table_row_or: vec![0; row_len_bytes],
-        table_row_min: vec![0xFF; row_len_bytes],
-        table_row_max: vec![0; row_len_bytes],
+        stats: TableStats::new(row_len_bytes),
     };
 
     if table_len_rows == 0 {
@@ -183,24 +181,63 @@ fn parse_file(source: &str, file: Bytes) -> Result<DatFile> {
 
     for row in dat_file.table.chunks_exact(row_len_bytes) {
         for (i, &byte) in row.iter().enumerate() {
-            dat_file.table_row_or[i] |= byte;
-            dat_file.table_row_min[i] = dat_file.table_row_min[i].min(byte);
-            dat_file.table_row_max[i] = dat_file.table_row_max[i].max(byte);
+            let byte_stats = &mut dat_file.stats.per_byte_stats[i];
+            byte_stats.or_value |= byte;
+            byte_stats.min_value = byte_stats.min_value.min(byte);
+            byte_stats.max_value = byte_stats.max_value.max(byte);
+            byte_stats.counts[byte as usize] += 1;
         }
+    }
+
+    for byte_stats in &mut dat_file.stats.per_byte_stats {
+        byte_stats.unique_count = byte_stats.counts.iter().filter(|&&c| c > 0).count();
     }
 
     Ok(dat_file)
 }
 
 #[derive(Debug, Clone)]
+pub struct ByteStats {
+    pub or_value: u8,
+    pub min_value: u8,
+    pub max_value: u8,
+    pub counts: [usize; 256], // Frequency of each byte value
+    pub unique_count: usize,
+}
+
+impl ByteStats {
+    fn new() -> Self {
+        ByteStats {
+            or_value: 0,
+            min_value: 0xFF,
+            max_value: 0,
+            counts: [0; 256],
+            unique_count: 0,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct TableStats {
+    // One entry per byte offset in a row
+    pub per_byte_stats: Vec<ByteStats>,
+}
+
+impl TableStats {
+    fn new(row_len_bytes: usize) -> Self {
+        TableStats {
+            per_byte_stats: vec![ByteStats::new(); row_len_bytes],
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct DatFile {
-    pub source: String,         // path to the file that we got this data from
-    pub table: Bytes,           // the entire fixed-length table section without the rows header
-    pub bytes_per_row: usize,   // how many bytes per row
-    pub vdata: Bytes,           // the entire variable-length data section, including 8 bytes of magic
-    pub table_row_or: Vec<u8>,  // 1 byte per row byte, all rows bitwise or'd together
-    pub table_row_min: Vec<u8>, // 1 byte per row byte, containing the min value of all rows
-    pub table_row_max: Vec<u8>, // 1 byte per row byte, containing the max value of all rows
+    pub source: String,       // path to the file that we got this data from
+    pub table: Bytes,         // the entire fixed-length table section without the rows header
+    pub bytes_per_row: usize, // how many bytes per row
+    pub vdata: Bytes,         // the entire variable-length data section, including 8 bytes of magic
+    pub stats: TableStats,
 }
 
 impl DatFile {
@@ -324,8 +361,7 @@ impl DatFile {
 
                 // Zero/Constant Check using precalculated column stats
                 // Hashes should not have bytes that are always 0 or always constant across all rows.
-                // table_row_max[i] == 0 implies that byte is always 0.
-                if self.table_row_max[col_index] == 0 || self.table_row_max[col_index + 1] == 0 {
+                if self.stats.per_byte_stats[col_index].max_value == 0 || self.stats.per_byte_stats[col_index + 1].max_value == 0 {
                     return Vec::new();
                 }
 
@@ -395,10 +431,9 @@ impl DatFile {
 
                             // Filter 2: Byte Variance & Parity (Misaligned/Padding/Pointer check)
                             if likely_hash {
-                                let mut lsb_set = HashSet::new();
-                                let mut msb_set = HashSet::new();
-                                let mut b0_counts = [0usize; 256];
-                                let mut b1_counts = [0usize; 256];
+                                let b0_stats = &self.stats.per_byte_stats[col_index];
+                                let b1_stats = &self.stats.per_byte_stats[col_index + 1];
+
                                 let mut lsb_odd = 0;
                                 let mut msb_odd = 0;
                                 let mut has_fe_pattern = false;
@@ -406,10 +441,6 @@ impl DatFile {
                                 for &v in &values {
                                     let b0 = (v & 0xFF) as u8;
                                     let b1 = (v >> 8) as u8;
-                                    lsb_set.insert(b0);
-                                    msb_set.insert(b1);
-                                    b0_counts[b0 as usize] += 1;
-                                    b1_counts[b1 as usize] += 1;
                                     if !b0.is_multiple_of(2) {
                                         lsb_odd += 1;
                                     }
@@ -428,7 +459,7 @@ impl DatFile {
 
                                 // 50% Dominance Check
                                 let limit = row_count / 2;
-                                if b0_counts.iter().any(|&c| c > limit) || b1_counts.iter().any(|&c| c > limit) {
+                                if b0_stats.counts.iter().any(|&c| c > limit) || b1_stats.counts.iter().any(|&c| c > limit) {
                                     likely_hash = false;
                                 }
 
@@ -440,16 +471,16 @@ impl DatFile {
                                 // If row_count is very small (e.g. < 3), min_unique is 3, which fails.
                                 // Adjust for very small tables: min_unique cannot exceed row_count.
                                 let min_unique = min_unique.min(row_count);
-                                if lsb_set.len() < min_unique || msb_set.len() < min_unique {
+                                if b0_stats.unique_count < min_unique || b1_stats.unique_count < min_unique {
                                     likely_hash = false;
                                 }
 
                                 // 1b. Zero Check:
                                 // If a byte is ALWAYS zero, it's not a hash.
-                                if lsb_set.len() == 1 && lsb_set.contains(&0) {
+                                if b0_stats.unique_count == 1 && b0_stats.min_value == 0 {
                                     likely_hash = false;
                                 }
-                                if msb_set.len() == 1 && msb_set.contains(&0) {
+                                if b1_stats.unique_count == 1 && b1_stats.min_value == 0 {
                                     likely_hash = false;
                                 }
 
@@ -480,10 +511,10 @@ impl DatFile {
 
                 // Zero/Constant Check using precalculated column stats
                 // Hashes should not have bytes that are always 0.
-                if self.table_row_max[col_index] == 0
-                    || self.table_row_max[col_index + 1] == 0
-                    || self.table_row_max[col_index + 2] == 0
-                    || self.table_row_max[col_index + 3] == 0
+                if self.stats.per_byte_stats[col_index].max_value == 0
+                    || self.stats.per_byte_stats[col_index + 1].max_value == 0
+                    || self.stats.per_byte_stats[col_index + 2].max_value == 0
+                    || self.stats.per_byte_stats[col_index + 3].max_value == 0
                 {
                     return Vec::new();
                 }
@@ -545,62 +576,27 @@ impl DatFile {
                             // Filter 2: Byte Variance & Parity
 
                             if likely_hash {
-                                let mut b0_set = HashSet::new();
-
-                                let mut b1_set = HashSet::new();
-
-                                let mut b2_set = HashSet::new();
-
-                                let mut b3_set = HashSet::new();
-
-                                let mut b0_counts = [0usize; 256];
-
-                                let mut b1_counts = [0usize; 256];
-
-                                let mut b2_counts = [0usize; 256];
-
-                                let mut b3_counts = [0usize; 256];
+                                let b0_stats = &self.stats.per_byte_stats[col_index];
+                                let b1_stats = &self.stats.per_byte_stats[col_index + 1];
+                                let b2_stats = &self.stats.per_byte_stats[col_index + 2];
+                                let b3_stats = &self.stats.per_byte_stats[col_index + 3];
 
                                 let mut lsb_odd = 0;
-
                                 let mut msb_odd = 0;
-
                                 let mut has_fe_pattern = false;
 
                                 for &v in &values {
                                     let b0 = (v & 0xFF) as u8;
-
                                     let b1 = ((v >> 8) & 0xFF) as u8;
-
                                     let b2 = ((v >> 16) & 0xFF) as u8;
-
                                     let b3 = ((v >> 24) & 0xFF) as u8;
-
-                                    b0_set.insert(b0);
-
-                                    b1_set.insert(b1);
-
-                                    b2_set.insert(b2);
-
-                                    b3_set.insert(b3);
-
-                                    b0_counts[b0 as usize] += 1;
-
-                                    b1_counts[b1 as usize] += 1;
-
-                                    b2_counts[b2 as usize] += 1;
-
-                                    b3_counts[b3 as usize] += 1;
 
                                     if !b0.is_multiple_of(2) {
                                         lsb_odd += 1;
                                     }
-
                                     if !b3.is_multiple_of(2) {
                                         msb_odd += 1;
                                     }
-
-                                    // Check for FE pattern: v != 0, and all bytes are 0 or FE.
 
                                     if v != 0 && (b0 == 0 || b0 == 0xFE) && (b1 == 0 || b1 == 0xFE) && (b2 == 0 || b2 == 0xFE) && (b3 == 0 || b3 == 0xFE) {
                                         has_fe_pattern = true;
@@ -612,42 +608,38 @@ impl DatFile {
                                 }
 
                                 // 50% Dominance Check
-
                                 let limit = row_count / 2;
-
-                                if b0_counts.iter().any(|&c| c > limit)
-                                    || b1_counts.iter().any(|&c| c > limit)
-                                    || b2_counts.iter().any(|&c| c > limit)
-                                    || b3_counts.iter().any(|&c| c > limit)
+                                if b0_stats.counts.iter().any(|&c| c > limit)
+                                    || b1_stats.counts.iter().any(|&c| c > limit)
+                                    || b2_stats.counts.iter().any(|&c| c > limit)
+                                    || b3_stats.counts.iter().any(|&c| c > limit)
                                 {
                                     likely_hash = false;
                                 }
 
                                 // Variance Check for all bytes
-
                                 let min_unique = (row_count / 10).clamp(3, 240);
-
                                 let min_unique = min_unique.min(row_count);
 
-                                if b0_set.len() < min_unique || b1_set.len() < min_unique || b2_set.len() < min_unique || b3_set.len() < min_unique {
+                                if b0_stats.unique_count < min_unique
+                                    || b1_stats.unique_count < min_unique
+                                    || b2_stats.unique_count < min_unique
+                                    || b3_stats.unique_count < min_unique
+                                {
                                     likely_hash = false;
                                 }
 
                                 // Zero Check for all bytes:
-
-                                // If a byte is ALWAYS zero, it's not a hash.
-
                                 if likely_hash
-                                    && ((b0_set.len() == 1 && b0_set.contains(&0))
-                                        || (b1_set.len() == 1 && b1_set.contains(&0))
-                                        || (b2_set.len() == 1 && b2_set.contains(&0))
-                                        || (b3_set.len() == 1 && b3_set.contains(&0)))
+                                    && ((b0_stats.unique_count == 1 && b0_stats.min_value == 0)
+                                        || (b1_stats.unique_count == 1 && b1_stats.min_value == 0)
+                                        || (b2_stats.unique_count == 1 && b2_stats.min_value == 0)
+                                        || (b3_stats.unique_count == 1 && b3_stats.min_value == 0))
                                 {
                                     likely_hash = false;
                                 }
 
                                 // Parity Check (LSB/MSB only usually sufficient for alignment)
-
                                 if likely_hash && row_count > 10 && (lsb_odd == 0 || lsb_odd == row_count || msb_odd == 0 || msb_odd == row_count) {
                                     likely_hash = false;
                                 }
@@ -687,17 +679,25 @@ impl DatFile {
                                     return true;
                                 }
                             }
-                            if self.table_row_min[col_index..col_index + 8] == self.table_row_max[col_index..col_index + 8] {
+                            let min_slice = &self.stats.per_byte_stats[col_index..col_index + 8]
+                                .iter()
+                                .map(|s| s.min_value)
+                                .collect::<Vec<_>>();
+                            let max_slice = &self.stats.per_byte_stats[col_index..col_index + 8]
+                                .iter()
+                                .map(|s| s.max_value)
+                                .collect::<Vec<_>>();
+                            if min_slice == max_slice {
                                 // if all rows have the same value, it's probably not a string, unless it's ""
                                 if !s.is_empty() {
                                     return true;
                                 }
                             }
-                            if self.table_row_min[col_index..col_index + 1] == [0xfe; 1] && self.table_row_max[col_index..col_index + 1] == [0xfe; 1] {
+                            if self.stats.per_byte_stats[col_index].min_value == 0xfe && self.stats.per_byte_stats[col_index].max_value == 0xfe {
                                 // if the first byte is all fe it's probably overlapping an empty thing
                                 return true;
                             }
-                            if self.table_row_min[col_index..col_index + 1] == [0x00; 1] && self.table_row_max[col_index..col_index + 1] == [0x00; 1] {
+                            if self.stats.per_byte_stats[col_index].min_value == 0x00 && self.stats.per_byte_stats[col_index].max_value == 0x00 {
                                 // if the first byte is all 00 it's probably not a string unless it's ""
                                 if !s.is_empty() {
                                     return true;
@@ -913,7 +913,7 @@ impl DatFile {
             let overlaps = occupied[start..end].iter().any(|&occupied| occupied);
 
             if !overlaps {
-                occupied = occupied[start..end].iter().copied().collect();
+                occupied[start..end].iter_mut().for_each(|o| *o = true);
                 accepted.push(claim);
             }
         }
