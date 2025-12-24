@@ -33,8 +33,11 @@ impl Scalar {
     pub fn bytes(&self) -> usize {
         match self {
             Scalar::Unknown => 0,
+            // index to a row in the current table, 0xfe filled if null
             Scalar::SelfRow => 8,
+            // index to some other table, 0xfe filled if null
             Scalar::ForeignRow => 16,
+            // index to a non-table enum (not in a datc64, can be zero or 1 indexed), 0xfe filled if null
             Scalar::EnumRow => 4,
             Scalar::Bool => 1,
             Scalar::String => 8,

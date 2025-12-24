@@ -70,15 +70,73 @@ The value in the Table Data is a `u64` offset relative to the start of the Varia
 
 Because Variable Data is typically written sequentially during table generation:
 
-1.  **Ordering**: Referenced values appear in the Variable Data section in the order their corresponding cells appear in the table (column by column, then row by row).
-2.  **Exception (Shared Strings)**: Due to deduplication, a string might be referenced "out of order" relative to the sequential flow if it was already written earlier.
-3.  **No Gaps**: In a "perfect" table, every byte of the Variable Data section (after the initial 8 magic bytes) should be accounted for by at least one reference (either a string, an array, or a reference inside an array).
+1.  **Ordering**: Referenced values generally appear in the Variable Data section in the order their corresponding cells appear in the table (column by column, then row by row).
+2.  **No Gaps**: In a "perfect" table, every byte of the Variable Data section (after the initial 8 magic bytes) should be accounted for by at least one reference (either a string, an array, or a reference inside an array).
+3.  **Exception (Shared Strings)**: Due to deduplication, a string might be referenced "out of order" relative to the sequential flow if it was already written earlier.
 4.  **Zero-Length Arrays**: Arrays with a count of 0 still have a valid (and increasing) offset, but they point to zero bytes. Multiple adjacent empty arrays might point to the same offset.
+
+## Heuristics, Validation & Type Detection
+
+Identifying column types and validating data in undocumented tables relies on statistical analysis and structural constraints.
+
+### Basic Type Constraints
+
+- **Boolean**: Must strictly be `0` or `1`. Any other byte value invalidates this type.
+- **Hashes (u16/u32)**: High entropy. Values should be distributed across the entire range of the integer type (unlike counts or indices which cluster near zero). MurmurHash is commonly used.
+- **Floats**: `f32`/`f64` columns usually contain values with fractional parts. If a column is valid as a float but all values are integers (e.g., `1.0`, `50.0`), it is more likely an integer type unless the context strongly suggests a rate or multiplier.
+- **EnumRow**: Values are highly concentrated at the lower end of the `i32` range (e.g., 0 to 100). Large values are extremely unlikely.
+
+### Variable Width Data (Arrays & Strings)
+
+- **Valid Offsets**:
+  - Must be `>= 8` (after the magic bytes).
+  - Must be `< TotalVariableDataSize`.
+  - **Strings**: Offset must be at least 2 bytes before the end of the section (for `0x0000` terminator).
+  - **Arrays**: Offset + (Count \* ElementSize) must be `<= TotalVariableDataSize`.
+- **Array Patterns**:
+  - **Count Limit**: Counts are rarely high. Values `> 30` are suspicious for generic data arrays (though technically possible).
+  - **Double Spike Histogram**: An array column (16 bytes) often shows two value distributions:
+    - **Count (first 8 bytes)**: Clustered very low (0-30).
+    - **Offset (next 8 bytes)**: Monotonically increasing (mostly) and spread across the variable data range.
+- **String/Array Differentiation**:
+  - If a `u64` column's values point to valid UTF-16 double-null terminated sequences, it's likely a `String`.
+  - If a `u128` (16-byte) column's second `u64` points to data, check the first `u64` (count). If the data at the offset looks like a sequence of `n` items, it's an array.
+
+### References
+
+- **Values**:
+  - **Null**: `0xFE` repeated (8 or 16 bytes). A non-reference column having this specific pattern is rare.
+  - **Range**: Valid references must be `< MaxRows` of the target table.
+- **Target Inference**:
+  - A column is only a valid reference to Table X if _all_ non-null values in that column are valid indices in Table X.
+  - **Correlation**: If a column is suspected to reference Table X, correlate the text data. Do the strings in the source column (or the source table's name) semantically relate to the string columns in Table X? (e.g., `MonsterId` column pointing to `Monsters.dat` which has a `Name` column like "Zombie").
+
+### Structural & Contextual Analysis
+
+- **Neighbor Inference**: A single byte column strictly containing `0` or `1`, sandwiched between two clearly identified string columns, is almost certainly a boolean. This is statistically stronger than an isolated byte column being 0/1 (which could be padding, small integers, etc.).
+- **Gap Analysis**:
+  - Map all known references (strings, arrays) to the Variable Data section.
+  - Identify "dead zones" (unreferenced bytes).
+  - Analyze the dead zones: Do they look like arrays of integers? Text?
+  - Find columns in the fixed data whose values (or derived offsets) point exactly to the start of these gaps. This can reveal previously unidentified array columns.
+- **Files & Directories**:
+  - Treat as `String` first.
+  - Validate if the string value corresponds to a real file path inside the game's GGPK/Bundle system.
+  - Directories act as prefixes for other file columns.
+
+### Byte Histograms (Little Endian)
+
+- **Integers/Indices**: Heavy weighting towards low values (0x00, 0x01...).
+- **Offsets**: Even distribution or gradual shifting across the file's size range.
+- **Entropy**:
+  - **Low**: Booleans, small enums, sparse arrays.
+  - **High**: Hashes, compressed data (unlikely here), encryption keys (unlikely here).
 
 ### References
 
 - **Foreign Row**: A 16-byte value linking to a row in another table. The exact mechanism (index vs key) is 128-bit wide.
 - **Local Row**: An 8-byte value linking to a row in the same table.
+- **Null Values**: If a reference (Local or Foreign) is null, the entire cell is filled with `0xFE` bytes (e.g., 8 bytes of `0xFE` for Local Row, 16 bytes for Foreign Row). This is distinct from a value of 0, which may be a valid index.
 
 ## Discrepancies & Notes
 
