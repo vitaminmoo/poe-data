@@ -8,10 +8,10 @@ use super::*;
 use std::{ops::Deref, sync::LazyLock};
 
 #[allow(non_upper_case_globals)]
-pub static TABLE_MonsterShapeshift: LazyLock<Vec<MonsterShapeshiftRow>> = LazyLock::new(|| {
+pub static TABLE_MonsterShapeShift: LazyLock<Vec<MonsterShapeShiftRow>> = LazyLock::new(|| {
     let df = DAT_LOADER.write().unwrap().get_table("data/balance/monstershapeshift.datc64").unwrap().clone();
     df.rows_iter()
-        .map(|row| MonsterShapeshiftRow {
+        .map(|row| MonsterShapeShiftRow {
             r#id: {
                 // array_mutator column.array == false && column.type != 'string|bool'
                 let mut cell_bytes = row.get(0..0 + 4).unwrap();
@@ -109,7 +109,7 @@ pub static TABLE_MonsterShapeshift: LazyLock<Vec<MonsterShapeshiftRow>> = LazyLo
 });
 
 #[derive(Debug)]
-pub struct MonsterShapeshiftRow {
+pub struct MonsterShapeShiftRow {
     pub r#id: i32,
     pub r#unknown4: i64,
     pub r#unknown20: i64,
@@ -126,30 +126,30 @@ pub struct MonsterShapeshiftRow {
 }
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Ord, PartialOrd)]
-pub struct MonsterShapeshiftRef(pub usize);
+pub struct MonsterShapeShiftRef(pub usize);
 
-impl Deref for MonsterShapeshiftRef {
-    type Target = MonsterShapeshiftRow;
+impl Deref for MonsterShapeShiftRef {
+    type Target = MonsterShapeShiftRow;
     fn deref(&self) -> &'static Self::Target {
-        &TABLE_MonsterShapeshift[self.0]
+        &TABLE_MonsterShapeShift[self.0]
     }
 }
 
-impl MonsterShapeshiftRef {
+impl MonsterShapeShiftRef {
     pub fn new(index: usize) -> Self {
         Self(index)
     }
-    pub fn as_static_ref(&self) -> &'static MonsterShapeshiftRow {
-        &TABLE_MonsterShapeshift[self.0]
+    pub fn as_static_ref(&self) -> &'static MonsterShapeShiftRow {
+        &TABLE_MonsterShapeShift[self.0]
     }
-    pub fn get(&self) -> &'static MonsterShapeshiftRow {
-        &TABLE_MonsterShapeshift[self.0]
+    pub fn get(&self) -> &'static MonsterShapeShiftRow {
+        &TABLE_MonsterShapeShift[self.0]
     }
     pub fn iter() -> impl Iterator<Item = Self> {
-        TABLE_MonsterShapeshift.iter().enumerate().map(|(i, _)| Self(i))
+        TABLE_MonsterShapeShift.iter().enumerate().map(|(i, _)| Self(i))
     }
-    pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static MonsterShapeshiftRow)> {
-        TABLE_MonsterShapeshift.iter().enumerate().map(|(i, x)| (Self(i), x))
+    pub fn iter_with_refs() -> impl Iterator<Item = (Self, &'static MonsterShapeShiftRow)> {
+        TABLE_MonsterShapeShift.iter().enumerate().map(|(i, x)| (Self(i), x))
     }
 }
 
@@ -159,7 +159,7 @@ mod test {
     use std::hint::black_box;
     #[test]
     fn get_all_rows() {
-        for row in TABLE_MonsterShapeshift.iter() {
+        for row in TABLE_MonsterShapeShift.iter() {
             black_box(row);
         }
     }

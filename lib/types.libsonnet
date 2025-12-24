@@ -175,7 +175,7 @@ local any = function(x) true;
             references:
               if super.references != null &&
                  std.objectHas(super.references, 'table') &&
-                 !std.contains(config.invalidTables, super.references.table)
+                 std.contains(config.validReferences, super.references.table)
               then super.references
               else null,
             cell_bytes: $.sizeof_cell(self),

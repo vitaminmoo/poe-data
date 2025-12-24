@@ -4,13 +4,13 @@ use std::fs::File;
 use std::io::{BufReader, Read};
 use std::str::FromStr;
 
-use winnow::ModalResult;
-use winnow::Parser;
 use winnow::ascii::{dec_int, dec_uint, digit1, float, multispace0, multispace1, space1};
 use winnow::combinator::{alt, delimited, empty, opt, preceded, repeat, separated, separated_pair, terminated};
 use winnow::error::{ContextError, ParseError};
 use winnow::stream::Stream;
 use winnow::token::{take, take_until, take_while};
+use winnow::ModalResult;
+use winnow::Parser;
 
 use crate::statdescriptions::{self, Descriptor, Language, LineFunction, LineSpec, Pattern, StatFunction};
 

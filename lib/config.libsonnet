@@ -8,25 +8,25 @@ local validfiles = import 'validfiles.libsonnet';
 
 local config = {
   poeVersion:: 2,
-  included:: ['Acts', 'NPCTalkDialogueTextAudio', 'MtxTypeGameSpecific'],
+  //included:: ['Acts', 'NPCTalkDialogueTextAudio', 'MtxTypeGameSpecific'],
   excluded:: {
-    AncestralTrialUnits: true,
-    AwardDisplay: true,
-    BeyondFactions: true,
-    CraftingBenchOptions: true,
-    CraftingBenchSortCategories: true,
-    GroundEffects: true,
-    HarvestPerLevelValues: true,
-    HudVisualsFromStat: true,
-    ItemNoteCode: true,
-    ItemVisualReplacement: true,
-    LegionBalancePerLevel: true,
-    LegionRanks: true,
-    NPCMaster: true,
-    PassiveJewelRadii: true,
-    PassiveOverrideLimits: true,
-    RelicItemEffectVariations: true,
-    SanctumSelectionDisplayOverride: true,
+    //AncestralTrialUnits: true,
+    //AwardDisplay: true,
+    //BeyondFactions: true,
+    //CraftingBenchOptions: true,
+    //CraftingBenchSortCategories: true,
+    //GroundEffects: true,
+    //HarvestPerLevelValues: true,
+    //HudVisualsFromStat: true,
+    //ItemNoteCode: true,
+    //ItemVisualReplacement: true,
+    //LegionBalancePerLevel: true,
+    //LegionRanks: true,
+    //NPCMaster: true,
+    //PassiveJewelRadii: true,
+    //PassiveOverrideLimits: true,
+    //RelicItemEffectVariations: true,
+    //SanctumSelectionDisplayOverride: true,
   },
 };
 
@@ -41,10 +41,11 @@ local tables = [table {
 local tablesKV = util.namedListToObject(config.poeVersion, tables);
 local enumsKV = util.namedListToObject(config.poeVersion, schema.enumerations);
 
-local allTables = std.objectFields(tablesKV);
+//local allTables = std.objectFields(tablesKV);
 
 config {
   //tables: [tablesKV[table] for table in util.depsolver.allTables(tablesKV, super.included, super.excluded)],
+  /*
   invalidTables: [
     table
     for table in allTables
@@ -52,12 +53,18 @@ config {
     std.contains(emptyfiles, std.asciiLower(table)) ||
     std.objectHas(super.excluded, table)
   ],
+  */
   tables: [
-    tablesKV[table]
-    for table in allTables
-    if !std.objectHas(super.excluded, table) &&
-    !std.contains(self.invalidTables, table)
+    table
+    for table in tables
+    if !std.objectHas(super.excluded, table.name) &&
+    !std.contains(table.tags, 'missing') &&
+    table.num_rows > 0
   ],
+  validReferences:: [
+    table.name
+    for table in $.tables
+  ] + [enum.name for enum in schema.enumerations],
   enums:: [e for e in std.objectValues(enumsKV)],
   datPath:: if config.poeVersion == 2 then 'data/balance' else 'data/',
 }

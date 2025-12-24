@@ -27,7 +27,7 @@ pub static TABLE_LegionMonsterCounts: LazyLock<Vec<LegionMonsterCountsRow>> = La
                 // array_mutator column.array == false && column.type != 'string|bool'
                 let mut cell_bytes = row.get(16..16 + 16).unwrap();
                 let value = cell_bytes.get_i64_le();
-                value
+                LegionRanksRef::new(value as usize)
             },
             r#unknown32: {
                 // array_mutator column.array == false && column.type != 'string|bool'
@@ -72,7 +72,7 @@ pub static TABLE_LegionMonsterCounts: LazyLock<Vec<LegionMonsterCountsRow>> = La
 #[derive(Debug)]
 pub struct LegionMonsterCountsRow {
     pub r#legion_factions_key: LegionFactionsRef,
-    pub r#legion_ranks_key: i64,
+    pub r#legion_ranks_key: LegionRanksRef,
     pub r#unknown32: i32,
     pub r#unknown36: i32,
     pub r#unknown40: i32,
