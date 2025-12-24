@@ -13,6 +13,7 @@ struct FileInfo {
     bytes: usize,
     rows: usize,
     table_length_bytes: usize,
+    vdata_length_bytes: usize,
 }
 
 fn main() -> Result<()> {
@@ -137,6 +138,9 @@ fn process_schema(original_schema: &Value, files: &HashMap<String, FileInfo>, ve
 
         if let Some(entry) = file_entry {
             new_table.insert("num_rows".to_string(), entry.rows.into());
+            new_table.insert("num_bytes".to_string(), entry.bytes.into());
+            new_table.insert("num_bytes_table".to_string(), entry.table_length_bytes.into());
+            new_table.insert("num_bytes_vdata".to_string(), entry.vdata_length_bytes.into());
         }
 
         // Calculate offsets and sizes
@@ -198,6 +202,7 @@ fn get_file_info(cache_dir: &Path, version: &str, is_poe2: bool) -> Result<HashM
                 let rows = u32::from_le_bytes(bytes[0..4].try_into().unwrap()) as usize;
                 let name = Path::new(path).file_stem().and_then(|s| s.to_str()).unwrap_or(path).to_string();
                 let table_length_bytes = bytes.windows(8).position(|w| w == [0xBB; 8]).expect("magic index not found") - 4;
+                let vdata_length_bytes = bytes.len() - table_length_bytes - 4;
 
                 files.insert(
                     name,
@@ -205,6 +210,7 @@ fn get_file_info(cache_dir: &Path, version: &str, is_poe2: bool) -> Result<HashM
                         bytes: bytes.len(),
                         rows,
                         table_length_bytes,
+                        vdata_length_bytes,
                     },
                 );
             }
