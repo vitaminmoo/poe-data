@@ -22,56 +22,60 @@ pub enum Scalar {
     F32,
     F64,
 }
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Cell {
     Scalar(Scalar),
     Array(Scalar),
 }
 
+impl Scalar {
+    pub fn bytes(&self) -> usize {
+        match self {
+            Scalar::Unknown => 0,
+            Scalar::SelfRow => 8,
+            Scalar::ForeignRow => 16,
+            Scalar::EnumRow => 4,
+            Scalar::Bool => 1,
+            Scalar::String => 8,
+            Scalar::Interval => 8,
+            Scalar::I16 => 2,
+            Scalar::U16 => 2,
+            Scalar::I32 => 4,
+            Scalar::U32 => 4,
+            Scalar::I64 => 8,
+            Scalar::U64 => 8,
+            Scalar::F32 => 4,
+            Scalar::F64 => 8,
+        }
+    }
+}
+
 impl Cell {
     pub fn bytes(&self) -> usize {
         match self {
-            // index to a row in the current table, 0xfe filled if null
-            Cell::Scalar(Scalar::SelfRow) => 8,
-            // index to some other table, 0xfe filled if null
-            Cell::Scalar(Scalar::ForeignRow) => 16,
-            // index to a non-table enum (not in a datc64, can be zero or 1 indexed), 0xfe filled if null
-            Cell::Scalar(Scalar::EnumRow) => 4,
-            // uint8_le 0 or 1
-            Cell::Scalar(Scalar::Bool) => 1,
-            // index into a utf-16 string in the variable width data with double-null termination
-            Cell::Scalar(Scalar::String) => 8,
-            // a pair of I32s that generally form a range
-            Cell::Scalar(Scalar::Interval) => 8,
-            Cell::Scalar(Scalar::I16) => 2,
-            Cell::Scalar(Scalar::U16) => 2,
-            Cell::Scalar(Scalar::I32) => 4,
-            Cell::Scalar(Scalar::U32) => 4,
-            Cell::Scalar(Scalar::I64) => 8,
-            Cell::Scalar(Scalar::U64) => 8,
-            Cell::Scalar(Scalar::F32) => 4,
-            Cell::Scalar(Scalar::F64) => 8,
-            // 8 bytes of count, 8 bytes of offset in the data field. Offset is always increasing and interleaved evenly in column, row order
-            // note that if count is 0 then offset is still valid but points to zero bytes, which means it can point to the last byte of the data section, and multiple adjacent empty array cells could point to the same offset if no other columns point to data
+            Cell::Scalar(s) => s.bytes(),
             Cell::Array(_) => 16,
-            // who knows
-            Cell::Scalar(_) => 0,
         }
     }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ScalarRef {
-    SelfRef(u32),
-    ForeignRef(u64),
-    EnumRef(u16),
-    Bool(u8),
-    String(u32),
+    SelfRef(u64),
+    ForeignRef(u128),
+    EnumRef(i32),
+    Bool(bool),
+    String(u64),
     I16(i16),
     U16(u16),
     I32(i32),
     U32(u32),
+    I64(i64),
+    U64(u64),
     F32(f32),
+    F64(f64),
+    Interval(i32, i32),
 }
 
 // A ColumnClaim is a object that declares that a column may or does exist at a particular offset in the row bytes
