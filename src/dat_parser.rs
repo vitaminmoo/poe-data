@@ -1,4 +1,4 @@
-use anyhow::{Result, anyhow, bail};
+use anyhow::{anyhow, bail, Result};
 use bytes::{Buf, Bytes};
 use std::collections::{HashMap, HashSet};
 use std::sync::{LazyLock, RwLock};
@@ -410,10 +410,10 @@ impl DatFile {
                                     msb_set.insert(b1);
                                     b0_counts[b0 as usize] += 1;
                                     b1_counts[b1 as usize] += 1;
-                                    if b0 % 2 != 0 {
+                                    if !b0.is_multiple_of(2) {
                                         lsb_odd += 1;
                                     }
-                                    if b1 % 2 != 0 {
+                                    if !b1.is_multiple_of(2) {
                                         msb_odd += 1;
                                     }
                                     // Check for FE pattern: v != 0, and all bytes are 0 or FE.
@@ -436,7 +436,7 @@ impl DatFile {
                                 // Random noise (hash) should have high unique counts.
                                 // For 71 rows, we expect ~60 unique values. Threshold of 10% is very safe.
                                 // Capped at 240 because a byte can only have 256 values.
-                                let min_unique = (row_count / 10).min(240).max(3);
+                                let min_unique = (row_count / 10).clamp(3, 240);
                                 // If row_count is very small (e.g. < 3), min_unique is 3, which fails.
                                 // Adjust for very small tables: min_unique cannot exceed row_count.
                                 let min_unique = min_unique.min(row_count);
@@ -457,10 +457,8 @@ impl DatFile {
                                 // Aligned pointers (like UTF-16 string offsets) are always even.
                                 // Random hashes should have a mix.
                                 // If 100% even or 100% odd, it's not a hash.
-                                if likely_hash && row_count > 10 {
-                                    if lsb_odd == 0 || lsb_odd == row_count || msb_odd == 0 || msb_odd == row_count {
-                                        likely_hash = false;
-                                    }
+                                if likely_hash && row_count > 10 && (lsb_odd == 0 || lsb_odd == row_count || msb_odd == 0 || msb_odd == row_count) {
+                                    likely_hash = false;
                                 }
                             }
 
@@ -594,11 +592,11 @@ impl DatFile {
 
                                     b3_counts[b3 as usize] += 1;
 
-                                    if b0 % 2 != 0 {
+                                    if !b0.is_multiple_of(2) {
                                         lsb_odd += 1;
                                     }
 
-                                    if b3 % 2 != 0 {
+                                    if !b3.is_multiple_of(2) {
                                         msb_odd += 1;
                                     }
 
@@ -627,7 +625,7 @@ impl DatFile {
 
                                 // Variance Check for all bytes
 
-                                let min_unique = (row_count / 10).min(240).max(3);
+                                let min_unique = (row_count / 10).clamp(3, 240);
 
                                 let min_unique = min_unique.min(row_count);
 
@@ -639,22 +637,19 @@ impl DatFile {
 
                                 // If a byte is ALWAYS zero, it's not a hash.
 
-                                if likely_hash {
-                                    if (b0_set.len() == 1 && b0_set.contains(&0))
+                                if likely_hash
+                                    && ((b0_set.len() == 1 && b0_set.contains(&0))
                                         || (b1_set.len() == 1 && b1_set.contains(&0))
                                         || (b2_set.len() == 1 && b2_set.contains(&0))
-                                        || (b3_set.len() == 1 && b3_set.contains(&0))
-                                    {
-                                        likely_hash = false;
-                                    }
+                                        || (b3_set.len() == 1 && b3_set.contains(&0)))
+                                {
+                                    likely_hash = false;
                                 }
 
                                 // Parity Check (LSB/MSB only usually sufficient for alignment)
 
-                                if likely_hash && row_count > 10 {
-                                    if lsb_odd == 0 || lsb_odd == row_count || msb_odd == 0 || msb_odd == row_count {
-                                        likely_hash = false;
-                                    }
+                                if likely_hash && row_count > 10 && (lsb_odd == 0 || lsb_odd == row_count || msb_odd == 0 || msb_odd == row_count) {
+                                    likely_hash = false;
                                 }
                             }
 
@@ -915,19 +910,10 @@ impl DatFile {
         for claim in claims {
             let start = claim.offset;
             let end = start + claim.bytes;
-
-            let mut overlaps = false;
-            for i in start..end {
-                if occupied[i] {
-                    overlaps = true;
-                    break;
-                }
-            }
+            let overlaps = occupied.iter().take(end).skip(start).any(|&occupied| occupied);
 
             if !overlaps {
-                for i in start..end {
-                    occupied[i] = true;
-                }
+                occupied = occupied.iter().take(end).skip(start).copied().collect();
                 accepted.push(claim);
             }
         }
