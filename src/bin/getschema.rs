@@ -10,10 +10,11 @@ use std::path::{Path, PathBuf};
 
 #[derive(Serialize, Deserialize, Debug)]
 struct FileInfo {
-    bytes: usize,
-    rows: usize,
-    table_length_bytes: usize,
-    vdata_length_bytes: usize,
+    num_bytes: usize,
+    num_bytes_tdata: usize,
+    num_bytes_vdata: usize,
+    num_rows: usize,
+    num_bytes_row: usize,
 }
 
 fn main() -> Result<()> {
@@ -137,10 +138,11 @@ fn process_schema(original_schema: &Value, files: &HashMap<String, FileInfo>, ve
         }
 
         if let Some(entry) = file_entry {
-            new_table.insert("num_rows".to_string(), entry.rows.into());
-            new_table.insert("num_bytes".to_string(), entry.bytes.into());
-            new_table.insert("num_bytes_table".to_string(), entry.table_length_bytes.into());
-            new_table.insert("num_bytes_vdata".to_string(), entry.vdata_length_bytes.into());
+            new_table.insert("num_bytes".to_string(), entry.num_bytes.into());
+            new_table.insert("num_bytes_tdata".to_string(), entry.num_bytes_tdata.into());
+            new_table.insert("num_bytes_vdata".to_string(), entry.num_bytes_vdata.into());
+            new_table.insert("num_rows".to_string(), entry.num_rows.into());
+            new_table.insert("num_bytes_row".to_string(), entry.num_bytes_row.into());
         }
 
         // Calculate offsets and sizes
@@ -151,6 +153,18 @@ fn process_schema(original_schema: &Value, files: &HashMap<String, FileInfo>, ve
                     let size = get_column_size(col_obj);
                     col_obj.insert("offset".to_string(), current_offset.into());
                     col_obj.insert("cell_bytes".to_string(), size.into());
+
+                    if let Some(entry) = file_entry {
+                        if (current_offset + size) as usize > entry.num_bytes_row {
+                            let reason = Value::String("column end > row length".to_string());
+                            if let Some(arr) = col_obj.get_mut("errors").and_then(|v| v.as_array_mut()) {
+                                arr.push(reason);
+                            } else {
+                                col_obj.insert("errors".to_string(), Value::Array(vec![reason]));
+                            }
+                        }
+                    }
+
                     current_offset += size;
                 }
             }
@@ -199,18 +213,16 @@ fn get_file_info(cache_dir: &Path, version: &str, is_poe2: bool) -> Result<HashM
     for res in fs.batch_read(&files_to_read) {
         match res {
             Ok((path, bytes)) if bytes.len() >= 4 => {
-                let rows = u32::from_le_bytes(bytes[0..4].try_into().unwrap()) as usize;
-                let name = Path::new(path).file_stem().and_then(|s| s.to_str()).unwrap_or(path).to_string();
+                let num_rows = u32::from_le_bytes(bytes[0..4].try_into().unwrap()) as usize;
                 let table_length_bytes = bytes.windows(8).position(|w| w == [0xBB; 8]).expect("magic index not found") - 4;
-                let vdata_length_bytes = bytes.len() - table_length_bytes - 4;
-
                 files.insert(
-                    name,
+                    Path::new(path).file_stem().and_then(|s| s.to_str()).unwrap_or(path).to_string(),
                     FileInfo {
-                        bytes: bytes.len(),
-                        rows,
-                        table_length_bytes,
-                        vdata_length_bytes,
+                        num_bytes: bytes.len(),
+                        num_bytes_tdata: table_length_bytes,
+                        num_bytes_vdata: bytes.len() - table_length_bytes - 4,
+                        num_rows,
+                        num_bytes_row: if num_rows > 0 { table_length_bytes / num_rows } else { 0 },
                     },
                 );
             }
@@ -219,9 +231,6 @@ fn get_file_info(cache_dir: &Path, version: &str, is_poe2: bool) -> Result<HashM
         }
     }
 
-    for (name, entry) in files.iter().take(10) {
-        eprintln!("  {}: {}", name, entry.rows);
-    }
     eprintln!("Found {} files for version {}", files.len(), version);
     Ok(files)
 }
