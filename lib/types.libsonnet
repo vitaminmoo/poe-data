@@ -178,9 +178,9 @@ local any = function(x) true;
                  std.contains(config.validReferences, super.references.table)
               then super.references
               else null,
-            cell_bytes: $.sizeof_cell(self),
+            //cell_bytes: $.sizeof_cell(self),
             value_bytes: $.sizeof_value(self),
-            offset: current_offset,
+            //offset: current_offset,
             // hide shit I don't care about
             description:: super.description,
             files:: super.files,

@@ -3,7 +3,7 @@ use poe_data::versions::get_versions;
 use reqwest::header::{ETAG, IF_MODIFIED_SINCE, IF_NONE_MATCH, LAST_MODIFIED};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -16,187 +16,167 @@ struct FileInfo {
 }
 
 fn main() -> Result<()> {
-    let args: Vec<String> = env::args().collect();
-    let output_dir = if args.len() > 1 { PathBuf::from(&args[1]) } else { PathBuf::from(".") };
+    let output_dir = env::args().nth(1).map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
 
     if !output_dir.exists() {
         fs::create_dir_all(&output_dir)?;
     }
 
-    // 0. Setup
-    let cache_dir = dirs::cache_dir().ok_or(anyhow::anyhow!("no cache dir"))?.join("poe_data_tools");
+    let cache_dir = dirs::cache_dir().context("no cache dir")?.join("poe_data_tools");
     fs::create_dir_all(&cache_dir)?;
 
     let schema_path = cache_dir.join("schema.min.json");
     let headers_path = cache_dir.join("schema.min.json.headers");
 
-    // 1. Download Schema (Conditional)
     let client = reqwest::blocking::Client::new();
     let schema_url = "https://github.com/poe-tool-dev/dat-schema/releases/download/latest/schema.min.json";
 
     let mut headers = reqwest::header::HeaderMap::new();
-    if schema_path.exists() && headers_path.exists() {
-        if let Ok(saved_headers) = fs::read_to_string(&headers_path) {
-            let h: HashMap<String, String> = serde_json::from_str(&saved_headers).unwrap_or_default();
-            if let Some(etag) = h.get("etag") {
-                if let Ok(val) = etag.parse() {
-                    headers.insert(IF_NONE_MATCH, val);
-                }
+    if schema_path.exists() {
+        if let Ok(h_str) = fs::read_to_string(&headers_path) {
+            let h: HashMap<String, String> = serde_json::from_str(&h_str).unwrap_or_default();
+            if let Some(etag) = h.get("etag").and_then(|v| v.parse().ok()) {
+                headers.insert(IF_NONE_MATCH, etag);
             }
-            if let Some(lm) = h.get("last-modified") {
-                if let Ok(val) = lm.parse() {
-                    headers.insert(IF_MODIFIED_SINCE, val);
-                }
+            if let Some(lm) = h.get("last-modified").and_then(|v| v.parse().ok()) {
+                headers.insert(IF_MODIFIED_SINCE, lm);
             }
         }
     }
 
-    // Handle redirects automatically by reqwest
     let res = client.get(schema_url).headers(headers).send().context("Failed to request schema")?;
 
     if res.status().is_success() {
-        let resp_headers = res.headers().clone();
-        let mut h_map = HashMap::new();
-        if let Some(etag) = resp_headers.get(ETAG) {
-            if let Ok(s) = etag.to_str() {
-                h_map.insert("etag".to_string(), s.to_string());
-            }
+        let mut h_map = HashMap::with_capacity(2);
+        if let Some(etag) = res.headers().get(ETAG).and_then(|v| v.to_str().ok()) {
+            h_map.insert("etag", etag);
         }
-        if let Some(lm) = resp_headers.get(LAST_MODIFIED) {
-            if let Ok(s) = lm.to_str() {
-                h_map.insert("last-modified".to_string(), s.to_string());
-            }
+        if let Some(lm) = res.headers().get(LAST_MODIFIED).and_then(|v| v.to_str().ok()) {
+            h_map.insert("last-modified", lm);
         }
         fs::write(&headers_path, serde_json::to_string(&h_map)?)?;
 
         let bytes = res.bytes()?;
         fs::write(&schema_path, bytes)?;
         eprintln!("Downloaded new schema.");
-        true
     } else if res.status() == reqwest::StatusCode::NOT_MODIFIED {
         eprintln!("Schema up to date.");
-        false
     } else {
         eprintln!("Schema download failed: {}", res.status());
-        false
-    };
+    }
 
     if !schema_path.exists() {
         anyhow::bail!("Schema file missing");
     }
 
-    let schema_json: Value = serde_json::from_str(&fs::read_to_string(&schema_path)?)?;
-
-    // 2. Check Versions
+    let schema_json: Value = serde_json::from_slice(&fs::read(&schema_path)?)?;
     let current_versions = get_versions()?;
 
-    // Check PoE 1
-    if current_versions.poe != "error" {
-        eprintln!("Checking info for PoE 1: {}", current_versions.poe);
-        if let Ok(map) = get_file_info(&cache_dir, &current_versions.poe, false) {
-            let schema = process_schema(&schema_json, &map, 1)?;
-            let output = output_dir.join("schema.1.min.json");
-            fs::write(&output, serde_json::to_string(&schema)?)?;
+    let process_version = |version: &str, is_poe2: bool, output_name: &str, version_num: u64| -> Result<()> {
+        if version == "error" {
+            return Ok(());
         }
-    }
+        eprintln!("Checking info for PoE {}: {}", if is_poe2 { "2" } else { "1" }, version);
+        if let Ok(map) = get_file_info(&cache_dir, version, is_poe2) {
+            let schema = process_schema(&schema_json, &map, version_num)?;
+            fs::write(output_dir.join(output_name), serde_json::to_string(&schema)?)?;
+        }
+        Ok(())
+    };
 
-    // Check PoE 2
-    if current_versions.poe2 != "error" {
-        eprintln!("Checking info for PoE 2: {}", current_versions.poe2);
-        if let Ok(map) = get_file_info(&cache_dir, &current_versions.poe2, false) {
-            let schema = process_schema(&schema_json, &map, 2)?;
-            let output = output_dir.join("schema.2.min.json");
-            fs::write(&output, serde_json::to_string(&schema)?)?;
-        }
-    }
+    process_version(&current_versions.poe, false, "schema.1.min.json", 1)?;
+    process_version(&current_versions.poe2, true, "schema.2.min.json", 2)?;
 
     Ok(())
 }
 
 fn process_schema(original_schema: &Value, files: &HashMap<String, FileInfo>, version_num: u64) -> Result<Value> {
-    let mut schema = original_schema.clone();
+    let mut new_schema = original_schema.as_object().context("Invalid schema format")?.clone();
 
-    if let Some(tables) = schema.get_mut("tables").and_then(|t| t.as_array_mut()) {
-        let mut new_tables = Vec::new();
+    let enumerations = original_schema
+        .get("enumerations")
+        .and_then(|t| t.as_array())
+        .context("Missing enumerations array")?;
+    let mut new_enumerations = Vec::with_capacity(enumerations.len());
+    for enumerator in enumerations {
+        let enumerator_obj = enumerator.as_object().context("Invalid enumerator format")?;
+        let valid_for = enumerator_obj.get("validFor").and_then(|v| v.as_u64()).unwrap_or(0);
+        if (valid_for & version_num) == 0 {
+            continue;
+        }
 
-        for table in tables.iter() {
-            let valid_for = table.get("validFor").and_then(|v| v.as_u64()).unwrap_or(0);
-            if (valid_for & version_num) == 0 {
-                continue;
+        let mut new_enumerator = enumerator_obj.clone();
+        new_enumerator.remove("validFor");
+        new_enumerations.push(Value::Object(new_enumerator));
+    }
+    new_schema.insert("enumerations".to_string(), Value::Array(new_enumerations));
+
+    let tables = original_schema.get("tables").and_then(|t| t.as_array()).context("Missing tables array")?;
+    let mut new_tables = Vec::with_capacity(tables.len());
+    for table in tables {
+        let table_obj = table.as_object().context("Invalid table format")?;
+        let valid_for = table_obj.get("validFor").and_then(|v| v.as_u64()).unwrap_or(0);
+        if (valid_for & version_num) == 0 {
+            continue;
+        }
+
+        let mut new_table = table_obj.clone();
+        new_table.remove("validFor");
+
+        let name = new_table.get("name").and_then(|n| n.as_str()).unwrap_or("");
+        let lookup_name = name.to_lowercase();
+        let file_entry = files.get(&lookup_name);
+
+        // Handle tags and row count
+        if let Some(tags_array) = new_table.get_mut("tags").and_then(|t| t.as_array_mut()) {
+            let has_missing = tags_array.iter().any(|v| v.as_str() == Some("missing"));
+            if file_entry.is_none() && !has_missing {
+                tags_array.push(Value::String("missing".to_string()));
             }
+        }
 
-            let mut table_obj = table.as_object().unwrap().clone();
-            // Clone the name string to avoid borrowing from table_obj while we mutate it
-            let name = table_obj.get("name").and_then(|n| n.as_str()).unwrap_or("").to_string();
+        if let Some(entry) = file_entry {
+            new_table.insert("num_rows".to_string(), entry.rows.into());
+        }
 
-            // Remove validFor as it is implicit in the split file
-            table_obj.remove("validFor");
-
-            let tags = table_obj.get("tags").and_then(|t| t.as_array()).cloned().unwrap_or_default();
-
-            let mut tags_set: HashSet<String> = tags.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect();
-
-            let lookup_name = name.to_lowercase();
-
-            if !files.contains_key(&lookup_name) && !tags_set.contains("missing") {
-                tags_set.insert("missing".to_string());
-            }
-
-            // Add row count
-            if let Some(entry) = files.get(&lookup_name) {
-                table_obj.insert("num_rows".to_string(), Value::Number(serde_json::Number::from(entry.rows)));
-            }
-
-            let mut new_tags: Vec<Value> = tags.into_iter().collect();
-
-            if !files.contains_key(&lookup_name) {
-                new_tags.push(Value::String("missing".to_string()));
-            }
-
-            table_obj.insert("tags".to_string(), Value::Array(new_tags));
-
-            // Calculate offsets and sizes
-            if let Some(columns) = table_obj.get_mut("columns").and_then(|c| c.as_array_mut()) {
-                let mut current_offset = 0;
-                for col in columns.iter_mut() {
-                    if let Some(col_obj) = col.as_object_mut() {
-                        let size = get_column_size(col_obj);
-                        col_obj.insert("offset".to_string(), Value::Number(serde_json::Number::from(current_offset)));
-                        col_obj.insert("cell_bytes".to_string(), Value::Number(serde_json::Number::from(size)));
-                        current_offset += size;
-                    }
+        // Calculate offsets and sizes
+        if let Some(columns) = new_table.get_mut("columns").and_then(|c| c.as_array_mut()) {
+            let mut current_offset = 0;
+            for col in columns.iter_mut() {
+                if let Some(col_obj) = col.as_object_mut() {
+                    let size = get_column_size(col_obj);
+                    col_obj.insert("offset".to_string(), current_offset.into());
+                    col_obj.insert("cell_bytes".to_string(), size.into());
+                    current_offset += size;
                 }
             }
-
-            new_tables.push(Value::Object(table_obj));
         }
 
-        // Update tables in schema
-        if let Some(obj) = schema.as_object_mut() {
-            obj.insert("tables".to_string(), Value::Array(new_tables));
-        }
+        new_tables.push(Value::Object(new_table));
     }
 
-    Ok(schema)
+    new_schema.insert("tables".to_string(), Value::Array(new_tables));
+    Ok(Value::Object(new_schema))
 }
 
 fn get_column_size(col: &serde_json::Map<String, Value>) -> u32 {
-    if col.get("array").and_then(|v| v.as_bool()).unwrap_or(false) {
+    if col.get("array").and_then(|v| v.as_bool()) == Some(true) {
         return 16;
     }
-    if col.get("interval").and_then(|v| v.as_bool()).unwrap_or(false) {
+    if col.get("interval").and_then(|v| v.as_bool()) == Some(true) {
         return 8;
     }
-    let type_str = col.get("type").and_then(|v| v.as_str()).unwrap_or("");
-    match type_str {
+    match col.get("type").and_then(|v| v.as_str()).unwrap_or("") {
         "bool" => 1,
         "string" => 8,
         "enumrow" | "i32" | "u32" | "f32" => 4,
         "row" | "i64" | "u64" | "f64" => 8,
         "foreignrow" => 16,
         "i16" | "u16" => 2,
-        _ => {
-            eprintln!("Unknown type: {}", type_str);
+        type_str => {
+            if !type_str.is_empty() {
+                eprintln!("Unknown type: {}", type_str);
+            }
             0
         }
     }
@@ -205,49 +185,37 @@ fn get_column_size(col: &serde_json::Map<String, Value>) -> u32 {
 fn get_file_info(cache_dir: &Path, version: &str, is_poe2: bool) -> Result<HashMap<String, FileInfo>> {
     let base_url = poe_data_tools::bundle_loader::cdn_base_url(cache_dir, version)?;
     let fs = poe_data_tools::bundle_fs::FS::from_cdn(&base_url, cache_dir)?;
-    let mut files = HashMap::new();
 
-    let files_to_read = fs
-        .list()
-        .filter(|x| {
-            if is_poe2 {
-                x.starts_with("data/balance/") && x.ends_with(".datc64")
-            } else {
-                x.starts_with("data/") && x.ends_with(".datc64")
-            }
-        })
-        .collect::<Vec<_>>();
-    let files_to_read_really: Vec<&str> = files_to_read.iter().map(String::as_ref).collect();
+    let prefix = if is_poe2 { "data/balance/" } else { "data/" };
+    let files_owned: Vec<String> = fs.list().filter(|x| x.starts_with(prefix) && x.ends_with(".datc64")).collect();
+    let files_to_read: Vec<&str> = files_owned.iter().map(|s| s.as_str()).collect();
 
-    for res in fs.batch_read(&files_to_read_really) {
+    let mut files = HashMap::with_capacity(files_to_read.len());
+
+    for res in fs.batch_read(&files_to_read) {
         match res {
-            Ok((path, bytes)) => {
-                if bytes.len() >= 4 {
-                    let length = bytes.len();
-                    let rows = u32::from_le_bytes(bytes[0..4].try_into().unwrap()) as usize;
-                    let name = std::path::Path::new(path).file_stem().unwrap().to_string_lossy().to_string();
-                    let magic_index = bytes.windows(8).position(|window| window == [0xBB; 8]).unwrap();
-                    let table_length_bytes = magic_index - 4;
+            Ok((path, bytes)) if bytes.len() >= 4 => {
+                let rows = u32::from_le_bytes(bytes[0..4].try_into().unwrap()) as usize;
+                let name = Path::new(path).file_stem().and_then(|s| s.to_str()).unwrap_or(path).to_string();
+                let table_length_bytes = bytes.windows(8).position(|w| w == [0xBB; 8]).expect("magic index not found") - 4;
 
-                    files.insert(
-                        name,
-                        FileInfo {
-                            bytes: length,
-                            rows,
-                            table_length_bytes,
-                        },
-                    );
-                }
+                files.insert(
+                    name,
+                    FileInfo {
+                        bytes: bytes.len(),
+                        rows,
+                        table_length_bytes,
+                    },
+                );
             }
-            Err((path, e)) => {
-                eprintln!("Failed to read {}: {}", path, e);
-            }
+            Ok(_) => {}
+            Err((path, e)) => eprintln!("Failed to read {}: {}", path, e),
         }
     }
 
-    eprintln!("Found {} files for version {}", files.len(), version);
     for (name, entry) in files.iter().take(10) {
         eprintln!("  {}: {}", name, entry.rows);
     }
+    eprintln!("Found {} files for version {}", files.len(), version);
     Ok(files)
 }

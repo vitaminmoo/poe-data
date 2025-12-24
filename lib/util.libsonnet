@@ -81,8 +81,7 @@ local trace(obj) = std.trace('trace: %s' % [obj], obj);
   enumeratorToVariant(indexing, idx, enumerator):
     '    %s = %s,' % [$.case.pascal(enumerator), indexing + idx],
   namedListToObject(poeVersion, list):: {
-    [x.name]: x { validFor:: null }
+    [x.name]: x
     for x in list
-    if (x.validFor & poeVersion) == poeVersion
   },
 }
