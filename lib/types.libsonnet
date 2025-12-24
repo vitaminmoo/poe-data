@@ -152,6 +152,7 @@ local any = function(x) true;
       [init] + $.scanl(func, arr[1:], result)
     ),
   mutate_columns(columns):: (
+    local valid_columns = std.filter(function(c) !std.objectHas(c, 'errors') || std.length(c.errors) == 0, columns);
     local initial = { offset: 0, column: [] };
     [x.column for x in $.scanl(
       function(column, acc) (
@@ -192,7 +193,7 @@ local any = function(x) true;
           })),
         }
       ),
-      columns,
+      valid_columns,
       initial
     )[1:]]
   ),

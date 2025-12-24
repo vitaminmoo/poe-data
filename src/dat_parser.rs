@@ -12,11 +12,16 @@ pub enum Scalar {
     EnumRow,
     Bool,
     String,
+    File,
+    Directory,
+    Color,
     Interval,
     I16,
     U16,
+    Hash16,
     I32,
     U32,
+    Hash32,
     I64,
     U64,
     F32,
@@ -41,11 +46,16 @@ impl Scalar {
             Scalar::EnumRow => 4,
             Scalar::Bool => 1,
             Scalar::String => 8,
+            Scalar::File => 8,
+            Scalar::Directory => 8,
+            Scalar::Color => 8,
             Scalar::Interval => 8,
             Scalar::I16 => 2,
             Scalar::U16 => 2,
+            Scalar::Hash16 => 2,
             Scalar::I32 => 4,
             Scalar::U32 => 4,
+            Scalar::Hash32 => 4,
             Scalar::I64 => 8,
             Scalar::U64 => 8,
             Scalar::F32 => 4,
@@ -61,24 +71,6 @@ impl Cell {
             Cell::Array(_) => 16,
         }
     }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum ScalarRef {
-    SelfRef(u64),
-    ForeignRef(u128),
-    EnumRef(i32),
-    Bool(bool),
-    String(u64),
-    I16(i16),
-    U16(u16),
-    I32(i32),
-    U32(u32),
-    I64(i64),
-    U64(u64),
-    F32(f32),
-    F64(f64),
-    Interval(i32, i32),
 }
 
 // A ColumnClaim is a object that declares that a column may or does exist at a particular offset in the row bytes
@@ -152,6 +144,9 @@ impl DatLoader {
             Ok((n, b)) => (n, b),
             Err((n, e)) => panic!("Failed to read file {}: {}", n, e),
         })
+    }
+    pub fn get_file_list(&self) -> Vec<String> {
+        self.fs.list().collect()
     }
 }
 
@@ -251,9 +246,9 @@ impl DatFile {
     pub fn strings_from_offset(&self, offset: usize, count: usize) -> Result<Vec<String>> {
         let mut strings = Vec::new();
         //let mut current_offset = offset;
-        let mut string_offset_bytes = self.vdata.slice(offset..offset + (4 * count));
+        let mut string_offset_bytes = self.vdata.slice(offset..offset + (8 * count));
         for _ in 0..count {
-            let string_offset = string_offset_bytes.get_u32_le() as usize;
+            let string_offset = string_offset_bytes.get_u64_le() as usize;
             let s = self.string_from_offset_if_valid(string_offset)?;
             //current_offset += s.len() * 2 + 4; // +2 for null terminators
             strings.push(s);
@@ -303,10 +298,9 @@ impl DatFile {
         Ok(())
     }
 
-    pub fn get_column_claims(&self, col_index: usize, cell_length: usize) -> Vec<ColumnClaim> {
+    pub fn get_column_claims(&self, col_index: usize, cell_length: usize, known_files: Option<&[String]>) -> Vec<ColumnClaim> {
         let mut cells = self.column_rows(col_index, cell_length);
         if cells.is_empty() {
-            println!("no cells for column {}", col_index);
             return Vec::new();
         }
         match cell_length {
@@ -325,8 +319,87 @@ impl DatFile {
                 */
                 Vec::new()
             }
-            2 => Vec::new(),
-            4 => Vec::new(),
+            2 => {
+                let mut claims = Vec::new();
+                let values: Vec<u16> = cells.iter().map(|c| c.clone().get_u16_le()).collect();
+                if values.iter().any(|&x| x > 0) {
+                    // skip if all zero
+                    // Simple heuristic for Hash16:
+                    // 1. High max value (uses the full range)
+                    // 2. High entropy (values are distributed)
+                    let max_val = *values.iter().max().unwrap_or(&0);
+                    if max_val > 1000 {
+                        // usage of upper range
+                        let mut counts = HashMap::new();
+                        for &val in &values {
+                            *counts.entry(val).or_insert(0) += 1;
+                        }
+                        let len = values.len() as f64;
+                        let entropy: f64 = counts.values().fold(0.0, |acc, &count| {
+                            let p = count as f64 / len;
+                            acc - p * p.log2()
+                        });
+
+                        // Max entropy is log2(len) if all unique, or log2(65536) if bounded by type.
+                        // If entropy is > 0.5 * max_possible_entropy_for_count, it's likely a hash or random ID.
+                        // But also indices can have high entropy.
+                        // Hashes usually are uniformly distributed.
+
+                        // Let's use a simpler check: if it looks like a hash (high values) and not just an index (0..N).
+                        // If we have values > N (row count), it's not a local row index.
+                        // If we have values > 100, likely not an enum.
+
+                        // For now, let's just claim Hash16 if it uses high bits and has high entropy.
+                        let max_possible = if values.len() < 65536 { values.len() as f64 } else { 65536.0 };
+                        if entropy > max_possible.log2() * 0.8 {
+                            claims.push(ColumnClaim {
+                                offset: col_index,
+                                bytes: 2,
+                                column_type: Cell::Scalar(Scalar::Hash16),
+                                labels: HashMap::new(),
+                            });
+                        }
+                    }
+                }
+                claims
+            }
+            4 => {
+                let mut claims = Vec::new();
+                let values: Vec<u32> = cells.iter().map(|c| c.clone().get_u32_le()).collect();
+                if values.iter().any(|&x| x > 0) {
+                    let max_val = *values.iter().max().unwrap_or(&0);
+                    // If max value is very large (e.g. > 1 million), and it's not a ForeignRow (which is 16 bytes usually, but old formats had 4/8 refs? No, datc64 foreign is 16).
+                    // But it could be a reference to something else.
+                    // Hash32 is likely if values are large and high entropy.
+                    if max_val > 1_000_000 {
+                        let mut counts = HashMap::new();
+                        for &val in &values {
+                            *counts.entry(val).or_insert(0) += 1;
+                        }
+                        let len = values.len() as f64;
+                        let entropy: f64 = counts.values().fold(0.0, |acc, &count| {
+                            let p = count as f64 / len;
+                            acc - p * p.log2()
+                        });
+
+                        // Check if entropy is high
+                        let max_possible = if values.len() < u32::MAX as usize {
+                            values.len() as f64
+                        } else {
+                            u32::MAX as f64
+                        };
+                        if entropy > max_possible.log2() * 0.8 {
+                            claims.push(ColumnClaim {
+                                offset: col_index,
+                                bytes: 4,
+                                column_type: Cell::Scalar(Scalar::Hash32),
+                                labels: HashMap::new(),
+                            });
+                        }
+                    }
+                }
+                claims
+            }
             8 => {
                 let mut claims = Vec::new();
                 let mut seen_strings = HashMap::new();
@@ -370,32 +443,130 @@ impl DatFile {
                     }
                     false
                 }) {
-                    claims.push(ColumnClaim {
-                        offset: col_index,
-                        bytes: 8,
-                        column_type: Cell::Scalar(Scalar::String),
-                        labels: HashMap::new(),
-                    });
+                    // It is a valid String column. Now specialize.
+                    let all_strings: Vec<&String> = seen_strings.keys().collect();
+
+                    let mut is_color = true;
+                    for s in &all_strings {
+                        if s.is_empty() {
+                            continue;
+                        }
+                        let is_hex_code = (s.len() == 7 && s.starts_with('#') && s[1..].chars().all(|c| c.is_ascii_hexdigit()))
+                            || (s.len() == 9 && s.starts_with('#') && s[1..].chars().all(|c| c.is_ascii_hexdigit()))
+                            || (s.len() == 8 && s.starts_with("0x") && s[2..].chars().all(|c| c.is_ascii_hexdigit()))
+                            || (s.len() == 10 && s.starts_with("0x") && s[2..].chars().all(|c| c.is_ascii_hexdigit()));
+                        if !is_hex_code {
+                            is_color = false;
+                            break;
+                        }
+                    }
+
+                    if is_color && !all_strings.is_empty() && all_strings.iter().any(|s| !s.is_empty()) {
+                        claims.push(ColumnClaim {
+                            offset: col_index,
+                            bytes: 8,
+                            column_type: Cell::Scalar(Scalar::Color),
+                            labels: HashMap::new(),
+                        });
+                    } else if let Some(files) = known_files {
+                        let mut is_file = true;
+                        let mut is_dir = true;
+                        let mut has_non_empty = false;
+
+                        for s in &all_strings {
+                            if s.is_empty() {
+                                continue;
+                            }
+                            has_non_empty = true;
+
+                            let s_lower = s.to_lowercase();
+
+                            // Check File
+                            if is_file && files.binary_search(&s_lower).is_err() {
+                                is_file = false;
+                            }
+
+                            // Check Directory
+                            if is_dir {
+                                let idx = files.partition_point(|f| f.as_str() < s_lower.as_str());
+                                if idx >= files.len() || !files[idx].starts_with(s_lower.as_str()) {
+                                    is_dir = false;
+                                }
+                            }
+
+                            if !is_file && !is_dir {
+                                break;
+                            }
+                        }
+
+                        if has_non_empty {
+                            if is_file {
+                                claims.push(ColumnClaim {
+                                    offset: col_index,
+                                    bytes: 8,
+                                    column_type: Cell::Scalar(Scalar::File),
+                                    labels: HashMap::new(),
+                                });
+                            } else if is_dir {
+                                claims.push(ColumnClaim {
+                                    offset: col_index,
+                                    bytes: 8,
+                                    column_type: Cell::Scalar(Scalar::Directory),
+                                    labels: HashMap::new(),
+                                });
+                            } else {
+                                claims.push(ColumnClaim {
+                                    offset: col_index,
+                                    bytes: 8,
+                                    column_type: Cell::Scalar(Scalar::String),
+                                    labels: HashMap::new(),
+                                });
+                            }
+                        } else {
+                            // All empty strings? Treat as String
+                            claims.push(ColumnClaim {
+                                offset: col_index,
+                                bytes: 8,
+                                column_type: Cell::Scalar(Scalar::String),
+                                labels: HashMap::new(),
+                            });
+                        }
+                    } else {
+                        // No known files, default to String
+                        claims.push(ColumnClaim {
+                            offset: col_index,
+                            bytes: 8,
+                            column_type: Cell::Scalar(Scalar::String),
+                            labels: HashMap::new(),
+                        });
+                    }
                 }
                 claims
             }
             16 => {
                 let mut claims = Vec::new();
-                let mut prev_offset = 0;
+
+                // Array detection
                 let mut is_array = true;
+                let mut max_count = 0;
                 for cell in cells.clone().iter_mut() {
                     let count = cell.get_u64_le() as usize;
                     let offset = cell.get_u64_le() as usize;
+
+                    if count > 1000 {
+                        is_array = false;
+                        break;
+                    }
+                    if count > max_count {
+                        max_count = count;
+                    }
+
                     if self.valid_data_ref(offset).is_err() {
                         is_array = false;
                         break;
                     }
-                    if offset <= prev_offset || count >= 30 {
-                        is_array = false;
-                        break;
-                    }
-                    prev_offset = offset;
                 }
+
                 if is_array {
                     claims.push(ColumnClaim {
                         offset: col_index,
@@ -405,14 +576,25 @@ impl DatFile {
                     });
                 }
 
-                let col_max = cells.iter_mut().map(|cell| cell.get_u128_le() as usize).max().unwrap();
-                if col_max > 0 && col_max <= 30000 {
-                    claims.push(ColumnClaim {
-                        offset: col_index,
-                        bytes: 16,
-                        column_type: Cell::Scalar(Scalar::ForeignRow),
-                        labels: HashMap::new(),
-                    });
+                // ForeignRow detection
+                // Foreign rows can be indices (u64? u128?) or keys.
+                // Nulls are typically 0xFE filled.
+                // We filter out nulls and check if the max value is within a reasonable range for an index.
+                let null_val = u128::from_le_bytes([0xFE; 16]);
+                let values: Vec<u128> = cells.iter().map(|c| c.clone().get_u128_le()).filter(|&v| v != null_val).collect();
+
+                if !values.is_empty() {
+                    let col_max = *values.iter().max().unwrap();
+                    // 100 million is a generous upper bound for row indices.
+                    // If it's a UUID/Hash, it will be much larger.
+                    if col_max <= 100_000_000 {
+                        claims.push(ColumnClaim {
+                            offset: col_index,
+                            bytes: 16,
+                            column_type: Cell::Scalar(Scalar::ForeignRow),
+                            labels: HashMap::new(),
+                        });
+                    }
                 }
                 claims
             }
@@ -480,6 +662,12 @@ mod tests {
             })
             .collect::<Vec<String>>();
 
+        let mut file_list = dl.get_file_list();
+        for f in file_list.iter_mut() {
+            *f = f.to_lowercase();
+        }
+        file_list.sort();
+
         //let shit = vec!["data/balance/worldareas.datc64"];
         let shit = dat_paths.iter().map(|x| x.as_str()).collect::<Vec<_>>();
 
@@ -487,13 +675,13 @@ mod tests {
 
         for (_, dat_file) in dl.get_tables(&shit) {
             //for bytes in [1, 2, 4, 8, 16] {
-            for bytes in [8] {
+            for bytes in [2, 4, 8] {
                 if dat_file.bytes_per_row < bytes + 1 {
                     continue;
                 }
                 let last_col = dat_file.bytes_per_row - bytes - 1;
                 for index in 0..last_col {
-                    let claims = dat_file.get_column_claims(index, bytes);
+                    let claims = dat_file.get_column_claims(index, bytes, Some(&file_list));
                     for claim in claims {
                         print!(
                             "{}:{}..{}, {:?}",
@@ -502,7 +690,10 @@ mod tests {
                             claim.offset + claim.bytes - 1,
                             claim.column_type
                         );
-                        if claim.column_type == Cell::Scalar(Scalar::String) {
+                        if matches!(
+                            claim.column_type,
+                            Cell::Scalar(Scalar::String) | Cell::Scalar(Scalar::File) | Cell::Scalar(Scalar::Directory) | Cell::Scalar(Scalar::Color)
+                        ) {
                             let mut empty = true;
                             for s in dat_file
                                 .column_rows_iter(claim.offset, claim.bytes)
@@ -521,6 +712,60 @@ mod tests {
                     }
                 }
             }
+        }
+    }
+
+    #[test]
+    fn test_specific_tables() {
+        let mut dl = DatLoader::default();
+        let mut file_list = dl.get_file_list();
+        for f in file_list.iter_mut() {
+            *f = f.to_lowercase();
+        }
+        file_list.sort();
+
+        let files = vec!["data/balance/rarity.datc64", "data/balance/hideouts.datc64"];
+        dl.load_tables(&files);
+
+        // Rarity Test
+        if let Some(rarity) = dl.dat_files.get("data/balance/rarity.datc64") {
+            // offset 32 is a color string
+            let claims = rarity.get_column_claims(32, 8, Some(&file_list));
+            assert!(
+                claims.iter().any(|c| matches!(c.column_type, Cell::Scalar(Scalar::Color))),
+                "Rarity offset 32 should be Color"
+            );
+        }
+
+        // Hideouts Test
+        if let Some(hideouts) = dl.dat_files.get("data/balance/hideouts.datc64") {
+            // offset 16 is Hash16
+            let claims_16 = hideouts.get_column_claims(16, 2, Some(&file_list));
+            assert!(
+                claims_16.iter().any(|c| matches!(c.column_type, Cell::Scalar(Scalar::Hash16))),
+                "Hideouts offset 16 should be Hash16"
+            );
+
+            // offset 18 is File
+            let claims_18 = hideouts.get_column_claims(18, 8, Some(&file_list));
+            assert!(
+                claims_18.iter().any(|c| matches!(c.column_type, Cell::Scalar(Scalar::File))),
+                "Hideouts offset 18 should be File"
+            );
+
+            // offset 52 is Array of 4-byte ints (16 bytes total for array ref)
+            let claims_52 = hideouts.get_column_claims(52, 16, Some(&file_list));
+            assert!(
+                claims_52.iter().any(|c| matches!(c.column_type, Cell::Array(_))),
+                "Hideouts offset 52 should be Array"
+            );
+
+            // offset 69 is foreign reference to MtxTypes table
+            let claims_69 = hideouts.get_column_claims(69, 16, Some(&file_list));
+            assert!(
+                claims_69.iter().any(|c| matches!(c.column_type, Cell::Scalar(Scalar::ForeignRow))),
+                "Hideouts offset 69 should be ForeignRow"
+            );
         }
     }
 }

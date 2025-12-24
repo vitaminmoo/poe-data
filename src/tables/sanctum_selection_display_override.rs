@@ -51,18 +51,6 @@ pub static TABLE_SanctumSelectionDisplayOverride: LazyLock<Vec<SanctumSelectionD
                 let value = cell_bytes.get_i64_le();
                 BaseItemTypesRef::new(value as usize)
             },
-            r#count: {
-                // array_mutator column.array == false && column.type != 'string|bool'
-                let mut cell_bytes = row.get(48..48 + 4).unwrap();
-                let value = cell_bytes.get_i32_le();
-                value
-            },
-            r#reward_category: {
-                // array_mutator column.array == false && column.type != 'string|bool'
-                let mut cell_bytes = row.get(52..52 + 16).unwrap();
-                let value = cell_bytes.get_i64_le();
-                value
-            },
         })
         .collect()
 });
@@ -74,8 +62,6 @@ pub struct SanctumSelectionDisplayOverrideRow {
     pub r#icon: String,
     pub r#downside: String,
     pub r#item: BaseItemTypesRef,
-    pub r#count: i32,
-    pub r#reward_category: i64,
 }
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Ord, PartialOrd)]

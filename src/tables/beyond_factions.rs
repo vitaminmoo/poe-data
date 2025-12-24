@@ -25,12 +25,6 @@ pub static TABLE_BeyondFactions: LazyLock<Vec<BeyondFactionsRow>> = LazyLock::ne
                 let value = cell_bytes.get_i64_le();
                 MonsterVarietiesRef::new(value as usize)
             },
-            r#unknown24: {
-                // array_mutator column.array == false && column.type != 'string|bool'
-                let mut cell_bytes = row.get(24..24 + 16).unwrap();
-                let value = cell_bytes.get_i64_le();
-                value
-            },
         })
         .collect()
 });
@@ -39,7 +33,6 @@ pub static TABLE_BeyondFactions: LazyLock<Vec<BeyondFactionsRow>> = LazyLock::ne
 pub struct BeyondFactionsRow {
     pub r#id: String,
     pub r#boss: MonsterVarietiesRef,
-    pub r#unknown24: i64,
 }
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Ord, PartialOrd)]

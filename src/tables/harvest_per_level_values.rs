@@ -71,24 +71,6 @@ pub static TABLE_HarvestPerLevelValues: LazyLock<Vec<HarvestPerLevelValuesRow>> 
                 let value = cell_bytes.get_i32_le();
                 value
             },
-            r#unknown36: {
-                // array_mutator column.array == false && column.type != 'string|bool'
-                let mut cell_bytes = row.get(36..36 + 4).unwrap();
-                let value = cell_bytes.get_i32_le();
-                value
-            },
-            r#unknown40: {
-                // array_mutator column.array == false && column.type != 'string|bool'
-                let mut cell_bytes = row.get(40..40 + 4).unwrap();
-                let value = cell_bytes.get_i32_le();
-                value
-            },
-            r#unknown44: {
-                // array_mutator column.array == false && column.type != 'string|bool'
-                let mut cell_bytes = row.get(44..44 + 4).unwrap();
-                let value = cell_bytes.get_i32_le();
-                value
-            },
         })
         .collect()
 });
@@ -104,9 +86,6 @@ pub struct HarvestPerLevelValuesRow {
     pub r#unknown24: i32,
     pub r#unknown28: i32,
     pub r#unknown32: i32,
-    pub r#unknown36: i32,
-    pub r#unknown40: i32,
-    pub r#unknown44: i32,
 }
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Ord, PartialOrd)]

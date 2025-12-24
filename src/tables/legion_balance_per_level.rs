@@ -95,24 +95,6 @@ pub static TABLE_LegionBalancePerLevel: LazyLock<Vec<LegionBalancePerLevelRow>> 
                 let value = cell_bytes.get_i32_le();
                 value
             },
-            r#unknown52: {
-                // array_mutator column.array == false && column.type != 'string|bool'
-                let mut cell_bytes = row.get(52..52 + 4).unwrap();
-                let value = cell_bytes.get_f32_le();
-                value
-            },
-            r#unknown56: {
-                // array_mutator column.array == false && column.type != 'string|bool'
-                let mut cell_bytes = row.get(56..56 + 4).unwrap();
-                let value = cell_bytes.get_i32_le();
-                value
-            },
-            r#unknown60: {
-                // array_mutator column.array == false && column.type != 'string|bool'
-                let mut cell_bytes = row.get(60..60 + 4).unwrap();
-                let value = cell_bytes.get_i32_le();
-                value
-            },
         })
         .collect()
 });
@@ -132,9 +114,6 @@ pub struct LegionBalancePerLevelRow {
     pub r#unknown40: i32,
     pub r#unknown44: i32,
     pub r#unknown48: i32,
-    pub r#unknown52: f32,
-    pub r#unknown56: i32,
-    pub r#unknown60: i32,
 }
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Ord, PartialOrd)]

@@ -38,12 +38,6 @@ pub static TABLE_RelicItemEffectVariations: LazyLock<Vec<RelicItemEffectVariatio
                 let value = df.string_from_offset(offset).unwrap();
                 value
             },
-            r#unknown24: {
-                // array_mutator column.array == false && column.type != 'string|bool'
-                let mut cell_bytes = row.get(24..24 + 4).unwrap();
-                let value = cell_bytes.get_i32_le();
-                value
-            },
         })
         .collect()
 });
@@ -53,7 +47,6 @@ pub struct RelicItemEffectVariationsRow {
     pub r#id: String,
     pub r#description: String,
     pub r#dds_file: String,
-    pub r#unknown24: i32,
 }
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Ord, PartialOrd)]

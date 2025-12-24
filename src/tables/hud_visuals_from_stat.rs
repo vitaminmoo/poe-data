@@ -30,12 +30,6 @@ pub static TABLE_HudVisualsFromStat: LazyLock<Vec<HudVisualsFromStatRow>> = Lazy
                 let value = cell_bytes.get_i64_le();
                 value
             },
-            r#unknown48: {
-                // array_mutator column.array == false && column.type != 'string|bool'
-                let mut cell_bytes = row.get(48..48 + 16).unwrap();
-                let value = cell_bytes.get_i64_le();
-                value
-            },
         })
         .collect()
 });
@@ -45,7 +39,6 @@ pub struct HudVisualsFromStatRow {
     pub r#unknown0: i64,
     pub r#unknown16: i64,
     pub r#unknown32: i64,
-    pub r#unknown48: i64,
 }
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Ord, PartialOrd)]

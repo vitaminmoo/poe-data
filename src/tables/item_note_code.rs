@@ -25,24 +25,6 @@ pub static TABLE_ItemNoteCode: LazyLock<Vec<ItemNoteCodeRow>> = LazyLock::new(||
                 let value = df.string_from_offset(offset).unwrap();
                 value
             },
-            r#order1: {
-                // array_mutator column.array == false && column.type != 'string|bool'
-                let mut cell_bytes = row.get(24..24 + 4).unwrap();
-                let value = cell_bytes.get_i32_le();
-                value
-            },
-            r#show: {
-                // array_mutator column.array == false && column.type == 'bool'
-                let cell_bytes = row.get(28).unwrap();
-                let value = cell_bytes.to_le() != 0;
-                value
-            },
-            r#order2: {
-                // array_mutator column.array == false && column.type != 'string|bool'
-                let mut cell_bytes = row.get(29..29 + 4).unwrap();
-                let value = cell_bytes.get_i32_le();
-                value
-            },
         })
         .collect()
 });
@@ -51,9 +33,6 @@ pub static TABLE_ItemNoteCode: LazyLock<Vec<ItemNoteCodeRow>> = LazyLock::new(||
 pub struct ItemNoteCodeRow {
     pub r#base_item: BaseItemTypesRef,
     pub r#code: String,
-    pub r#order1: i32,
-    pub r#show: bool,
-    pub r#order2: i32,
 }
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Ord, PartialOrd)]

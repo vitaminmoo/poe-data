@@ -148,26 +148,6 @@ pub static TABLE_NPCMaster: LazyLock<Vec<NPCMasterRow>> = LazyLock::new(|| {
                 let value = cell_bytes.get_i64_le();
                 value
             },
-            r#unknown172: {
-                // array_mutator column.array == true
-                let mut cell_bytes = row.get(172..172 + 16).unwrap();
-                let count = cell_bytes.get_u64_le() as usize;
-                let offset = cell_bytes.get_u64_le() as usize;
-                // array_mutator column.array == true && column.type else
-                let values = df
-                    .array_from_offset(offset, count, 16)
-                    .unwrap()
-                    .iter()
-                    .map(|x| x.clone().get_i64_le())
-                    .collect::<Vec<i64>>();
-                values
-            },
-            r#unknown188: {
-                // array_mutator column.array == false && column.type != 'string|bool'
-                let mut cell_bytes = row.get(188..188 + 16).unwrap();
-                let value = cell_bytes.get_i64_le();
-                value
-            },
         })
         .collect()
 });
@@ -191,8 +171,6 @@ pub struct NPCMasterRow {
     pub r#unknown124: Vec<i64>,
     pub r#unknown140: Vec<i64>,
     pub r#unknown156: i64,
-    pub r#unknown172: Vec<i64>,
-    pub r#unknown188: i64,
 }
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Ord, PartialOrd)]

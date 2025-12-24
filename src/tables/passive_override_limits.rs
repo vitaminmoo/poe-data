@@ -31,12 +31,6 @@ pub static TABLE_PassiveOverrideLimits: LazyLock<Vec<PassiveOverrideLimitsRow>> 
                 let value = df.string_from_offset(offset).unwrap();
                 value
             },
-            r#unknown16: {
-                // array_mutator column.array == false && column.type == 'bool'
-                let cell_bytes = row.get(16).unwrap();
-                let value = cell_bytes.to_le() != 0;
-                value
-            },
         })
         .collect()
 });
@@ -45,7 +39,6 @@ pub static TABLE_PassiveOverrideLimits: LazyLock<Vec<PassiveOverrideLimitsRow>> 
 pub struct PassiveOverrideLimitsRow {
     pub r#id: String,
     pub r#description: String,
-    pub r#unknown16: bool,
 }
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Ord, PartialOrd)]

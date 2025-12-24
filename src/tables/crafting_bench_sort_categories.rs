@@ -36,12 +36,6 @@ pub static TABLE_CraftingBenchSortCategories: LazyLock<Vec<CraftingBenchSortCate
                 let value = cell_bytes.to_le() != 0;
                 value
             },
-            r#type: {
-                // array_mutator column.array == false && column.type != 'string|bool'
-                let mut cell_bytes = row.get(25..25 + 16).unwrap();
-                let value = cell_bytes.get_i64_le();
-                value
-            },
         })
         .collect()
 });
@@ -51,7 +45,6 @@ pub struct CraftingBenchSortCategoriesRow {
     pub r#id: String,
     pub r#name: ClientStringsRef,
     pub r#is_visible: bool,
-    pub r#type: i64,
 }
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Ord, PartialOrd)]

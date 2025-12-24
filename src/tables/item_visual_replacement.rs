@@ -35,30 +35,6 @@ pub static TABLE_ItemVisualReplacement: LazyLock<Vec<ItemVisualReplacementRow>> 
                 let value = cell_bytes.get_i64_le();
                 value
             },
-            r#unknown48: {
-                // array_mutator column.array == false && column.type == 'bool'
-                let cell_bytes = row.get(48).unwrap();
-                let value = cell_bytes.to_le() != 0;
-                value
-            },
-            r#unknown49: {
-                // array_mutator column.array == false && column.type == 'bool'
-                let cell_bytes = row.get(49).unwrap();
-                let value = cell_bytes.to_le() != 0;
-                value
-            },
-            r#unknown50: {
-                // array_mutator column.array == false && column.type == 'bool'
-                let cell_bytes = row.get(50).unwrap();
-                let value = cell_bytes.to_le() != 0;
-                value
-            },
-            r#unknown51: {
-                // array_mutator column.array == false && column.type == 'bool'
-                let cell_bytes = row.get(51).unwrap();
-                let value = cell_bytes.to_le() != 0;
-                value
-            },
         })
         .collect()
 });
@@ -68,10 +44,6 @@ pub struct ItemVisualReplacementRow {
     pub r#unknown0: i64,
     pub r#unknown16: i64,
     pub r#unknown32: i64,
-    pub r#unknown48: bool,
-    pub r#unknown49: bool,
-    pub r#unknown50: bool,
-    pub r#unknown51: bool,
 }
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Ord, PartialOrd)]

@@ -91,19 +91,6 @@ pub static TABLE_AwardDisplay: LazyLock<Vec<AwardDisplayRow>> = LazyLock::new(||
                 let value = cell_bytes.get_i32_le();
                 value
             },
-            r#unknown88: {
-                // array_mutator column.array == false && column.type == 'string'
-                let mut cell_bytes = row.get(88..88 + 8).unwrap();
-                let offset = cell_bytes.get_i32_le() as usize;
-                let value = df.string_from_offset(offset).unwrap();
-                value
-            },
-            r#unknown96: {
-                // array_mutator column.array == false && column.type == 'bool'
-                let cell_bytes = row.get(96).unwrap();
-                let value = cell_bytes.to_le() != 0;
-                value
-            },
         })
         .collect()
 });
@@ -122,8 +109,6 @@ pub struct AwardDisplayRow {
     pub r#ogg_file: String,
     pub r#unknown68: i64,
     pub r#unknown84: i32,
-    pub r#unknown88: String,
-    pub r#unknown96: bool,
 }
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Ord, PartialOrd)]

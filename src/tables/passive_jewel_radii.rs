@@ -37,12 +37,6 @@ pub static TABLE_PassiveJewelRadii: LazyLock<Vec<PassiveJewelRadiiRow>> = LazyLo
                 let value = cell_bytes.get_i32_le();
                 value
             },
-            r#unknown20: {
-                // array_mutator column.array == false && column.type != 'string|bool'
-                let mut cell_bytes = row.get(20..20 + 16).unwrap();
-                let value = cell_bytes.get_i64_le();
-                value
-            },
         })
         .collect()
 });
@@ -53,7 +47,6 @@ pub struct PassiveJewelRadiiRow {
     pub r#ring_outer_radius: i32,
     pub r#ring_inner_radius: i32,
     pub r#radius: i32,
-    pub r#unknown20: i64,
 }
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Ord, PartialOrd)]
