@@ -910,10 +910,10 @@ impl DatFile {
         for claim in claims {
             let start = claim.offset;
             let end = start + claim.bytes;
-            let overlaps = occupied.iter().take(end).skip(start).any(|&occupied| occupied);
+            let overlaps = occupied[start..end].iter().any(|&occupied| occupied);
 
             if !overlaps {
-                occupied = occupied.iter().take(end).skip(start).copied().collect();
+                occupied = occupied[start..end].iter().copied().collect();
                 accepted.push(claim);
             }
         }
