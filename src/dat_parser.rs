@@ -34,7 +34,7 @@ impl Cell {
             // index to a row in the current table, 0xfe filled if null
             Cell::Scalar(Scalar::SelfRow) => 8,
             // index to some other table, 0xfe filled if null
-            Cell::Scalar(Scalar::ForeignRow) => 8,
+            Cell::Scalar(Scalar::ForeignRow) => 16,
             // index to a non-table enum (not in a datc64, can be zero or 1 indexed), 0xfe filled if null
             Cell::Scalar(Scalar::EnumRow) => 4,
             // uint8_le 0 or 1
@@ -42,7 +42,7 @@ impl Cell {
             // index into a utf-16 string in the variable width data with double-null termination
             Cell::Scalar(Scalar::String) => 8,
             // a pair of I32s that generally form a range
-            Cell::Scalar(Scalar::Interval) => 16,
+            Cell::Scalar(Scalar::Interval) => 8,
             Cell::Scalar(Scalar::I16) => 2,
             Cell::Scalar(Scalar::U16) => 2,
             Cell::Scalar(Scalar::I32) => 4,
