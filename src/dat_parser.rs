@@ -1,6 +1,6 @@
 use anyhow::{anyhow, bail, Result};
 use bytes::{Buf, Bytes};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::{LazyLock, RwLock};
 
 // datc64 column types
@@ -321,6 +321,14 @@ impl DatFile {
             }
             2 => {
                 let mut claims = Vec::new();
+
+                // Zero/Constant Check using precalculated column stats
+                // Hashes should not have bytes that are always 0 or always constant across all rows.
+                // table_row_max[i] == 0 implies that byte is always 0.
+                if self.table_row_max[col_index] == 0 || self.table_row_max[col_index + 1] == 0 {
+                    return Vec::new();
+                }
+
                 let values: Vec<u16> = cells.iter().map(|c| c.clone().get_u16_le()).collect();
                 if values.iter().any(|&x| x > 0) {
                     // skip if all zero
@@ -352,12 +360,118 @@ impl DatFile {
                         // For now, let's just claim Hash16 if it uses high bits and has high entropy.
                         let max_possible = if values.len() < 65536 { values.len() as f64 } else { 65536.0 };
                         if entropy > max_possible.log2() * 0.8 {
-                            claims.push(ColumnClaim {
-                                offset: col_index,
-                                bytes: 2,
-                                column_type: Cell::Scalar(Scalar::Hash16),
-                                labels: HashMap::new(),
-                            });
+                            let mut likely_hash = true;
+                            let row_count = values.len();
+
+                            // Essential check: If it's a hash, the values should scatter across the u16 range.
+                            // If the max value is small, it's likely an index or enum, not a hash.
+                            // 40000 is ~60% of u16::MAX.
+                            if max_val < 40000 {
+                                likely_hash = false;
+                            }
+
+                            // Essential check: Hashes should be significantly larger than the row count.
+                            // If max_val is close to row_count, it's likely a row index (SelfRow).
+                            if max_val < (row_count * 2).min(60000) as u16 {
+                                likely_hash = false;
+                            }
+
+                            // Filter 1: Range Usage
+                            // True hashes should be uniformly distributed across 0..65535.
+                            // Small integers, indices, or offsets into small files will cluster in the lower range.
+                            if likely_hash && row_count > 50 {
+                                // Also check bucket distribution (chunks of 4096)
+                                let mut buckets = [0u8; 16];
+                                for &v in &values {
+                                    buckets[(v >> 12) as usize] = 1;
+                                }
+                                let filled_buckets = buckets.iter().sum::<u8>();
+                                // With 50 rows, we expect significant coverage.
+                                // If clustered in just a few buckets (e.g. low values), it's not a hash.
+                                if filled_buckets < 8 {
+                                    likely_hash = false;
+                                }
+                            }
+
+                            // Filter 2: Byte Variance & Parity (Misaligned/Padding/Pointer check)
+                            if likely_hash {
+                                let mut lsb_set = HashSet::new();
+                                let mut msb_set = HashSet::new();
+                                let mut b0_counts = [0usize; 256];
+                                let mut b1_counts = [0usize; 256];
+                                let mut lsb_odd = 0;
+                                let mut msb_odd = 0;
+                                let mut has_fe_pattern = false;
+
+                                for &v in &values {
+                                    let b0 = (v & 0xFF) as u8;
+                                    let b1 = (v >> 8) as u8;
+                                    lsb_set.insert(b0);
+                                    msb_set.insert(b1);
+                                    b0_counts[b0 as usize] += 1;
+                                    b1_counts[b1 as usize] += 1;
+                                    if b0 % 2 != 0 {
+                                        lsb_odd += 1;
+                                    }
+                                    if b1 % 2 != 0 {
+                                        msb_odd += 1;
+                                    }
+                                    // Check for FE pattern: v != 0, and all bytes are 0 or FE.
+                                    if v != 0 && (b0 == 0 || b0 == 0xFE) && (b1 == 0 || b1 == 0xFE) {
+                                        has_fe_pattern = true;
+                                    }
+                                }
+
+                                if has_fe_pattern {
+                                    likely_hash = false;
+                                }
+
+                                // 50% Dominance Check
+                                let limit = row_count / 2;
+                                if b0_counts.iter().any(|&c| c > limit) || b1_counts.iter().any(|&c| c > limit) {
+                                    likely_hash = false;
+                                }
+
+                                // 1. Variance Check:
+                                // Random noise (hash) should have high unique counts.
+                                // For 71 rows, we expect ~60 unique values. Threshold of 10% is very safe.
+                                // Capped at 240 because a byte can only have 256 values.
+                                let min_unique = (row_count / 10).min(240).max(3);
+                                // If row_count is very small (e.g. < 3), min_unique is 3, which fails.
+                                // Adjust for very small tables: min_unique cannot exceed row_count.
+                                let min_unique = min_unique.min(row_count);
+                                if lsb_set.len() < min_unique || msb_set.len() < min_unique {
+                                    likely_hash = false;
+                                }
+
+                                // 1b. Zero Check:
+                                // If a byte is ALWAYS zero, it's not a hash.
+                                if lsb_set.len() == 1 && lsb_set.contains(&0) {
+                                    likely_hash = false;
+                                }
+                                if msb_set.len() == 1 && msb_set.contains(&0) {
+                                    likely_hash = false;
+                                }
+
+                                // 2. Parity Check:
+                                // Aligned pointers (like UTF-16 string offsets) are always even.
+                                // Random hashes should have a mix.
+                                // If 100% even or 100% odd, it's not a hash.
+                                if likely_hash && row_count > 10 {
+                                    if lsb_odd == 0 || lsb_odd == row_count || msb_odd == 0 || msb_odd == row_count {
+                                        likely_hash = false;
+                                    }
+                                }
+                            }
+
+                            if likely_hash {
+                                claims.push(ColumnClaim {
+                                    offset: col_index,
+                                    bytes: 2,
+                                    column_type: Cell::Scalar(Scalar::Hash16),
+                                    labels: HashMap::new(),
+                                });
+                            }
                         }
                     }
                 }
@@ -365,6 +479,17 @@ impl DatFile {
             }
             4 => {
                 let mut claims = Vec::new();
+
+                // Zero/Constant Check using precalculated column stats
+                // Hashes should not have bytes that are always 0.
+                if self.table_row_max[col_index] == 0
+                    || self.table_row_max[col_index + 1] == 0
+                    || self.table_row_max[col_index + 2] == 0
+                    || self.table_row_max[col_index + 3] == 0
+                {
+                    return Vec::new();
+                }
+
                 let values: Vec<u32> = cells.iter().map(|c| c.clone().get_u32_le()).collect();
                 if values.iter().any(|&x| x > 0) {
                     let max_val = *values.iter().max().unwrap_or(&0);
@@ -389,12 +514,158 @@ impl DatFile {
                             u32::MAX as f64
                         };
                         if entropy > max_possible.log2() * 0.8 {
-                            claims.push(ColumnClaim {
-                                offset: col_index,
-                                bytes: 4,
-                                column_type: Cell::Scalar(Scalar::Hash32),
-                                labels: HashMap::new(),
-                            });
+                            let mut likely_hash = true;
+                            let row_count = values.len();
+
+                            // Essential check: Range Usage
+                            // u32::MAX is ~4.29 billion.
+                            // If max_val is small (e.g. < 100,000,000), it's using < 2.3% of the range.
+                            if max_val < 100_000_000 {
+                                likely_hash = false;
+                            }
+
+                            // Essential check: Hashes should be significantly larger than the row count.
+                            // If max_val is close to row_count, it's likely a row index (SelfRow).
+                            if max_val < (row_count as u32 * 2).min(100_000_000) {
+                                likely_hash = false;
+                            }
+
+                            // Filter 1: Range Usage
+                            if likely_hash && row_count > 50 {
+                                // Buckets (top nibble, 16 buckets)
+                                let mut buckets = [0u8; 16];
+                                for &v in &values {
+                                    buckets[(v >> 28) as usize] = 1;
+                                }
+                                let filled_buckets = buckets.iter().sum::<u8>();
+                                // With 50 rows, we expect significant coverage.
+                                if filled_buckets < 4 {
+                                    likely_hash = false;
+                                }
+                            }
+
+                            // Filter 2: Byte Variance & Parity
+
+                            if likely_hash {
+                                let mut b0_set = HashSet::new();
+
+                                let mut b1_set = HashSet::new();
+
+                                let mut b2_set = HashSet::new();
+
+                                let mut b3_set = HashSet::new();
+
+                                let mut b0_counts = [0usize; 256];
+
+                                let mut b1_counts = [0usize; 256];
+
+                                let mut b2_counts = [0usize; 256];
+
+                                let mut b3_counts = [0usize; 256];
+
+                                let mut lsb_odd = 0;
+
+                                let mut msb_odd = 0;
+
+                                let mut has_fe_pattern = false;
+
+                                for &v in &values {
+                                    let b0 = (v & 0xFF) as u8;
+
+                                    let b1 = ((v >> 8) & 0xFF) as u8;
+
+                                    let b2 = ((v >> 16) & 0xFF) as u8;
+
+                                    let b3 = ((v >> 24) & 0xFF) as u8;
+
+                                    b0_set.insert(b0);
+
+                                    b1_set.insert(b1);
+
+                                    b2_set.insert(b2);
+
+                                    b3_set.insert(b3);
+
+                                    b0_counts[b0 as usize] += 1;
+
+                                    b1_counts[b1 as usize] += 1;
+
+                                    b2_counts[b2 as usize] += 1;
+
+                                    b3_counts[b3 as usize] += 1;
+
+                                    if b0 % 2 != 0 {
+                                        lsb_odd += 1;
+                                    }
+
+                                    if b3 % 2 != 0 {
+                                        msb_odd += 1;
+                                    }
+
+                                    // Check for FE pattern: v != 0, and all bytes are 0 or FE.
+
+                                    if v != 0 && (b0 == 0 || b0 == 0xFE) && (b1 == 0 || b1 == 0xFE) && (b2 == 0 || b2 == 0xFE) && (b3 == 0 || b3 == 0xFE) {
+                                        has_fe_pattern = true;
+                                    }
+                                }
+
+                                if has_fe_pattern {
+                                    likely_hash = false;
+                                }
+
+                                // 50% Dominance Check
+
+                                let limit = row_count / 2;
+
+                                if b0_counts.iter().any(|&c| c > limit)
+                                    || b1_counts.iter().any(|&c| c > limit)
+                                    || b2_counts.iter().any(|&c| c > limit)
+                                    || b3_counts.iter().any(|&c| c > limit)
+                                {
+                                    likely_hash = false;
+                                }
+
+                                // Variance Check for all bytes
+
+                                let min_unique = (row_count / 10).min(240).max(3);
+
+                                let min_unique = min_unique.min(row_count);
+
+                                if b0_set.len() < min_unique || b1_set.len() < min_unique || b2_set.len() < min_unique || b3_set.len() < min_unique {
+                                    likely_hash = false;
+                                }
+
+                                // Zero Check for all bytes:
+
+                                // If a byte is ALWAYS zero, it's not a hash.
+
+                                if likely_hash {
+                                    if (b0_set.len() == 1 && b0_set.contains(&0))
+                                        || (b1_set.len() == 1 && b1_set.contains(&0))
+                                        || (b2_set.len() == 1 && b2_set.contains(&0))
+                                        || (b3_set.len() == 1 && b3_set.contains(&0))
+                                    {
+                                        likely_hash = false;
+                                    }
+                                }
+
+                                // Parity Check (LSB/MSB only usually sufficient for alignment)
+
+                                if likely_hash && row_count > 10 {
+                                    if lsb_odd == 0 || lsb_odd == row_count || msb_odd == 0 || msb_odd == row_count {
+                                        likely_hash = false;
+                                    }
+                                }
+                            }
+
+                            if likely_hash {
+                                claims.push(ColumnClaim {
+                                    offset: col_index,
+                                    bytes: 4,
+                                    column_type: Cell::Scalar(Scalar::Hash32),
+                                    labels: HashMap::new(),
+                                });
+                            }
                         }
                     }
                 }
@@ -724,7 +995,7 @@ mod tests {
         }
         file_list.sort();
 
-        let files = vec!["data/balance/rarity.datc64", "data/balance/hideouts.datc64"];
+        let files = vec!["data/balance/rarity.datc64", "data/balance/hideouts.datc64", "data/balance/miscanimated.datc64"];
         dl.load_tables(&files);
 
         // Rarity Test
@@ -766,6 +1037,38 @@ mod tests {
                 claims_69.iter().any(|c| matches!(c.column_type, Cell::Scalar(Scalar::ForeignRow))),
                 "Hideouts offset 69 should be ForeignRow"
             );
+        }
+
+        // MiscAnimated Test
+        if let Some(miscanimated) = dl.dat_files.get("data/balance/miscanimated.datc64") {
+            // offset 40 is Hash32
+            let claims_40 = miscanimated.get_column_claims(40, 4, Some(&file_list));
+            assert!(
+                claims_40.iter().any(|c| matches!(c.column_type, Cell::Scalar(Scalar::Hash32))),
+                "MiscAnimated offset 40 should be Hash32"
+            );
+        }
+    }
+
+    #[test]
+    fn test_hideouts_hash16_candidates() {
+        let mut dl = DatLoader::default();
+        let files = vec!["data/balance/hideouts.datc64"];
+        dl.load_tables(&files);
+
+        if let Some(hideouts) = dl.dat_files.get("data/balance/hideouts.datc64") {
+            println!("Analyzing Hideouts.datc64 for Hash16 candidates...");
+            let mut detected = Vec::new();
+            // Iterate all possible 2-byte alignments
+            for i in 0..hideouts.bytes_per_row - 1 {
+                let claims = hideouts.get_column_claims(i, 2, None);
+                if claims.iter().any(|c| matches!(c.column_type, Cell::Scalar(Scalar::Hash16))) {
+                    println!("Hash16 candidate found at offset {}", i);
+                    detected.push(i);
+                }
+            }
+            println!("Detected Hash16 offsets: {:?}", detected);
+            assert_eq!(detected, vec![16], "Should only detect offset 16 as Hash16 in Hideouts");
         }
     }
 }
