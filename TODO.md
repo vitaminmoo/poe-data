@@ -13,6 +13,7 @@
 - [x] Verified `hideouts.datc64` offset 18 is correctly detected as `File` (after case-insensitivity fix).
 - [x] **Fix Array Detection**: `hideouts.datc64` offset 52 now correctly detected as an array.
 - [x] **Verify ForeignRef at Offset 69**: Confirmed as `ForeignRow` using updated max-value heuristic.
+- [x] **Conflict Resolution**: Implemented a second-pass conflict resolution stage in `get_all_column_claims` to prioritize high-confidence types (File, Directory, Color, Array) over less likely ones (Hash16, Hash32, String).
 - [x] **Heuristic Refinement**: Relaxed count constraints and removed strict offset monotonicity.
 - [x] **Cleanup**: Removed debug `println!` statements from `src/dat_parser.rs`.
 - [x] **Fix Generated Table Tests**:

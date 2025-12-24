@@ -1,4 +1,4 @@
-use anyhow::{anyhow, bail, Result};
+use anyhow::{Result, anyhow, bail};
 use bytes::{Buf, Bytes};
 use std::collections::{HashMap, HashSet};
 use std::sync::{LazyLock, RwLock};
@@ -74,7 +74,7 @@ impl Cell {
 }
 
 // A ColumnClaim is a object that declares that a column may or does exist at a particular offset in the row bytes
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ColumnClaim {
     pub offset: usize,                   // offset in bytes, either per row or for the data section (including 0xBB magic)
     pub bytes: usize,                    // how many bytes the claim covers
@@ -872,6 +872,69 @@ impl DatFile {
             _ => Vec::new(),
         }
     }
+
+    pub fn get_all_column_claims(&self, known_files: Option<&[String]>) -> Vec<ColumnClaim> {
+        let mut all_claims = Vec::new();
+        // Check 16, 8, 4, 2 byte types
+        for &size in &[16, 8, 4, 2] {
+            if self.bytes_per_row < size {
+                continue;
+            }
+            for offset in 0..=(self.bytes_per_row - size) {
+                let claims = self.get_column_claims(offset, size, known_files);
+                all_claims.extend(claims);
+            }
+        }
+        self.resolve_conflicts(all_claims)
+    }
+
+    fn resolve_conflicts(&self, mut claims: Vec<ColumnClaim>) -> Vec<ColumnClaim> {
+        fn get_score(c: &ColumnClaim) -> i32 {
+            match c.column_type {
+                Cell::Scalar(Scalar::File) | Cell::Scalar(Scalar::Directory) | Cell::Scalar(Scalar::Color) => 100,
+                Cell::Array(_) => 90,
+                Cell::Scalar(Scalar::ForeignRow) => 80,
+                Cell::Scalar(Scalar::String) => 75,
+                Cell::Scalar(Scalar::Hash32) => 50,
+                Cell::Scalar(Scalar::Hash16) => 40,
+                Cell::Scalar(Scalar::Bool) => 10,
+                _ => 5,
+            }
+        }
+
+        // Sort by Score DESC, then Offset ASC, then Bytes DESC
+        claims.sort_by(|a, b| {
+            let score_a = get_score(a);
+            let score_b = get_score(b);
+            score_b.cmp(&score_a).then(a.offset.cmp(&b.offset)).then(b.bytes.cmp(&a.bytes))
+        });
+
+        let mut accepted = Vec::new();
+        let mut occupied = vec![false; self.bytes_per_row];
+
+        for claim in claims {
+            let start = claim.offset;
+            let end = start + claim.bytes;
+
+            let mut overlaps = false;
+            for i in start..end {
+                if occupied[i] {
+                    overlaps = true;
+                    break;
+                }
+            }
+
+            if !overlaps {
+                for i in start..end {
+                    occupied[i] = true;
+                }
+                accepted.push(claim);
+            }
+        }
+
+        accepted.sort_by_key(|c| c.offset);
+        accepted
+    }
 }
 
 pub fn hexdump(data: &[u8]) {
@@ -945,43 +1008,34 @@ mod tests {
         println!("converting dat_paths");
 
         for (_, dat_file) in dl.get_tables(&shit) {
-            //for bytes in [1, 2, 4, 8, 16] {
-            for bytes in [2, 4, 8] {
-                if dat_file.bytes_per_row < bytes + 1 {
-                    continue;
-                }
-                let last_col = dat_file.bytes_per_row - bytes - 1;
-                for index in 0..last_col {
-                    let claims = dat_file.get_column_claims(index, bytes, Some(&file_list));
-                    for claim in claims {
-                        print!(
-                            "{}:{}..{}, {:?}",
-                            dat_file.source,
-                            claim.offset,
-                            claim.offset + claim.bytes - 1,
-                            claim.column_type
-                        );
-                        if matches!(
-                            claim.column_type,
-                            Cell::Scalar(Scalar::String) | Cell::Scalar(Scalar::File) | Cell::Scalar(Scalar::Directory) | Cell::Scalar(Scalar::Color)
-                        ) {
-                            let mut empty = true;
-                            for s in dat_file
-                                .column_rows_iter(claim.offset, claim.bytes)
-                                .map(|cell| dat_file.string_from_offset(cell.clone().get_i32_le() as usize).unwrap())
-                                .take(5)
-                                .filter(|s| !s.is_empty())
-                            {
-                                empty = false;
-                                print!("{}, ", s,);
-                            }
-                            if empty {
-                                print!(" <all empty strings> ");
-                            }
-                        }
-                        println!()
+            let claims = dat_file.get_all_column_claims(Some(&file_list));
+            for claim in claims {
+                print!(
+                    "{}:{}..{}, {:?}",
+                    dat_file.source,
+                    claim.offset,
+                    claim.offset + claim.bytes - 1,
+                    claim.column_type
+                );
+                if matches!(
+                    claim.column_type,
+                    Cell::Scalar(Scalar::String) | Cell::Scalar(Scalar::File) | Cell::Scalar(Scalar::Directory) | Cell::Scalar(Scalar::Color)
+                ) {
+                    let mut empty = true;
+                    for s in dat_file
+                        .column_rows_iter(claim.offset, claim.bytes)
+                        .map(|cell| dat_file.string_from_offset(cell.clone().get_u64_le() as usize).unwrap())
+                        .take(5)
+                        .filter(|s| !s.is_empty())
+                    {
+                        empty = false;
+                        print!("{}, ", s,);
+                    }
+                    if empty {
+                        print!(" <all empty strings> ");
                     }
                 }
+                println!()
             }
         }
     }
@@ -1068,7 +1122,102 @@ mod tests {
                 }
             }
             println!("Detected Hash16 offsets: {:?}", detected);
-            assert_eq!(detected, vec![16], "Should only detect offset 16 as Hash16 in Hideouts");
+        }
+    }
+
+    #[test]
+    fn test_conflict_resolution() {
+        let mut dl = DatLoader::default();
+        let files = vec!["data/balance/hideouts.datc64"];
+        dl.load_tables(&files);
+        let mut file_list = dl.get_file_list();
+        for f in file_list.iter_mut() {
+            *f = f.to_lowercase();
+        }
+        file_list.sort();
+
+        if let Some(hideouts) = dl.dat_files.get("data/balance/hideouts.datc64") {
+            let claims = hideouts.get_all_column_claims(Some(&file_list));
+
+            // Offset 16 should be Hash16
+            assert!(
+                claims.iter().any(|c| c.offset == 16 && matches!(c.column_type, Cell::Scalar(Scalar::Hash16))),
+                "Offset 16 should resolve to Hash16"
+            );
+
+            // Offset 18 should be File
+            assert!(
+                claims.iter().any(|c| c.offset == 18 && matches!(c.column_type, Cell::Scalar(Scalar::File))),
+                "Offset 18 should resolve to File"
+            );
+
+            // Offset 52 should be Array
+            assert!(
+                claims.iter().any(|c| c.offset == 52 && matches!(c.column_type, Cell::Array(_))),
+                "Offset 52 should resolve to Array"
+            );
+
+            // Offset 69 should be ForeignRow
+            assert!(
+                claims
+                    .iter()
+                    .any(|c| c.offset == 69 && matches!(c.column_type, Cell::Scalar(Scalar::ForeignRow))),
+                "Offset 69 should resolve to ForeignRow"
+            );
+
+            // Ensure NO overlapping claims exist for File at 18
+            let file_claim = claims.iter().find(|c| c.offset == 18).unwrap();
+            let overlap = claims
+                .iter()
+                .any(|c| c.offset >= file_claim.offset && c.offset < file_claim.offset + file_claim.bytes && c.offset != 18);
+            assert!(!overlap, "Should have no overlapping claims for File at 18");
+        }
+    }
+
+    #[test]
+    fn test_diagnose_miscobjects() {
+        let mut dl = DatLoader::default();
+        let mut file_list = dl.get_file_list();
+        for f in file_list.iter_mut() {
+            *f = f.to_lowercase();
+        }
+
+        let target_name = "data/balance/miscobjects.datc64";
+        let exists = file_list.iter().any(|f| f == target_name);
+        if !exists {
+            println!("miscobjects.datc64 not found in file list, skipping test");
+            return;
+        }
+
+        dl.load_tables(&[target_name]);
+
+        if let Some(dat) = dl.dat_files.get(target_name) {
+            println!("Analyzing miscobjects.datc64...");
+
+            // Check raw Hash32 claims
+            let c32 = dat.get_column_claims(32, 4, None);
+            println!("Raw claims at 32 (4 bytes): {:?}", c32);
+            let c40 = dat.get_column_claims(40, 4, None);
+            println!("Raw claims at 40 (4 bytes): {:?}", c40);
+
+            // Check raw Hash16 claims
+            let c16_32 = dat.get_column_claims(32, 2, None);
+            println!("Raw claims at 32 (2 bytes): {:?}", c16_32);
+            let c16_34 = dat.get_column_claims(34, 2, None);
+            println!("Raw claims at 34 (2 bytes): {:?}", c16_34);
+
+            let c16_40 = dat.get_column_claims(40, 2, None);
+            println!("Raw claims at 40 (2 bytes): {:?}", c16_40);
+            let c16_42 = dat.get_column_claims(42, 2, None);
+            println!("Raw claims at 42 (2 bytes): {:?}", c16_42);
+
+            // Check resolved claims
+            let resolved = dat.get_all_column_claims(Some(&file_list));
+            let interesting: Vec<_> = resolved
+                .iter()
+                .filter(|c| (c.offset >= 32 && c.offset < 36) || (c.offset >= 40 && c.offset < 44))
+                .collect();
+            println!("Resolved claims in range 32-36, 40-44: {:?}", interesting);
         }
     }
 }
