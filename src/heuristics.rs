@@ -495,6 +495,13 @@ pub fn get_column_claims(dat_file: &DatFile, col_index: usize, cell_length: usiz
                     }
                 }
             }
+
+            if candidates.contains(Scalar::Interval) {
+                if let Some(claim) = crate::scanners::interval::scan(dat_file, col_index) {
+                    claims.push(claim);
+                }
+            }
+
             claims
         }
         16 => {
@@ -554,6 +561,7 @@ pub fn resolve_conflicts(dat_file: &DatFile, mut claims: Vec<ColumnClaim>) -> Ve
             Cell::Array(_) => 90,
             Cell::Scalar(Scalar::ForeignRow) => 80,
             Cell::Scalar(Scalar::String) => 75,
+            Cell::Scalar(Scalar::Interval) => 60,
             Cell::Scalar(Scalar::Hash32) => 50,
             Cell::Scalar(Scalar::Hash16) => 40,
             Cell::Scalar(Scalar::Bool) => 10,

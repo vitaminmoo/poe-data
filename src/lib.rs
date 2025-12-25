@@ -1,5 +1,6 @@
 pub mod dat_parser;
 pub mod heuristics;
+pub mod scanners;
 pub mod statdescriptions;
 pub mod statdescriptions_parser;
 pub mod tables;

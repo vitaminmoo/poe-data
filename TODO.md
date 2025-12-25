@@ -23,8 +23,17 @@
 
 ## Remaining Tasks
 - [ ] (Optional) Add logic to support both 32-bit and 64-bit string arrays if support for legacy .dat files is needed (currently defaults to 64-bit).
-- [x] Evaluate breaking cell validation logic in `src/dat_parser.rs` out into a separate modules, one per type, with another for arrays that can use the basic types as a second stage. The goal is to get `dat_parser.rs` to be primarily a parser.
-  - **Status**: *Completed*. Created `src/types.rs` for shared types and `src/heuristics.rs` for validation logic. `src/dat_parser.rs` now delegates validation to `heuristics.rs`.
+- [ ] **Performance & Allocations**
+    - [ ] Remove `Vec<Bytes>` allocation in `get_column_claims`: Refactor checkers to consume `column_rows_iter` lazily to avoid allocating a vector for every row in every column.
+    - [ ] Optimize Entropy & Stat Calculation: Use a fixed-size array for `u16` entropy and a shared `HashMap` buffer for `u32` to reduce allocation overhead.
+    - [ ] Implement "Phase 2" Fast-Fail for Strings: Early exit during string iteration if an invalid sequence is found, rather than collecting all strings first.
+- [ ] **Modularity & Organization**
+    - [ ] Extract Type Scanners to `src/scanners/`: Move specific type heuristics out of `heuristics.rs` into specialized modules (e.g., `integers.rs`, `strings.rs`, `arrays.rs`) using a unified scanning trait.
+    - [ ] Unify `Scalar` and `Array` handling: Refactor the detection loop to treat Arrays as a container type more consistently with Scalars.
+- [ ] **Type Detection Coverage**
+    - [x] Implement `Interval` Detection: Detect 8-byte columns where `i32_min <= i32_max` consistently.
+    - [ ] Implement `DateTime` Detection: Identify `u64` values that fall within valid game-relevant epoch ranges.
+    - [ ] Improve `ForeignRow` vs `Int` logic: Refine the distinction between 128-bit keys and large integers using clustering and distribution analysis.
 - [x] Split type validation into a few phases. The first phase would be to do checks that can with 100% confidence rule out the possibility of a type being at an offset. The second would be for checks that demonstrate with a high degree of certainty but not 100% that a type is not at an offset. The third would indicate that an offset likely is a specific type. The fourth would be for tests that have close to a 100% certainty that a type exists at a current offset. The result of these checks should be optimized for evaluating the possibilities of a specific offset extremely quickly with minimal memory and cpu overhead. I'm thinking a struct that contains booleans for each possible type so we can bitmap check each, but I'm not certain.
   - **Status**: *Completed*. Implemented `TypeSet` (bitmask) and `check_phase_1_absolutes` in `src/heuristics.rs`. This allows fast, absolute rejection of invalid types before expensive heuristics.
 - [x] Push as much precomputation of statistical things up into the shared code like the xor and max and min. Make a new struct that holds the stats per byte, and pre-calculate it all once for the entire table. Then the individual type checks can avoid iterating the entire column over and over to calculate the same or similar stats
