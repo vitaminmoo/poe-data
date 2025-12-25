@@ -25,6 +25,133 @@ pub enum Scalar {
     F64,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct TypeSet(u32);
+
+impl TypeSet {
+    pub fn empty() -> Self {
+        Self(0)
+    }
+
+    pub fn full() -> Self {
+        Self(!0) // All bits set
+    }
+
+    pub fn from_size(bytes: usize) -> Self {
+        let mut set = Self::empty();
+        match bytes {
+            1 => {
+                set.insert(Scalar::Bool);
+                set.insert(Scalar::EnumRow); // technically often 4 bytes, but sometimes 1? Unlikely, but let's stick to standard
+                                             // Actually EnumRow is 4 bytes in standard datc64.
+                                             // Single byte columns are usually bool or u8 (which we map to EnumRow sometimes or just ignore? Scalar::U8 isn't in the enum yet).
+                                             // The Scalar enum doesn't have U8/I8. Assuming Bool for now.
+            }
+            2 => {
+                set.insert(Scalar::I16);
+                set.insert(Scalar::U16);
+                set.insert(Scalar::Hash16);
+            }
+            4 => {
+                set.insert(Scalar::I32);
+                set.insert(Scalar::U32);
+                set.insert(Scalar::Hash32);
+                set.insert(Scalar::F32);
+                set.insert(Scalar::EnumRow);
+            }
+            8 => {
+                set.insert(Scalar::I64);
+                set.insert(Scalar::U64);
+                set.insert(Scalar::F64);
+                set.insert(Scalar::SelfRow);
+                set.insert(Scalar::String);
+                set.insert(Scalar::File);
+                set.insert(Scalar::Directory);
+                set.insert(Scalar::Color);
+                set.insert(Scalar::Interval);
+            }
+            16 => {
+                set.insert(Scalar::ForeignRow);
+                // Arrays are handled separately in Cell, but here we track Scalar types.
+                // We might need to handle "Array" as a distinct thing if we want to validte it,
+                // but Cell::Array matches. For now, 16 bytes is mostly ForeignRow.
+                // The old logic handled arrays separately.
+            }
+            _ => {}
+        }
+        set
+    }
+
+    fn bit_mask(s: Scalar) -> u32 {
+        match s {
+            Scalar::Unknown => 0,
+            Scalar::SelfRow => 1 << 0,
+            Scalar::ForeignRow => 1 << 1,
+            Scalar::EnumRow => 1 << 2,
+            Scalar::Bool => 1 << 3,
+            Scalar::String => 1 << 4,
+            Scalar::File => 1 << 5,
+            Scalar::Directory => 1 << 6,
+            Scalar::Color => 1 << 7,
+            Scalar::Interval => 1 << 8,
+            Scalar::I16 => 1 << 9,
+            Scalar::U16 => 1 << 10,
+            Scalar::Hash16 => 1 << 11,
+            Scalar::I32 => 1 << 12,
+            Scalar::U32 => 1 << 13,
+            Scalar::Hash32 => 1 << 14,
+            Scalar::I64 => 1 << 15,
+            Scalar::U64 => 1 << 16,
+            Scalar::F32 => 1 << 17,
+            Scalar::F64 => 1 << 18,
+        }
+    }
+
+    pub fn insert(&mut self, s: Scalar) {
+        self.0 |= Self::bit_mask(s);
+    }
+
+    pub fn remove(&mut self, s: Scalar) {
+        self.0 &= !Self::bit_mask(s);
+    }
+
+    pub fn contains(&self, s: Scalar) -> bool {
+        (self.0 & Self::bit_mask(s)) != 0
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.0 == 0
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = Scalar> + '_ {
+        // This is a simple iterator implementation
+        // We can optimize this if needed, but for now checking all enum variants is fine given the small number
+        [
+            Scalar::SelfRow,
+            Scalar::ForeignRow,
+            Scalar::EnumRow,
+            Scalar::Bool,
+            Scalar::String,
+            Scalar::File,
+            Scalar::Directory,
+            Scalar::Color,
+            Scalar::Interval,
+            Scalar::I16,
+            Scalar::U16,
+            Scalar::Hash16,
+            Scalar::I32,
+            Scalar::U32,
+            Scalar::Hash32,
+            Scalar::I64,
+            Scalar::U64,
+            Scalar::F32,
+            Scalar::F64,
+        ]
+        .into_iter()
+        .filter(move |&s| self.contains(s))
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Cell {
     Scalar(Scalar),

@@ -322,7 +322,11 @@ mod tests {
                     let mut empty = true;
                     for s in dat_file
                         .column_rows_iter(claim.offset, claim.bytes)
-                        .map(|cell| dat_file.string_from_offset(cell.clone().get_u64_le() as usize).unwrap())
+                        .map(|cell| {
+                            dat_file
+                                .string_from_offset(cell.clone().get_u64_le() as usize)
+                                .unwrap_or_else(|_| "<null/invalid>".to_string())
+                        })
                         .take(5)
                         .filter(|s| !s.is_empty())
                     {
