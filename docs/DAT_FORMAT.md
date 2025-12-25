@@ -134,9 +134,15 @@ Identifying column types and validating data in undocumented tables relies on st
 
 ### References
 
-- **Foreign Row**: A 16-byte value linking to a row in another table. The exact mechanism (index vs key) is 128-bit wide.
-- **Local Row**: An 8-byte value linking to a row in the same table.
-- **Null Values**: If a reference (Local or Foreign) is null, the entire cell is filled with `0xFE` bytes (e.g., 8 bytes of `0xFE` for Local Row, 16 bytes for Foreign Row). This is distinct from a value of 0, which may be a valid index.
+- **Foreign Row**: A 16-byte (128-bit) value linking to a row in another table.
+  - These are **Index References**, not hashes or GUIDs.
+  - The 128-bit width is likely reserved for runtime replacement with "fat pointers" (direct memory addresses) by the game engine.
+  - **Values**: Little-endian integers between `0` and the target table's row count.
+  - **Null**: `0xFEFEFEFEFEFEFEFEFEFEFEFEFEFEFEFE` (16 bytes of `0xFE`).
+- **Local Row**: An 8-byte (64-bit) value linking to a row in the same table.
+  - **Values**: Little-endian integers between `0` and the current table's row count.
+  - **Null**: `0xFEFEFEFEFEFEFEFE` (8 bytes of `0xFE`).
+- **Null Values**: If a reference is null, the entire cell is filled with `0xFE` bytes. This is distinct from a value of 0, which is a valid index (Row 0).
 
 ## Discrepancies & Notes
 

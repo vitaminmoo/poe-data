@@ -126,6 +126,11 @@ pub fn get_column_claims(dat_file: &DatFile, col_index: usize, cell_length: usiz
                     claims.push(claim);
                 }
             }
+            if candidates.contains(Scalar::SelfRow) {
+                if let Some(claim) = scanners::references::scan_row(dat_file, col_index) {
+                    claims.push(claim);
+                }
+            }
         }
         16 => {
             if is_array_candidate {
@@ -164,7 +169,7 @@ pub fn resolve_conflicts(dat_file: &DatFile, mut claims: Vec<ColumnClaim>) -> Ve
         match c.column_type {
             Cell::Scalar(Scalar::File) | Cell::Scalar(Scalar::Directory) | Cell::Scalar(Scalar::Color) => 100,
             Cell::Array(_) => 90,
-            Cell::Scalar(Scalar::ForeignRow) => 80,
+            Cell::Scalar(Scalar::ForeignRow) | Cell::Scalar(Scalar::SelfRow) => 80,
             Cell::Scalar(Scalar::String) => 75,
             Cell::Scalar(Scalar::Interval) | Cell::Scalar(Scalar::DateTime) => 60,
             Cell::Scalar(Scalar::Hash32) => 50,

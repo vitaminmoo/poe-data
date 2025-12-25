@@ -94,6 +94,7 @@ fn parse_file(source: &str, file: Bytes) -> Result<DatFile> {
     let mut dat_file = DatFile {
         source: source.to_string(),
         table,
+        row_count: table_len_rows,
         bytes_per_row: row_len_bytes,
         vdata: data,
         stats: TableStats::new(row_len_bytes),
@@ -124,6 +125,7 @@ fn parse_file(source: &str, file: Bytes) -> Result<DatFile> {
 pub struct DatFile {
     pub source: String,       // path to the file that we got this data from
     pub table: Bytes,         // the entire fixed-length table section without the rows header
+    pub row_count: usize,     // number of rows in the table
     pub bytes_per_row: usize, // how many bytes per row
     pub vdata: Bytes,         // the entire variable-length data section, including 8 bytes of magic
     pub stats: TableStats,
