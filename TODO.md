@@ -20,20 +20,20 @@
     - Filtered out invalid columns (errors in schema) in `lib/types.libsonnet` to prevent OOB reads.
     - Updated `src/dat_parser.rs` to use 64-bit offsets for string arrays, fixing `ground_effects` failures.
     - All 718 tests passed.
+- [x] **Performance & Allocations**
+    - [x] Remove `Vec<Bytes>` allocation in `get_column_claims`: Refactor checkers to consume `column_rows_iter` lazily.
+    - [x] Optimize Entropy & Stat Calculation: Use a fixed-size array for `u16` entropy.
+    - [x] Implement "Phase 2" Fast-Fail for Strings: Early exit during string iteration if an invalid sequence is found.
+- [x] **Modularity & Organization**
+    - [x] Extract Type Scanners to `src/scanners/`: Moved specific type heuristics out of `heuristics.rs` into specialized modules using a unified scanning approach.
+    - [x] Unify `Scalar` and `Array` handling: Refactored the detection loop to treat Arrays as a container type via `src/scanners/arrays.rs`.
+- [x] **Type Detection Coverage**
+    - [x] Implement `Interval` Detection: Detect 8-byte columns where `i32_min <= i32_max` consistently.
+    - [x] Implement `DateTime` Detection: Identify `u64` values that fall within valid game-relevant epoch ranges.
+- [x] Split type validation into a few phases. ...
+  - **Status**: *Completed*. Implemented `TypeSet` (bitmask) and `check_phase_1_absolutes` in `src/heuristics.rs`.
+- [x] Push as much precomputation of statistical things up into the shared code like the xor and max and min.
 
 ## Remaining Tasks
 - [ ] (Optional) Add logic to support both 32-bit and 64-bit string arrays if support for legacy .dat files is needed (currently defaults to 64-bit).
-- [ ] **Performance & Allocations**
-    - [ ] Remove `Vec<Bytes>` allocation in `get_column_claims`: Refactor checkers to consume `column_rows_iter` lazily to avoid allocating a vector for every row in every column.
-    - [ ] Optimize Entropy & Stat Calculation: Use a fixed-size array for `u16` entropy and a shared `HashMap` buffer for `u32` to reduce allocation overhead.
-    - [ ] Implement "Phase 2" Fast-Fail for Strings: Early exit during string iteration if an invalid sequence is found, rather than collecting all strings first.
-- [ ] **Modularity & Organization**
-    - [ ] Extract Type Scanners to `src/scanners/`: Move specific type heuristics out of `heuristics.rs` into specialized modules (e.g., `integers.rs`, `strings.rs`, `arrays.rs`) using a unified scanning trait.
-    - [ ] Unify `Scalar` and `Array` handling: Refactor the detection loop to treat Arrays as a container type more consistently with Scalars.
-- [ ] **Type Detection Coverage**
-    - [x] Implement `Interval` Detection: Detect 8-byte columns where `i32_min <= i32_max` consistently.
-    - [ ] Implement `DateTime` Detection: Identify `u64` values that fall within valid game-relevant epoch ranges.
-    - [ ] Improve `ForeignRow` vs `Int` logic: Refine the distinction between 128-bit keys and large integers using clustering and distribution analysis.
-- [x] Split type validation into a few phases. The first phase would be to do checks that can with 100% confidence rule out the possibility of a type being at an offset. The second would be for checks that demonstrate with a high degree of certainty but not 100% that a type is not at an offset. The third would indicate that an offset likely is a specific type. The fourth would be for tests that have close to a 100% certainty that a type exists at a current offset. The result of these checks should be optimized for evaluating the possibilities of a specific offset extremely quickly with minimal memory and cpu overhead. I'm thinking a struct that contains booleans for each possible type so we can bitmap check each, but I'm not certain.
-  - **Status**: *Completed*. Implemented `TypeSet` (bitmask) and `check_phase_1_absolutes` in `src/heuristics.rs`. This allows fast, absolute rejection of invalid types before expensive heuristics.
-- [x] Push as much precomputation of statistical things up into the shared code like the xor and max and min. Make a new struct that holds the stats per byte, and pre-calculate it all once for the entire table. Then the individual type checks can avoid iterating the entire column over and over to calculate the same or similar stats
+- [ ] Improve `ForeignRow` vs `Int` logic: Refine the distinction between 128-bit keys and large integers using clustering and distribution analysis.

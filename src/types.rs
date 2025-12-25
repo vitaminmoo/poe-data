@@ -13,6 +13,7 @@ pub enum Scalar {
     Directory,
     Color,
     Interval,
+    DateTime,
     I16,
     U16,
     Hash16,
@@ -69,6 +70,7 @@ impl TypeSet {
                 set.insert(Scalar::Directory);
                 set.insert(Scalar::Color);
                 set.insert(Scalar::Interval);
+                set.insert(Scalar::DateTime);
             }
             16 => {
                 set.insert(Scalar::ForeignRow);
@@ -94,6 +96,7 @@ impl TypeSet {
             Scalar::Directory => 1 << 6,
             Scalar::Color => 1 << 7,
             Scalar::Interval => 1 << 8,
+            Scalar::DateTime => 1 << 19,
             Scalar::I16 => 1 << 9,
             Scalar::U16 => 1 << 10,
             Scalar::Hash16 => 1 << 11,
@@ -136,6 +139,7 @@ impl TypeSet {
             Scalar::Directory,
             Scalar::Color,
             Scalar::Interval,
+            Scalar::DateTime,
             Scalar::I16,
             Scalar::U16,
             Scalar::Hash16,
@@ -174,6 +178,7 @@ impl Scalar {
             Scalar::Directory => 8,
             Scalar::Color => 8,
             Scalar::Interval => 8,
+            Scalar::DateTime => 8,
             Scalar::I16 => 2,
             Scalar::U16 => 2,
             Scalar::Hash16 => 2,
