@@ -147,3 +147,4 @@ Identifying column types and validating data in undocumented tables relies on st
 ## Discrepancies & Notes
 
 - **Legacy Formats**: Older `.dat` files (32-bit) used 4-byte offsets for strings and 8-byte `{count, offset}` (2x u32) for arrays. The `.datc64` format updates these to 64-bit widths.
+- **Alignment**: There is no alignment in this file format. Data is packed tightly.
