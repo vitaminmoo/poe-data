@@ -4,7 +4,7 @@ This document describes the `.datc64` file format used by Path of Exile (PoE) an
 
 ## File Structure
 
-The file consists of a header, a fixed-width data section (Table Data), a separator, and a variable-width data section (Variable Data).
+The file consists of a header, a fixed-width data section (Table Data), a separator, and a variable-length data section (Variable Data).
 
 | Offset | Type   | Description                                                                           |
 | :----- | :----- | :------------------------------------------------------------------------------------ |
@@ -13,28 +13,36 @@ The file consists of a header, a fixed-width data section (Table Data), a separa
 | ...    | `u64`  | **Separator**. `0xBBBBBBBBBBBBBBBB` (8 bytes of `0xBB`).                              |
 | ...    | `[u8]` | **Variable Data**. Heap for variable-length data (Strings, Arrays).                   |
 
+### Table Data
+
+Note that the bytes per row is determined by the table schema, which is not stored in the file itself. It can be inferred by finding the location of the magic separator (`0xBB...`), subtracting the header size (4), and dividing by the number of rows.
+
+### Variable Data
+
+The variable-length data contains all the pointed to strings and arrays, concatenated. The offsets in the Table Data section are relative to the start of the Variable Data section (i.e., the first byte including the separator (so offsets < 8 are invalid)). Strings always reference the offset of the first instance of each string, table-wide. Arrays **do** support deduplication: if multiple cells have identical array contents (same length and same values), they may point to the same offset in the Variable Data. Additionally, individual cells can have an array item count of 0, in which case the offset might point to zero bytes at a valid location, or might be 0, or might be shared with other empty arrays. This means offsets in a column are **not guaranteed to be strictly increasing** or unique.
+
 ## Data Types
 
-All data in the Table Data section is fixed-width. Variable-length data is stored in the Variable Data section and referenced by offset.
+All data in the Table Data section is fixed-width.
 
-| Type          | Size (Bytes) | Description                                                                              |
-| :------------ | :----------- | :--------------------------------------------------------------------------------------- |
-| `bool`        | 1            | Boolean value (0 or 1).                                                                  |
-| `i16` / `u16` | 2            | 16-bit integer.                                                                          |
-| `i32` / `u32` | 4            | 32-bit integer.                                                                          |
-| `i64` / `u64` | 8            | 64-bit integer.                                                                          |
-| `f32`         | 4            | 32-bit floating point.                                                                   |
-| `f64`         | 8            | 64-bit floating point.                                                                   |
-| `string`      | 8            | **Offset** (`u64`) into Variable Data. Points to a UTF-16 double-null-terminated string. |
-| `array`       | 16           | **Count** (`u64`) followed by **Offset** (`u64`) into Variable Data.                     |
-| `interval`    | 8            | Two `i32` values representing a range/interval.                                          |
-| `row`         | 8            | Reference to a row in the current table (Local Reference). Likely an index.              |
-| `foreignrow`  | 16           | Reference to a row in another table. 128-bit value (Key/GUID?).                          |
-| `enumrow`     | 4            | Index (`i32`) into a predefined enumeration.                                             |
+| Type          | Size (Bytes) | Description                                                                                                     |
+| :------------ | :----------- | :-------------------------------------------------------------------------------------------------------------- |
+| `bool`        | 1            | Boolean value (0 or 1). Note that this is a 1 byte field where only 1 bit is used.                              |
+| `i16` / `u16` | 2            | 16-bit integer.                                                                                                 |
+| `i32` / `u32` | 4            | 32-bit integer.                                                                                                 |
+| `i64` / `u64` | 8            | 64-bit integer.                                                                                                 |
+| `f32`         | 4            | 32-bit floating point.                                                                                          |
+| `f64`         | 8            | 64-bit floating point. Not actually used in the game (yet?)                                                     |
+| `string`      | 8            | **Offset** (`u64`) into Variable Data. Points to a UTF-16 double-null-terminated string.                        |
+| `array`       | 16           | **Count** (`u64`) followed by **Offset** (`u64`) into Variable Data.                                            |
+| `interval`    | 8            | Two `i32` values representing a range/interval.                                                                 |
+| `row`         | 8            | u64 Reference to a row in the current table by index.                                                           |
+| `foreignrow`  | 16           | u128 Reference to a row in another table by index. Never larger than the largest row index of the target table. |
+| `enumrow`     | 4            | u32 Reference into a predefined enum (code-based). May be 0 or 1 indexed.                                       |
 
 ### Arrays
 
-Arrays are a "meta-type" or container layer. An array field in the table data does **not** contain the data itself, but a reference to it.
+Arrays are a "meta-type" or container layer. An array field in the table data does **not** contain the data itself, but references to it in the Variable Data section.
 
 - **Structure**: `[Count: u64, Offset: u64]` (16 bytes).
 - **Data Location**: The `Offset` points to the start of the array's data in the Variable Data section.
@@ -47,16 +55,16 @@ Arrays are a "meta-type" or container layer. An array field in the table data do
 
 These types are semantically distinct but are implemented using the basic types above.
 
-| High-Level Type | Underlying Type | Description                                                                                                                                            |
-| :-------------- | :-------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Interval**    | `i32` (x2)      | Represents a numeric range. Stored as two consecutive 32-bit integers (Min, Max). Often technically valid to treat as `i64` but semantically distinct. |
-| **File**        | `string`        | A string that is a path to a specific game asset file (e.g., `.dds`, `.ao`, `.sm`).                                                                    |
-| **Directory**   | `string`        | A string representing a directory path, often used as a prefix for multiple files.                                                                     |
-| **Color**       | `string`        | Typically a string representation of a color (e.g., hex code). Needs verification for specific tables.                                                 |
-| **Point**       | `i32` (x2)?     | Likely two consecutive `i32`s representing X and Y coordinates.                                                                                        |
-| **DateTime**    | `u64`?          | A timestamp. Format (Unix epoch, Windows ticks, etc.) needs verification.                                                                              |
-| **Hash16**      | `u16`           | A 16-bit hash value.                                                                                                                                   |
-| **Hash32**      | `u32`           | A 32-bit hash value.                                                                                                                                   |
+| High-Level Type | Underlying Type | Description                                                                                        |
+| :-------------- | :-------------- | :------------------------------------------------------------------------------------------------- |
+| **Interval**    | `i32` (x2)      | Represents a numeric range. Stored as two consecutive 32-bit integers (Min, Max).                  |
+| **File**        | `string`        | A string that is a path to a specific game asset file (e.g., `.dds`, `.ao`, `.sm`).                |
+| **Directory**   | `string`        | A string representing a directory path, often used as a prefix for multiple files.                 |
+| **Color**       | `string`        | A string represatation of a color. `0xAAAAAA` formats exist but I am not yet clear on consistency. |
+| **Point**       | `i32` (x2)?     | Likely two consecutive `i32`s representing X and Y coordinates. I don't know yet.                  |
+| **DateTime**    | `u64`?          | A timestamp. I don't know yet.                                                                     |
+| **Hash16**      | `u16`           | A 16-bit hash value.                                                                               |
+| **Hash32**      | `u32`           | A 32-bit hash value.                                                                               |
 
 ### Strings
 
@@ -68,7 +76,7 @@ The value in the Table Data is a `u64` offset relative to the start of the Varia
 
 ### Validation & Completeness
 
-Because Variable Data is typically written sequentially during table generation:
+Because Variable Data is written sequentially during table generation:
 
 1.  **Ordering**: Referenced values generally appear in the Variable Data section in the order their corresponding cells appear in the table (column by column, then row by row).
 2.  **No Gaps**: In a "perfect" table, every byte of the Variable Data section (after the initial 8 magic bytes) should be accounted for by at least one reference (either a string, an array, or a reference inside an array).
@@ -94,19 +102,19 @@ Identifying column types and validating data in undocumented tables relies on st
   - **Strings**: Offset must be at least 2 bytes before the end of the section (for `0x0000` terminator).
   - **Arrays**: Offset + (Count \* ElementSize) must be `<= TotalVariableDataSize`.
 - **Array Patterns**:
-  - **Count Limit**: Counts are rarely high. Values `> 30` are suspicious for generic data arrays (though technically possible).
+  - **Count Limit**: Counts are rarely high. Values `> 50` are suspicious for generic data arrays (though technically possible).
   - **Double Spike Histogram**: An array column (16 bytes) often shows two value distributions:
     - **Count (first 8 bytes)**: Clustered very low (0-30).
-    - **Offset (next 8 bytes)**: Monotonically increasing (mostly) and spread across the variable data range.
+    - **Offset (next 8 bytes)**: Monotonically increasing and spread across the variable data range.
 - **String/Array Differentiation**:
-  - If a `u64` column's values point to valid UTF-16 double-null terminated sequences, it's likely a `String`.
+  - If a `u64` column's values all point to valid UTF-16 double-null terminated sequences, it's likely a `String`.
   - If a `u128` (16-byte) column's second `u64` points to data, check the first `u64` (count). If the data at the offset looks like a sequence of `n` items, it's an array.
 
 ### References
 
 - **Values**:
   - **Null**: `0xFE` repeated (8 or 16 bytes). A non-reference column having this specific pattern is rare.
-  - **Range**: Valid references must be `< MaxRows` of the target table.
+  - **Range**: Valid references must be `< MaxRows` of the target table or enum.
 - **Target Inference**:
   - A column is only a valid reference to Table X if _all_ non-null values in that column are valid indices in Table X.
   - **Correlation**: If a column is suspected to reference Table X, correlate the text data. Do the strings in the source column (or the source table's name) semantically relate to the string columns in Table X? (e.g., `MonsterId` column pointing to `Monsters.dat` which has a `Name` column like "Zombie").
@@ -122,7 +130,7 @@ Identifying column types and validating data in undocumented tables relies on st
 - **Files & Directories**:
   - Treat as `String` first.
   - Validate if the string value corresponds to a real file path inside the game's GGPK/Bundle system.
-  - Directories act as prefixes for other file columns.
+  - Directories act as prefix filters for the file paths.
 
 ### Byte Histograms (Little Endian)
 
@@ -130,19 +138,19 @@ Identifying column types and validating data in undocumented tables relies on st
 - **Offsets**: Even distribution or gradual shifting across the file's size range.
 - **Entropy**:
   - **Low**: Booleans, small enums, sparse arrays.
-  - **High**: Hashes, compressed data (unlikely here), encryption keys (unlikely here).
+  - **High**: Hashes.
 
 ### References
 
 - **Foreign Row**: A 16-byte (128-bit) value linking to a row in another table.
-  - These are **Index References**, not hashes or GUIDs.
+  - These are **Index References**.
   - The 128-bit width is likely reserved for runtime replacement with "fat pointers" (direct memory addresses) by the game engine.
   - **Values**: Little-endian integers between `0` and the target table's row count.
-  - **Null**: `0xFEFEFEFEFEFEFEFEFEFEFEFEFEFEFEFE` (16 bytes of `0xFE`).
 - **Local Row**: An 8-byte (64-bit) value linking to a row in the same table.
   - **Values**: Little-endian integers between `0` and the current table's row count.
-  - **Null**: `0xFEFEFEFEFEFEFEFE` (8 bytes of `0xFE`).
-- **Null Values**: If a reference is null, the entire cell is filled with `0xFE` bytes. This is distinct from a value of 0, which is a valid index (Row 0).
+- **EnumRow**: A 4-byte (32-bit) value linking to a predefined enum.
+  - **Values**: Little-endian integers between `0` and the maximum enum value.
+- **Null Values**: If a reference is null, the entire cell is filled with `0xFE` bytes. This is distinct from a value of 0, which is a valid index (Row 0). Seeing this pattern in any table row is a very strong indicator of a reference type.
 
 ## Discrepancies & Notes
 

@@ -1,7 +1,8 @@
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 // datc64 column types
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Scalar {
     Unknown,
     SelfRow,
@@ -43,10 +44,6 @@ impl TypeSet {
         match bytes {
             1 => {
                 set.insert(Scalar::Bool);
-                set.insert(Scalar::EnumRow); // technically often 4 bytes, but sometimes 1? Unlikely, but let's stick to standard
-                                             // Actually EnumRow is 4 bytes in standard datc64.
-                                             // Single byte columns are usually bool or u8 (which we map to EnumRow sometimes or just ignore? Scalar::U8 isn't in the enum yet).
-                                             // The Scalar enum doesn't have U8/I8. Assuming Bool for now.
             }
             2 => {
                 set.insert(Scalar::I16);
@@ -96,7 +93,6 @@ impl TypeSet {
             Scalar::Directory => 1 << 6,
             Scalar::Color => 1 << 7,
             Scalar::Interval => 1 << 8,
-            Scalar::DateTime => 1 << 19,
             Scalar::I16 => 1 << 9,
             Scalar::U16 => 1 << 10,
             Scalar::Hash16 => 1 << 11,
@@ -107,6 +103,7 @@ impl TypeSet {
             Scalar::U64 => 1 << 16,
             Scalar::F32 => 1 << 17,
             Scalar::F64 => 1 << 18,
+            Scalar::DateTime => 1 << 19,
         }
     }
 
@@ -156,7 +153,7 @@ impl TypeSet {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Cell {
     Scalar(Scalar),
     Array(Scalar),
@@ -250,4 +247,12 @@ impl TableStats {
             per_byte_stats: vec![ByteStats::new(); row_len_bytes],
         }
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ColumnValidation {
+    pub offset: usize,
+    pub length: usize,
+    pub allowed_types: Vec<Scalar>,
+    pub is_array: bool,
 }

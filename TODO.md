@@ -32,8 +32,10 @@
     - [x] Implement `DateTime` Detection: Identify `u64` values that fall within valid game-relevant epoch ranges.
 - [x] Split type validation into a few phases. ...
   - **Status**: *Completed*. Implemented `TypeSet` (bitmask) and `check_phase_1_absolutes` in `src/heuristics.rs`.
+  - **Status**: *Refined*. Isolated absolute rejection logic in `src/validators.rs` and exposed via `DatFile::validate_types`.
 - [x] Push as much precomputation of statistical things up into the shared code like the xor and max and min.
 
 ## Remaining Tasks
+- [ ] Create a binary/tool to export `validate_types` results (e.g., to JSON) for external schema validation.
 - [ ] (Optional) Add logic to support both 32-bit and 64-bit string arrays if support for legacy .dat files is needed (currently defaults to 64-bit).
 - [ ] Improve `ForeignRow` vs `Int` logic: Refine the distinction between 128-bit keys and large integers using clustering and distribution analysis.

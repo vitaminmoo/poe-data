@@ -27,21 +27,21 @@ impl Default for DatLoader {
 
 impl DatLoader {
     pub fn get_table(&mut self, name: &str) -> Option<&DatFile> {
-        self.load_table(name);
+        if let Err(e) = self.load_table(name) {
+            eprintln!("Failed to load table {}: {}", name, e);
+            return None;
+        }
         self.dat_files.get(name)
     }
-    fn load_table(&mut self, name: &str) {
+    fn load_table(&mut self, name: &str) -> Result<()> {
         if self.dat_files.contains_key(name) {
-            return;
+            return Ok(());
         }
         eprintln!("loading {}", name);
-        match self.load_file(name) {
-            Ok(loaded) => {
-                let df = parse_file(name, loaded).unwrap();
-                self.dat_files.insert(name.to_string(), df);
-            }
-            Err(err) => panic!("Couldn't load table {}: {}", name, err),
-        }
+        let loaded = self.load_file(name)?;
+        let df = parse_file(name, loaded)?;
+        self.dat_files.insert(name.to_string(), df);
+        Ok(())
     }
     // load_file gets a file from the cache or cdn and returns their Bytes
     fn load_file(&mut self, name: &str) -> Result<Bytes> {
@@ -49,15 +49,18 @@ impl DatLoader {
     }
     pub fn get_tables<'a>(&mut self, names: &'a [&'a str]) -> impl Iterator<Item = (&'a str, &DatFile)> {
         self.load_tables(names);
-        names.iter().map(|n| (*n, self.dat_files.get(*n).unwrap()))
+        names.iter().filter_map(|n| self.dat_files.get(*n).map(|df| (*n, df)))
     }
     pub fn load_tables<'a>(&'a mut self, names: &[&'a str]) {
         let missing = names.iter().copied().filter(|n| !self.dat_files.contains_key(*n)).collect::<Vec<&str>>();
         let loaded = self
             .load_files(&missing)
-            .map(|(n, b)| match parse_file(n, b) {
-                Ok(df) => (n.to_string(), df),
-                Err(_) => panic!("fuck"),
+            .filter_map(|(n, b)| match parse_file(n, b) {
+                Ok(df) => Some((n.to_string(), df)),
+                Err(e) => {
+                    eprintln!("Failed to parse {}: {}", n, e);
+                    None
+                }
             })
             .collect::<Vec<_>>();
         self.dat_files.extend(loaded);
@@ -232,6 +235,10 @@ impl DatFile {
 
     pub fn get_all_column_claims(&self, known_files: Option<&[String]>) -> Vec<ColumnClaim> {
         heuristics::get_all_column_claims(self, known_files)
+    }
+
+    pub fn validate_types(&self, known_files: Option<&[String]>) -> Vec<crate::types::ColumnValidation> {
+        heuristics::validate_file_types(self, known_files)
     }
 }
 

@@ -28,12 +28,15 @@ pub fn scan(dat_file: &DatFile, col_index: usize) -> Option<ColumnClaim> {
     }
 
     if valid_count > 0 && has_non_zero {
-        return Some(ColumnClaim {
-            offset: col_index,
-            bytes: 8,
-            column_type: Cell::Scalar(Scalar::Interval),
-            labels: HashMap::new(),
-        });
+        // Require 90% validity to avoid false positives on random data
+        if valid_count >= (dat_file.row_count * 9 / 10) {
+            return Some(ColumnClaim {
+                offset: col_index,
+                bytes: 8,
+                column_type: Cell::Scalar(Scalar::Interval),
+                labels: HashMap::new(),
+            });
+        }
     }
 
     None

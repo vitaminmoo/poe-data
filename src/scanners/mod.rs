@@ -1,4 +1,5 @@
 pub mod arrays;
+pub mod bool;
 pub mod datetime;
 pub mod hashes;
 pub mod interval;

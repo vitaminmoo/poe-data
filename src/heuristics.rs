@@ -2,84 +2,44 @@ use crate::dat_parser::DatFile;
 use crate::scanners;
 use crate::types::{Cell, ColumnClaim, Scalar, TypeSet};
 
-pub fn check_phase_1_absolutes(dat_file: &DatFile, col_index: usize, cell_length: usize) -> (TypeSet, bool) {
+pub fn check_phase_1_absolutes(dat_file: &DatFile, col_index: usize, cell_length: usize, known_files: Option<&[String]>) -> (TypeSet, bool) {
     let mut candidates = TypeSet::from_size(cell_length);
     let mut is_array_candidate = cell_length == 16;
-    let vdata_len = dat_file.vdata.len();
-
-    // Zero check optimization
-    let mut all_zeros = true;
-    for i in 0..cell_length {
-        if dat_file.stats.per_byte_stats[col_index + i].max_value != 0 {
-            all_zeros = false;
-            break;
-        }
-    }
-    if all_zeros {
-        return (candidates, is_array_candidate);
-    }
 
     match cell_length {
         1 => {
-            if dat_file.stats.per_byte_stats[col_index].max_value > 1 {
+            if !crate::validators::is_valid_bool(dat_file, col_index) {
                 candidates.remove(Scalar::Bool);
             }
         }
-        8 => {
-            let mut possible_ptr = true;
-            let rows_iter = dat_file.column_rows_iter(col_index, 8);
-
-            for mut row in rows_iter {
-                let val = bytes::Buf::get_u64_le(&mut row);
-                if val == 0xFEFEFEFEFEFEFEFE {
-                    continue;
-                }
-                if val == 0 {
-                    possible_ptr = false;
-                    break;
-                }
-                if val < 8 || val as usize >= vdata_len {
-                    possible_ptr = false;
-                    break;
-                }
-                if dat_file.string_from_offset_if_valid(val as usize).is_err() {
-                    possible_ptr = false;
-                    break;
-                }
+        2 => {
+            if !crate::validators::is_valid_hash16(dat_file, col_index) {
+                candidates.remove(Scalar::Hash16);
             }
-
-            if !possible_ptr {
+        }
+        4 => {
+            if !crate::validators::is_valid_hash32(dat_file, col_index) {
+                candidates.remove(Scalar::Hash32);
+            }
+        }
+        8 => {
+            if !crate::validators::is_valid_string_pointer(dat_file, col_index) {
                 candidates.remove(Scalar::String);
                 candidates.remove(Scalar::File);
                 candidates.remove(Scalar::Directory);
                 candidates.remove(Scalar::Color);
+            } else {
+                if !crate::validators::is_valid_file_path(dat_file, col_index, known_files) {
+                    candidates.remove(Scalar::File);
+                }
+                if !crate::validators::is_valid_directory_path(dat_file, col_index, known_files) {
+                    candidates.remove(Scalar::Directory);
+                }
             }
         }
         16 => {
-            let rows_iter = dat_file.column_rows_iter(col_index, 16);
-            for mut row in rows_iter {
-                let count = bytes::Buf::get_u64_le(&mut row);
-                let offset = bytes::Buf::get_u64_le(&mut row);
-
-                if count == 0xFEFEFEFEFEFEFEFE && offset == 0xFEFEFEFEFEFEFEFE {
-                    is_array_candidate = false;
-                    break;
-                }
-
-                if count > 100_000 {
-                    is_array_candidate = false;
-                    break;
-                }
-
-                if count > 0 {
-                    if offset < 8 || offset as usize > vdata_len {
-                        is_array_candidate = false;
-                        break;
-                    }
-                } else if offset != 0 && (offset < 8 || offset as usize > vdata_len) {
-                    is_array_candidate = false;
-                    break;
-                }
+            if !crate::validators::is_valid_array(dat_file, col_index) {
+                is_array_candidate = false;
             }
         }
         _ => {}
@@ -89,7 +49,7 @@ pub fn check_phase_1_absolutes(dat_file: &DatFile, col_index: usize, cell_length
 }
 
 pub fn get_column_claims(dat_file: &DatFile, col_index: usize, cell_length: usize, known_files: Option<&[String]>) -> Vec<ColumnClaim> {
-    let (candidates, is_array_candidate) = check_phase_1_absolutes(dat_file, col_index, cell_length);
+    let (candidates, is_array_candidate) = check_phase_1_absolutes(dat_file, col_index, cell_length, known_files);
 
     if candidates.is_empty() && !is_array_candidate {
         return Vec::new();
@@ -144,6 +104,13 @@ pub fn get_column_claims(dat_file: &DatFile, col_index: usize, cell_length: usiz
                 }
             }
         }
+        1 => {
+            if candidates.contains(Scalar::Bool) {
+                if let Some(claim) = scanners::bool::scan(dat_file, col_index) {
+                    claims.push(claim);
+                }
+            }
+        }
         _ => {}
     }
 
@@ -152,7 +119,7 @@ pub fn get_column_claims(dat_file: &DatFile, col_index: usize, cell_length: usiz
 
 pub fn get_all_column_claims(dat_file: &DatFile, known_files: Option<&[String]>) -> Vec<ColumnClaim> {
     let mut all_claims = Vec::new();
-    for &size in &[16, 8, 4, 2] {
+    for &size in &[16, 8, 4, 2, 1] {
         if dat_file.bytes_per_row < size {
             continue;
         }
@@ -169,12 +136,13 @@ pub fn resolve_conflicts(dat_file: &DatFile, mut claims: Vec<ColumnClaim>) -> Ve
         match c.column_type {
             Cell::Scalar(Scalar::File) | Cell::Scalar(Scalar::Directory) | Cell::Scalar(Scalar::Color) => 100,
             Cell::Array(_) => 90,
+            Cell::Scalar(Scalar::String) => 85,
             Cell::Scalar(Scalar::ForeignRow) | Cell::Scalar(Scalar::SelfRow) => 80,
-            Cell::Scalar(Scalar::String) => 75,
-            Cell::Scalar(Scalar::Interval) | Cell::Scalar(Scalar::DateTime) => 60,
+            Cell::Scalar(Scalar::DateTime) => 60,
             Cell::Scalar(Scalar::Hash32) => 50,
             Cell::Scalar(Scalar::Hash16) => 40,
             Cell::Scalar(Scalar::Bool) => 10,
+            Cell::Scalar(Scalar::Interval) => 5,
             _ => 5,
         }
     }
@@ -201,4 +169,28 @@ pub fn resolve_conflicts(dat_file: &DatFile, mut claims: Vec<ColumnClaim>) -> Ve
 
     accepted.sort_by_key(|c| c.offset);
     accepted
+}
+
+pub fn validate_file_types(dat_file: &DatFile, known_files: Option<&[String]>) -> Vec<crate::types::ColumnValidation> {
+    let mut validations = Vec::new();
+    let row_len = dat_file.bytes_per_row;
+
+    // Check for standard sizes: 1, 2, 4, 8, 16.
+    for &length in &[1, 2, 4, 8, 16] {
+        if row_len < length {
+            continue;
+        }
+        for offset in 0..=(row_len - length) {
+            let (candidates, is_array) = check_phase_1_absolutes(dat_file, offset, length, known_files);
+            let allowed_types: Vec<Scalar> = candidates.iter().collect();
+
+            validations.push(crate::types::ColumnValidation {
+                offset,
+                length,
+                allowed_types,
+                is_array,
+            });
+        }
+    }
+    validations
 }

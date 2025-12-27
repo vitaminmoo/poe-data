@@ -5,4 +5,5 @@ pub mod statdescriptions;
 pub mod statdescriptions_parser;
 pub mod tables;
 pub mod types;
+pub mod validators;
 pub mod versions;

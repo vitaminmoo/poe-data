@@ -18,12 +18,15 @@ pub fn scan(dat_file: &DatFile, col_index: usize) -> Option<ColumnClaim> {
         }
 
         // Array Validity Checks
-        if count > 100_000 {
+        if count > 50 {
             return None;
         }
 
         if count > 0 {
             if offset < 8 || offset as usize > vdata_len {
+                return None;
+            }
+            if (offset as usize + count as usize) > vdata_len {
                 return None;
             }
         } else if offset != 0 && (offset < 8 || offset as usize > vdata_len) {
