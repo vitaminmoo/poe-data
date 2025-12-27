@@ -34,6 +34,12 @@
   - **Status**: *Completed*. Implemented `TypeSet` (bitmask) and `check_phase_1_absolutes` in `src/heuristics.rs`.
   - **Status**: *Refined*. Isolated absolute rejection logic in `src/validators.rs` and exposed via `DatFile::validate_types`.
 - [x] Push as much precomputation of statistical things up into the shared code like the xor and max and min.
+- [x] Remove duplicate checks from scanners where validators already exclude offsets.
+    - [x] Added `is_valid_color` to `src/validators.rs`.
+    - [x] Updated `src/heuristics.rs` to filter Color in Phase 1.
+    - [x] Simplified `src/scanners/strings.rs` to rely on Phase 1 candidates.
+    - [x] Removed redundant iteration in `src/scanners/bool.rs` and `src/scanners/arrays.rs`.
+    - [x] Removed redundant zero checks in `src/scanners/hashes.rs`.
 
 ## Remaining Tasks
 - [ ] Create a binary/tool to export `validate_types` results (e.g., to JSON) for external schema validation.

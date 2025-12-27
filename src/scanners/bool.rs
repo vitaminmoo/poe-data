@@ -2,18 +2,8 @@ use crate::dat_parser::DatFile;
 use crate::types::{Cell, ColumnClaim, Scalar};
 use std::collections::HashMap;
 
-pub fn scan(dat_file: &DatFile, col_index: usize) -> Option<ColumnClaim> {
-    let rows_iter = dat_file.column_rows_iter(col_index, 1);
-
-    // Check every row
-    for row in rows_iter {
-        // Since we are iterating with size 1, row is just 1 byte
-        let val = row[0].to_le();
-        if val != 0 && val != 1 {
-            return None;
-        }
-    }
-
+pub fn scan(_dat_file: &DatFile, col_index: usize) -> Option<ColumnClaim> {
+    // If we are here, validators have already confirmed it's a valid bool column (0/1).
     Some(ColumnClaim {
         offset: col_index,
         bytes: 1,

@@ -11,7 +11,6 @@ pub fn scan_hash16(dat_file: &DatFile, col_index: usize) -> Option<ColumnClaim> 
 
     let mut counts = [0usize; 65536];
     let mut max_val = 0;
-    let mut has_non_zero = false;
     let mut lsb_odd = 0;
     let mut msb_odd = 0;
     let mut has_fe_pattern = false;
@@ -20,9 +19,6 @@ pub fn scan_hash16(dat_file: &DatFile, col_index: usize) -> Option<ColumnClaim> 
     let rows_iter = dat_file.column_rows_iter(col_index, 2);
     for mut row in rows_iter {
         let v = row.get_u16_le();
-        if v > 0 {
-            has_non_zero = true;
-        }
         if v > max_val {
             max_val = v;
         }
@@ -44,7 +40,7 @@ pub fn scan_hash16(dat_file: &DatFile, col_index: usize) -> Option<ColumnClaim> 
         }
     }
 
-    if !has_non_zero || max_val <= 1000 || has_fe_pattern {
+    if max_val <= 1000 || has_fe_pattern {
         return None;
     }
     if row_count > 10 && (lsb_odd == 0 || lsb_odd == row_count || msb_odd == 0 || msb_odd == row_count) {
@@ -126,7 +122,6 @@ pub fn scan_hash32(dat_file: &DatFile, col_index: usize) -> Option<ColumnClaim> 
 
     let mut counts = HashMap::new();
     let mut max_val = 0;
-    let mut has_non_zero = false;
     let mut lsb_odd = 0;
     let mut msb_odd = 0;
     let mut has_fe_pattern = false;
@@ -134,9 +129,6 @@ pub fn scan_hash32(dat_file: &DatFile, col_index: usize) -> Option<ColumnClaim> 
     let rows_iter = dat_file.column_rows_iter(col_index, 4);
     for mut row in rows_iter {
         let v = row.get_u32_le();
-        if v > 0 {
-            has_non_zero = true;
-        }
         if v > max_val {
             max_val = v;
         }
@@ -158,7 +150,7 @@ pub fn scan_hash32(dat_file: &DatFile, col_index: usize) -> Option<ColumnClaim> 
         }
     }
 
-    if !has_non_zero || max_val <= 1_000_000 || has_fe_pattern {
+    if max_val <= 1_000_000 || has_fe_pattern {
         return None;
     }
     if row_count > 10 && (lsb_odd == 0 || lsb_odd == row_count || msb_odd == 0 || msb_odd == row_count) {

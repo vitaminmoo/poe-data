@@ -35,6 +35,9 @@ pub fn check_phase_1_absolutes(dat_file: &DatFile, col_index: usize, cell_length
                 if !crate::validators::is_valid_directory_path(dat_file, col_index, known_files) {
                     candidates.remove(Scalar::Directory);
                 }
+                if !crate::validators::is_valid_color(dat_file, col_index) {
+                    candidates.remove(Scalar::Color);
+                }
             }
         }
         16 => {
@@ -74,7 +77,7 @@ pub fn get_column_claims(dat_file: &DatFile, col_index: usize, cell_length: usiz
         }
         8 => {
             if candidates.contains(Scalar::String) {
-                claims.extend(scanners::strings::scan(dat_file, col_index, known_files));
+                claims.extend(scanners::strings::scan(dat_file, col_index, &candidates));
             }
             if candidates.contains(Scalar::Interval) {
                 if let Some(claim) = scanners::interval::scan(dat_file, col_index) {

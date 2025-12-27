@@ -138,6 +138,36 @@ pub fn is_valid_directory_path(dat_file: &DatFile, col_index: usize, known_files
     true
 }
 
+pub fn is_valid_color(dat_file: &DatFile, col_index: usize) -> bool {
+    if !is_valid_string_pointer(dat_file, col_index) {
+        return false;
+    }
+
+    let mut has_non_empty = false;
+    for mut row in dat_file.column_rows_iter(col_index, 8) {
+        let offset = row.get_u64_le() as usize;
+        let s = match dat_file.string_from_offset_if_valid(offset) {
+            Ok(s) => s,
+            Err(_) => return false,
+        };
+
+        if s.is_empty() {
+            continue;
+        }
+        has_non_empty = true;
+
+        let is_hex_code = (s.len() == 7 && s.starts_with('#') && s[1..].chars().all(|c| c.is_ascii_hexdigit()))
+            || (s.len() == 9 && s.starts_with('#') && s[1..].chars().all(|c| c.is_ascii_hexdigit()))
+            || (s.len() == 8 && s.starts_with("0x") && s[2..].chars().all(|c| c.is_ascii_hexdigit()))
+            || (s.len() == 10 && s.starts_with("0x") && s[2..].chars().all(|c| c.is_ascii_hexdigit()));
+
+        if !is_hex_code {
+            return false;
+        }
+    }
+    has_non_empty
+}
+
 fn list_binary_search(list: &[String], target: &str) -> Result<usize, usize> {
     list.binary_search_by(|probe| probe.as_str().cmp(target))
 }
