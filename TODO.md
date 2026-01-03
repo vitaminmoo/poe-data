@@ -22,7 +22,7 @@
     - All 718 tests passed.
 - [x] **Performance & Allocations**
     - [x] Remove `Vec<Bytes>` allocation in `get_column_claims`: Refactor checkers to consume `column_rows_iter` lazily.
-    - [x] Optimize Entropy & Stat Calculation: Use a fixed-size array for `u16` entropy.
+    - [x] Optimize Entropy & Stat Calculation: Use a fixed-size array for `u16` encoding.
     - [x] Implement "Phase 2" Fast-Fail for Strings: Early exit during string iteration if an invalid sequence is found.
 - [x] **Modularity & Organization**
     - [x] Extract Type Scanners to `src/scanners/`: Moved specific type heuristics out of `heuristics.rs` into specialized modules using a unified scanning approach.
@@ -30,18 +30,15 @@
 - [x] **Type Detection Coverage**
     - [x] Implement `Interval` Detection: Detect 8-byte columns where `i32_min <= i32_max` consistently.
     - [x] Implement `DateTime` Detection: Identify `u64` values that fall within valid game-relevant epoch ranges.
-- [x] Split type validation into a few phases. ...
-  - **Status**: *Completed*. Implemented `TypeSet` (bitmask) and `check_phase_1_absolutes` in `src/heuristics.rs`.
-  - **Status**: *Refined*. Isolated absolute rejection logic in `src/validators.rs` and exposed via `DatFile::validate_types`.
+- [x] Split type validation into a few phases.
 - [x] Push as much precomputation of statistical things up into the shared code like the xor and max and min.
 - [x] Remove duplicate checks from scanners where validators already exclude offsets.
-    - [x] Added `is_valid_color` to `src/validators.rs`.
-    - [x] Updated `src/heuristics.rs` to filter Color in Phase 1.
-    - [x] Simplified `src/scanners/strings.rs` to rely on Phase 1 candidates.
-    - [x] Removed redundant iteration in `src/scanners/bool.rs` and `src/scanners/arrays.rs`.
-    - [x] Removed redundant zero checks in `src/scanners/hashes.rs`.
+- [x] **Detailed Validation & Error Reporting**
+    - [x] Refactored validators to return `Result<(), ValidationError>` providing `check`, `row`, and `value_hex` for precise debugging.
+    - [x] Updated `src/bin/getschema.rs` to utilize `DatLoader` and perform schema-wide validation.
+    - [x] Injected detailed `ValidationError` objects into the `errors` field of generated schema JSON files.
+    - [x] Added `inherited` tag support in `getschema.rs` for tables compatible with both PoE1 and PoE2.
 
 ## Remaining Tasks
-- [ ] Create a binary/tool to export `validate_types` results (e.g., to JSON) for external schema validation.
 - [ ] (Optional) Add logic to support both 32-bit and 64-bit string arrays if support for legacy .dat files is needed (currently defaults to 64-bit).
 - [ ] Improve `ForeignRow` vs `Int` logic: Refine the distinction between 128-bit keys and large integers using clustering and distribution analysis.

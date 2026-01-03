@@ -16,16 +16,20 @@ pub struct DatLoader {
 
 impl Default for DatLoader {
     fn default() -> Self {
-        let cache_dir = dirs::cache_dir().unwrap().join("poe_data_tools");
-        std::fs::create_dir_all(&cache_dir).unwrap();
-        let base_url = poe_data_tools::bundle_loader::cdn_base_url(&cache_dir, "2").unwrap();
-        eprintln!("loading fs");
-        let fs = poe_data_tools::bundle_fs::FS::from_cdn(&base_url, &cache_dir).unwrap();
-        DatLoader { fs, dat_files: HashMap::new() }
+        Self::new("2").expect("Failed to create default DatLoader")
     }
 }
 
 impl DatLoader {
+    pub fn new(version: &str) -> Result<Self> {
+        let cache_dir = dirs::cache_dir().ok_or_else(|| anyhow!("no cache dir"))?.join("poe_data_tools");
+        std::fs::create_dir_all(&cache_dir)?;
+        let base_url = poe_data_tools::bundle_loader::cdn_base_url(&cache_dir, version)?;
+        eprintln!("loading fs for version {}", version);
+        let fs = poe_data_tools::bundle_fs::FS::from_cdn(&base_url, &cache_dir)?;
+        Ok(DatLoader { fs, dat_files: HashMap::new() })
+    }
+
     pub fn get_table(&mut self, name: &str) -> Option<&DatFile> {
         if let Err(e) = self.load_table(name) {
             eprintln!("Failed to load table {}: {}", name, e);
@@ -67,9 +71,12 @@ impl DatLoader {
     }
     // load_files efficiently gets all specified files from the cache or cdn and returns their Bytes
     pub fn load_files<'a>(&'a self, names: &[&'a str]) -> impl Iterator<Item = (&'a str, Bytes)> {
-        self.fs.batch_read(names).map(|res| match res {
-            Ok((n, b)) => (n, b),
-            Err((n, e)) => panic!("Failed to read file {}: {}", n, e),
+        self.fs.batch_read(names).filter_map(|res| match res {
+            Ok((n, b)) => Some((n, b)),
+            Err((_, e)) => {
+                eprintln!("Failed to read file: {}", e);
+                None
+            }
         })
     }
     pub fn get_file_list(&self) -> Vec<String> {

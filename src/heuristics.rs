@@ -1,58 +1,82 @@
 use crate::dat_parser::DatFile;
 use crate::scanners;
-use crate::types::{Cell, ColumnClaim, Scalar, TypeSet};
+use crate::types::{Cell, ColumnClaim, Scalar, TypeSet, ValidationError};
 
-pub fn check_phase_1_absolutes(dat_file: &DatFile, col_index: usize, cell_length: usize, known_files: Option<&[String]>) -> (TypeSet, bool) {
+pub fn check_phase_1_absolutes(
+    dat_file: &DatFile,
+    col_index: usize,
+    cell_length: usize,
+    known_files: Option<&[String]>,
+) -> (TypeSet, bool, Vec<(Scalar, ValidationError)>) {
     let mut candidates = TypeSet::from_size(cell_length);
     let mut is_array_candidate = cell_length == 16;
+    let mut failures = Vec::new();
 
     match cell_length {
         1 => {
-            if !crate::validators::is_valid_bool(dat_file, col_index) {
+            if let Err(e) = crate::validators::is_valid_bool(dat_file, col_index) {
                 candidates.remove(Scalar::Bool);
+                failures.push((Scalar::Bool, e));
             }
         }
         2 => {
-            if !crate::validators::is_valid_hash16(dat_file, col_index) {
+            if let Err(e) = crate::validators::is_valid_hash16(dat_file, col_index) {
                 candidates.remove(Scalar::Hash16);
+                failures.push((Scalar::Hash16, e));
             }
         }
         4 => {
-            if !crate::validators::is_valid_hash32(dat_file, col_index) {
+            if let Err(e) = crate::validators::is_valid_hash32(dat_file, col_index) {
                 candidates.remove(Scalar::Hash32);
+                failures.push((Scalar::Hash32, e));
             }
         }
         8 => {
-            if !crate::validators::is_valid_string_pointer(dat_file, col_index) {
+            if let Err(e) = crate::validators::is_valid_string_pointer(dat_file, col_index) {
                 candidates.remove(Scalar::String);
                 candidates.remove(Scalar::File);
                 candidates.remove(Scalar::Directory);
                 candidates.remove(Scalar::Color);
+                failures.push((Scalar::String, e.clone()));
+                failures.push((Scalar::File, e.clone()));
+                failures.push((Scalar::Directory, e.clone()));
+                failures.push((Scalar::Color, e));
             } else {
-                if !crate::validators::is_valid_file_path(dat_file, col_index, known_files) {
+                if let Err(e) = crate::validators::is_valid_file_path(dat_file, col_index, known_files) {
                     candidates.remove(Scalar::File);
+                    failures.push((Scalar::File, e));
                 }
-                if !crate::validators::is_valid_directory_path(dat_file, col_index, known_files) {
+                if let Err(e) = crate::validators::is_valid_directory_path(dat_file, col_index, known_files) {
                     candidates.remove(Scalar::Directory);
+                    failures.push((Scalar::Directory, e));
                 }
-                if !crate::validators::is_valid_color(dat_file, col_index) {
+                if let Err(e) = crate::validators::is_valid_color(dat_file, col_index) {
                     candidates.remove(Scalar::Color);
+                    failures.push((Scalar::Color, e));
                 }
             }
         }
         16 => {
-            if !crate::validators::is_valid_array(dat_file, col_index) {
+            if let Err(_e) = crate::validators::is_valid_array(dat_file, col_index) {
                 is_array_candidate = false;
+                // Since 'Array' isn't a Scalar type in our TypeSet usually (it's a Cell type),
+                // we might need to represent this error differently or just ignore if we can't map to Scalar.
+                // But for now, let's assume we don't track Array errors in 'failures' mapped to Scalar.
+                // Wait, users might want to know WHY it's not an array.
+                // We can use a dummy scalar or just add it to failures with a special key if we had one.
+                // But ColumnValidation has failures: Vec<(Scalar, ValidationError)>.
+                // We can hack it or add Scalar::Array? Scalar has no Array.
+                // Let's just log it if possible or ignore for now as 'is_array' bool tells us status.
             }
         }
         _ => {}
     }
 
-    (candidates, is_array_candidate)
+    (candidates, is_array_candidate, failures)
 }
 
 pub fn get_column_claims(dat_file: &DatFile, col_index: usize, cell_length: usize, known_files: Option<&[String]>) -> Vec<ColumnClaim> {
-    let (candidates, is_array_candidate) = check_phase_1_absolutes(dat_file, col_index, cell_length, known_files);
+    let (candidates, is_array_candidate, _) = check_phase_1_absolutes(dat_file, col_index, cell_length, known_files);
 
     if candidates.is_empty() && !is_array_candidate {
         return Vec::new();
@@ -184,7 +208,7 @@ pub fn validate_file_types(dat_file: &DatFile, known_files: Option<&[String]>) -
             continue;
         }
         for offset in 0..=(row_len - length) {
-            let (candidates, is_array) = check_phase_1_absolutes(dat_file, offset, length, known_files);
+            let (candidates, is_array, failures) = check_phase_1_absolutes(dat_file, offset, length, known_files);
             let allowed_types: Vec<Scalar> = candidates.iter().collect();
 
             validations.push(crate::types::ColumnValidation {
@@ -192,6 +216,7 @@ pub fn validate_file_types(dat_file: &DatFile, known_files: Option<&[String]>) -
                 length,
                 allowed_types,
                 is_array,
+                failures,
             });
         }
     }

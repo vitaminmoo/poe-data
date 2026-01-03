@@ -250,9 +250,17 @@ impl TableStats {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ValidationError {
+    pub check: String,
+    pub row: usize,
+    pub value_hex: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ColumnValidation {
     pub offset: usize,
     pub length: usize,
     pub allowed_types: Vec<Scalar>,
     pub is_array: bool,
+    pub failures: Vec<(Scalar, ValidationError)>,
 }
